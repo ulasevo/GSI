@@ -1,0 +1,42 @@
+{
+    "project_title": "GSI",
+    "page_title": "GSI: Ulaş's Genomic Stability Inducers",
+    "intro": "Music is the one non-negotiable no matter how I am to feel, to cherish that and the songs that play the miniscule role in shaping who I am, I am creating this authentic web-page, you're welcome to linger",
+    "newest_first": true,
+    "force_refresh_covers": false,
+    "filters": {
+        "personal": {
+            "label": "Personal",
+            "description": "Songs that got tangled with memory, body, recovery, desire or some version of me.",
+            "color": "#d64b6a",
+            "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls",
+            "playlist_cover": "",
+            "playlist_cta": "Want more of the same?"
+    },
+    "bassline": {
+        "label": "Bassline",
+        "description": "the type'a bass that makes you zone out and vibe in. Click and figure out what makes each song special",
+        "color": "#7b5cff",
+        "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls",
+            "playlist_cover": "covers/bassline-playlist.png",
+            "playlist_cta": "Want more of the same?"
+    },
+    "ulas": {
+        "label": "Ulaş's Selection",
+        "description": "the ever changing list of songs that I hand-picked for you to delve into",
+        "color":"#ff6b35",
+        "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls",
+            "playlist_cover": "",
+            "playlist_cta": "Want more of the same?"
+    }
+},
+    "sections": [
+        "Charge",
+        "Sonical Attraction",
+        "Lyric/Vocal Detail",
+        "Version of ulaş",
+        "Lore",
+        "Reading",
+        "Comment"
+    ]
+}
