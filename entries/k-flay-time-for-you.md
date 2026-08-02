@@ -10,8 +10,8 @@ accent: "#f38963"
 
 ![cover](../covers/k-flay-time-for-you.jpg)
 
-**Album: {album}
-**Accent:** `#020b26`
+**Album:** Life as a Dog
+**Accent:** `#f38963`
 
 ## Charge
 

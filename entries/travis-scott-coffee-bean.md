@@ -10,8 +10,8 @@ accent: "#d9a441"
 
 ![cover](../covers/travis-scott-coffee-bean.jpg)
 
-**Album: {album}
-**Accent:** `#91afc4`
+**Album:** ASTROWORLD
+**Accent:** `#d9a441`
 
 ## Charge
 

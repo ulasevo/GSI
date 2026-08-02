@@ -10,8 +10,8 @@ accent: "#925b56"
 
 ![cover](../covers/travis-scott-through-the-late-night.jpg)
 
-**Album: {album}
-**Accent:** `#000000`
+**Album:** Birds In The Trap McKnight
+**Accent:** `#925b56`
 
 ## Charge
 

@@ -10,8 +10,8 @@ accent: "#ff2f92"
 
 ![cover](../covers/metric-empty.jpg)
 
-**Album: {album}
-**Accent:** `#1d0c14`
+**Album:** Live It Out
+**Accent:** `#ff2f92`
 
 ## Charge
 

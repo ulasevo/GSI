@@ -8,7 +8,7 @@ from urllib.parse import quote_plus # allows search text to be URL safe
 import requests # web requests
 from PIL import Image # read covers and extract colors
 
-BASE = Path(".") # THIS folder
+BASE = Path(__file__).resolve().parent # THIS folder
 ENTRIES_DIR = BASE / "entries" # markdown file generation path
 COVERS_DIR = BASE / "covers" # album cover saving path
 SITE_DIR = BASE / "site" #HTML index creation path
@@ -84,7 +84,12 @@ def download_cover(url: str, save_path: Path) -> bool: # downloads cover; return
         return False # tell build_entries to fall back safely
 
 def dominant_color(image_path: Path) -> str:
-    image = Image.open(image_path).convert("RGB")
+    try: # catch corrupt images that PILLOW cannot identify
+        image = Image.open(image_path).convert("RGB")
+    except (OSError, ValueError) as error:
+        print(f" Could not read image: {image_path}")
+        print(f" Reason: {error}")
+        return "#888888"
     image = image.resize((120, 120)) # SHRINK FOR FASTER
 
     reduced = image.quantize(colors = 14).convert("RGB") #SIX MAIN COLORS!!
@@ -175,14 +180,21 @@ def sync_entry_metadata(entry_path: Path, artist: str, track: str, album: str, c
             text = f"{new_frontmatter}\n\n{body}"
     else:
         text = f"{new_frontmatter}\n\n{text}"
-    text = re.sub(
-        r"\*\*Album:\*\*.*",
-        f"**Album:"" {album}",
-        text,
-        count = 1
-    ) #update, once
+    text = re.sub(r"^\*{2}Album:.*$", ################### ^ means “beginning of a line.”
+                                                        #  $ means “end of a line.”
+                                                        # .* means “the remaining characters on that line.”
+                                                        # re.MULTILINE allows ^ and $ to work on individual lines instead of only the whole file.
+                                                        # The f before the replacement string inserts the real album or accent value.
+                                                        # Backticks around {accent} preserve the existing Markdown code styling.
+                  f"**Album:** {album}",
+                  text, count = 1,
+                  flags = re.MULTILINE
+    ) 
+    text = re.sub( r"^\*\*Accent:\*\*.*$",
+                  f"**Accent:** `{accent}`",
+                  text, count = 1, flags = re.MULTILINE)
     if cover_file and "![cover](" not in text:
-        title_line = f"# {track} - {artist}"
+        title_line = f"# {track} — {artist}"
         cover_line = f"![cover](../covers/{cover_file})"
         if title_line in text:
             text = text.replace(title_line, f"{title_line}\n\n{cover_line}", 1)
@@ -231,26 +243,42 @@ def build_entries() -> list[dict]: # Main Builder for markdown and covers
                 manual_cover_file = ""
 
         has_local_cover = bool(manual_cover_file)
-        needs_download = force_refresh_covers or manual_cover_url or not cover_path.exists()
+        needs_download = force_refresh_covers or not cover_path.exists()
         should_download_cover = (not has_local_cover) and needs_download
 
         if should_download_cover:
             if manual_cover_url:
                 cover_url = manual_cover_url
             else:
-                cover_url = search_itunes_cover(artist, track, album)
+                try:
+                    cover_url = search_itunes_cover(artist, track, album)
+                except requests.RequestException as error:
+                    print(f" iTunes cover search failed for {track}.")
+                    print(f" Reason: {error}")
+                    cover_url = None
+
             if cover_url is None:
                 print(f" No cover found for {track}.")
-                accent = "#444444"
-                cover_file = ""
+                if cover_path.exists():
+                    print(f" Using cached cover for {track}.")
+                    accent = dominant_color(cover_path)
+                    cover_file = cover_path.name
+                else:
+                    accent = "#444444"
+                    cover_file = ""
             else:
                 download_ok = download_cover(cover_url, cover_path) # try to download cover without crashing
                 if download_ok: # if cover downloaded successfully
                     accent = dominant_color(cover_path)
                     cover_file = cover_path.name
                 else: # if manual/auto cover failed
-                    accent = "#444444"
-                    cover_file = ""
+                    if cover_path.exists():
+                        print(f" Using cached cover for {track}.")
+                        accent = dominant_color(cover_path)
+                        cover_file = cover_path.name
+                    else:
+                        accent = "#444444"
+                        cover_file = ""
         else:
             if cover_path.exists():
                 accent = dominant_color(cover_path) # use existing cover
@@ -348,6 +376,7 @@ def build_entry_page(item: dict) -> None: #HTML review page
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{html.escape(item["track"])} — {html.escape(item["artist"])}</title>
     <style>
         :root {{
@@ -599,6 +628,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{project_title}</title>
     <style>
         body {{
@@ -1049,7 +1079,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             }});
 
             cards.forEach(card => {{ // show/hide cards based on tags
-                const tags = card.dataset.tags || ""; // tags from tracks.csv
+                const tags = (card.dataset.tags || "").split(" "); // tags from tracks.csv
                 const shouldShow = tags.includes(filterName); // overlap works here
                 card.style.display = shouldShow ? "flex" : "none";
             }});

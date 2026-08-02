@@ -10,8 +10,8 @@ accent: "#c7c7c7"
 
 ![cover](../covers/kendrick-lamar-tv-off.jpg)
 
-**Album: {album}
-**Accent:** `#1c1e23`
+**Album:** GNX
+**Accent:** `#c7c7c7`
 
 ## Charge
 

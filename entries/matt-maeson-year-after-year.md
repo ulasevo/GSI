@@ -10,8 +10,8 @@ accent: "#0c87a9"
 
 ![cover](../covers/matt-maeson-year-after-year.jpg)
 
-**Album: {album}
-**Accent:** `#181919`
+**Album:** A Quiet And Harmless Living
+**Accent:** `#0c87a9`
 
 ## Charge
 
