@@ -904,7 +904,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             box-sizing: border-box;
             gap: 24px;
             max-height:520px;
-            overflow: hdden;
+            overflow: hidden;
             opacity: 1;
             transform: translateY(0);
             transition:
@@ -983,7 +983,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             line-height: 1.55;
             color: #d8d8d8;
         }}
-        .filter-description.hidden {{ 
+        .filter-description.hidden {{
             max-height: 0;
             opacity: 0;
             transform: translateY(-12px);
