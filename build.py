@@ -603,7 +603,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         playlist_cta = (filter_settings.get("playlist_cta") or "Want more of the same?").strip()
         playlist_src, playlist_color = playlist_visuals(playlist_cover, color)
         filter_buttons.append(
-            f'<button class="filter-btn" data-filter="{safe_filter_key}">{safe_label}</button>'
+            f'<button class="filter-btn" data-filter="{safe_filter_key}" aria-pressed="false">{safe_label}</button>'
         )
 
         filter_data[filter_key] = {
@@ -694,6 +694,21 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 radial-gradient(circle at 65% 86%, rgba(255,180,70,.09), transparent 28%);
             filter: blur(18px) saturate(1.25);
             opacity: .8;
+            transition: background .35s ease, opacity .35s ease;
+        }}
+        body.filter-active::after {{
+            background:
+                radial-gradient(
+                    circle at 68% 28%,
+                    color-mix(in srgb, var(--page-tint, #ffffff), transparent 70%),
+                    transparent 36%
+                ),
+                radial-gradient(
+                    circle at 18% 78%,
+                    color-mix(in srgb, var(--page-tint, #ffffff), transparent 84%),
+                    transparent 30%
+                );
+            opacity: 1;
         }}
         body > * {{
             position: relative;
@@ -807,6 +822,17 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             background: rgba(28, 28, 28, .86);
             border: 1px solid rgba(255, 255, 255, .09);
             box-shadow: 0 0 35px rgba(0,0,0,.22);
+            max-height: 400px;
+            overflow: hidden;
+            opacity: 1;
+            transform: translateY(0);
+            transition:
+                max-height .35s ease,
+                opacity .22s ease,
+                transform .35s ease,
+                margin .35s ease,
+                padding .35s ease,
+                border-width .35s ease;
         }}
 
         .intro p {{
@@ -814,6 +840,15 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             line-height: 1.6;
             color: #d8d8d8;
             font-size: 16px;
+        }}
+        body.filter-active .intro{{
+            max-height: 0;
+            margin-bottom: 0;
+            padding-top: 0;
+            padding-bottom: 0;
+            border-width: 0;
+            opacity: 0;
+            transform: translateY(-12px);
         }}
         .filter-panel {{
             margin: 0 0 34px;
@@ -846,7 +881,8 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
         }}
 
-        .filter-btn:hover {{
+        .filter-btn:hover,
+        .filter-btn:focus-visible {{
             transform: skew(-8deg) translateY(-3px);
             border-color: color-mix(in srgb, var(--page-tint, #ffffff), white 30%);
             box-shadow: 0 0 20px color-mix(in srgb, var(--page-tint, #ffffff), transparent 66%),
@@ -864,8 +900,27 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         .filter-description {{
             display: flex;
             justify-content: space-between;
-            align-items: stretch;
+            align-items: center;
+            box-sizing: border-box;
             gap: 24px;
+            max-height:520px;
+            overflow: hdden;
+            opacity: 1;
+            transform: translateY(0);
+            transition:
+                max-height .38s ease,
+                opacity .24s ease,
+                transform .38s ease;
+        }}
+        body.filter-active .filter-description{{
+            padding: 22px;
+            border-radius: 24px;
+            background:
+                linear-gradient(135deg, rgba(255,255,255,.055), rgba(0,0,0,.18)),
+                color-mix(in srgb, var(--page-tint, #ffffff), #111 88%);
+                border: 1px solid color-mix(in srgb, var(--page-tint, #ffffff), white 18%);
+                box-shadow: 0 0 44px color-mix(in srgb, var(--page-tint, #ffffff), transparent 78%),
+                0 20px 46px rgba(0,0,0,.26);
         }}
         .filter-copy {{
             flex: 1;
@@ -891,7 +946,8 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 0 18px 34px rgba(0,0,0,.28);
             transition: transform .16s ease, box-shadow .16s, border-color .16s ease;
         }}
-        .playlist-card:hover {{
+        .playlist-card:hover,
+        .playlist-card:focus-visible {{
             transform: translateY(-4px) rotate(-0.4deg);
             border-color: color-mix(in srgb, var(--playlist-accent), white 48%);
             box-shadow:
@@ -927,8 +983,11 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             line-height: 1.55;
             color: #d8d8d8;
         }}
-        .filter-description.hidden {{
-            display: none;
+        .filter-description.hidden {{ 
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-12px);
+            pointer-events: none;
         }}
 
         .grid {{
@@ -954,13 +1013,20 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
         }}
 
-        .card:hover {{
+        .card:hover,
+        .card:focus-visible {{
             transform: translateY(-7px) scale(1.018) rotate(-0.35deg);
             border-color: color-mix(in srgb, var(--accent), white 35%);
             box-shadow:
                 0 0 28px color-mix(in srgb, var(--accent), transparent 42%),
                 0 0 80px color-mix(in srgb, var(--accent), transparent 72%),
                 0 24px 52px rgba(0,0,0,.35);
+        }}
+        .filter-btn:focus-visible,
+        .playlist-card:focus-visible,
+        .card:focus-visible {{
+            outline: 2px solid color-mix(in srgb, var(--page-tint, #ffffff), white 35%);
+            outline-offset: 4px;
         }}
 
         .card img {{
@@ -1007,6 +1073,38 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             box-shadow: none;
             text-shadow: 0 2px 8px rgba(0,0,0,.85);
         }}
+        @media (max-width: 760px) {{
+            body {{
+                padding: 22px;
+            }}
+            .wordmark {{
+                font-size: clamp(68px, 28vw, 110px);
+            }}
+            .filter-description {{
+                flex-direction: column;
+                align-items: stretch;
+                gap: 18px;
+            }}
+            body.filter-active .filter-description {{
+                padding: 18px;
+            }}
+            .playlist-card {{
+                width: min(100%, 240px);
+                min-width: 0;
+                align-self: flex-start;
+            }}
+            .grid {{
+                grid-template-columns: minmax(0, 1fr);
+            }}
+        }}
+        @media (prefers-reduced-motion: reduce) {{
+            *, *::before, *::after {{
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
+                scroll-behavior: auto !important;
+            }}
+        }}
     </style>
 </head>
 <body>
@@ -1041,10 +1139,12 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         }}
         function clearFilter() {{ // return to default homepage state
             activeFilter = null; // forget active filter
+            document.body.classList.remove("filter-active");
             document.documentElement.style.setProperty("--page-tint", "#ffffff"); // reset tint/glow
 
             buttons.forEach(button => {{ // remove active look from every button
                 button.classList.remove("active");
+                button.setAttribute("aria-pressed", "false");
             }});
 
             cards.forEach(card => {{ // show every song card
@@ -1064,6 +1164,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             }}
 
             activeFilter = filterName; // remember active filter
+            document.body.classList.add("filter-active"); // we attach and remove a CSS class whose appearance is controlled by javascript
             const info = filterInfo[filterName]; // get label/description/color from config.json
 
             document.documentElement.style.setProperty("--page-tint", info.color); // update glow/tint
@@ -1086,7 +1187,9 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 hidePlaylist();
             }}
             buttons.forEach(button => {{ // update active button style
-                button.classList.toggle("active", button.dataset.filter === filterName);
+                const isActive = button.dataset.filter === filterName; // === checks exact equality
+                button.classList.toggle("active", isActive);
+                button.setAttribute("aria-pressed", String(isActive)); // converts boolean true/false into text
             }});
 
             cards.forEach(card => {{ // show/hide cards based on tags
