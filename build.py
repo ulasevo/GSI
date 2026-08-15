@@ -4,7 +4,7 @@ import re # so I can clean file names?
 import html # escapes review text before placing it
 import colorsys # we need proper accent colors for material you effect
 from pathlib import Path # cross OS handling
-from urllib.parse import quote_plus # allows search text to be URL safe
+from urllib.parse import quote, quote_plus # allows search text to be URL safe
 import requests # web requests
 from PIL import Image # read covers and extract colors
 
@@ -295,7 +295,7 @@ def build_entries() -> list[dict]: # Main Builder for markdown and covers
         else:
             sync_entry_metadata(entry_path, artist, track, album, cover_file, accent)
             append_missing_sections(entry_path, sections)
-            print(" Entry already exists. Synced missing sections only.")
+            print(f" Updated metadata and checked sections: {entry_path}")
 
         built_tracks.append({  # save data needed for the index
             "tags": tags,
@@ -317,9 +317,12 @@ def simple_markdown_to_html(markdown_text: str) -> str:
     paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()] #blank lines as paragraph breaks
     return "\n".join([f"<p>{p.replace(chr(10), '<br>')}</p>" for p in paragraphs]) #keep single line breaks
 def make_streaming_links(item: dict) -> str:
-    query = quote_plus(f"{item['artist']} {item['track']}") #url imprint
-    spotify_url = item.get("spotify_url") or f"https://open.spotify.com/search/{query}"
-    apple_url = item.get("apple_url") or f"https://music.apple.com/search?term={query}"
+    search_text = f"{item['artist']} {item['track']}"
+    spotify_query = quote(search_text, safe="")
+    apple_query = quote_plus(search_text)
+
+    spotify_url = item.get("spotify_url") or f"https://open.spotify.com/search/{spotify_query}"
+    apple_url = item.get("apple_url") or f"https://music.apple.com/search?term={apple_query}"
     return f"""
                 <div class="stream-block">
                     <div class= "stream-label">Have a listen on:</div>
@@ -551,21 +554,27 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     page_title = config.get("page_title", project_title)
     intro = config.get("intro", "")
     filters = config.get("filters", {})
+    safe_project_title = html.escape(project_title)
+    safe_page_title = html.escape(page_title)
+    safe_intro = html.escape(intro)
     cards = [] # stores HTML chunks for every song card
 
     for item in tracks:
+        safe_track = html.escape(item["track"])
+        safe_artist = html.escape(item["artist"])
+        safe_album = html.escape(item["album"])
         cover_html = ""
         if item["cover_file"]:
-            cover_html = f'<img src="../covers/{item["cover_file"]}" alt="{item["album"]} cover">'  # image tag
+            cover_html = f'<img src="../covers/{item["cover_file"]}" alt="{safe_album} cover">'  # image tag
         tags = item.get("tags", "")
         tags_for_attr = tags.lower().replace(","," ")
         card = f"""
         <a class="card" data-tags="{tags_for_attr}" href="entries/{item["html_file"]}" style="--accent: {item["accent"]};">
             {cover_html}
             <div class="info">
-                <h2>{item["track"]}</h2>
-                <p>{item["artist"]}</p>
-                <span>{item["album"]}</span>
+                <h2>{safe_track}</h2>
+                <p>{safe_artist}</p>
+                <span>{safe_album}</span>
             </div>
         </a>
         """  # one visual card, colored by album accent
@@ -575,7 +584,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     if intro.strip():
         intro_html = f"""
         <section class = "intro">
-            <p>{intro}</p>
+            <p>{safe_intro}</p>
         </section>
         """
     filter_buttons = []
@@ -585,6 +594,8 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 
     for filter_key, filter_settings in filters.items(): # build one button per config filter
         label = filter_settings.get("label", filter_key) # visible button text
+        safe_filter_key = html.escape(filter_key, quote = True) # quote protects quotation marks in insertion to html
+        safe_label = html.escape(label)
         description = filter_settings.get("description", "") # panel text
         color = filter_settings.get("color", "#ffffff") # page tint color
         playlist_url = (filter_settings.get("playlist_url") or "").strip()
@@ -592,7 +603,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         playlist_cta = (filter_settings.get("playlist_cta") or "Want more of the same?").strip()
         playlist_src, playlist_color = playlist_visuals(playlist_cover, color)
         filter_buttons.append(
-            f'<button class="filter-btn" data-filter="{filter_key}">{label}</button>'
+            f'<button class="filter-btn" data-filter="{safe_filter_key}">{safe_label}</button>'
         )
 
         filter_data[filter_key] = {
@@ -623,13 +634,13 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     </section>
     """
 
-    filter_data_json = json.dumps(filter_data) # turns Python dict into JavaScript object text
-    html = f"""<!DOCTYPE html>
+    filter_data_json = json.dumps(filter_data).replace("</", "<\\/") # turns Python dict into JavaScript object text
+    index_html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{project_title}</title>
+    <title>{safe_project_title}</title>
     <style>
         body {{
             --chrome: #f2f2f2;
@@ -1001,7 +1012,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 <body>
     <header class = "site-hero">
         <div class = "wordmark">GSI</div>
-        <div class = "subtitle">{page_title}</div>
+        <div class = "subtitle">{safe_page_title}</div>
     </header>
     {intro_html}
     {filters_html}
@@ -1099,7 +1110,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 """  # full HTML page as one string
 
     index_path = SITE_DIR / "index.html"
-    index_path.write_text(html, encoding = "utf-8")
+    index_path.write_text(index_html, encoding = "utf-8")
     print(f"\nBuilt visual index: {index_path}")
 
 def main() -> None:
