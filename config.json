@@ -34,7 +34,7 @@
         "description": "A song carries the potential to make you feel like you're not breathing the same air for its duration, these songs make full use of that potential and promise to be packed with their own atmosphere.",
         "color": "#f00000",
         "playlist_url": "https://music.apple.com/tr/playlist/dup/pl.u-mJy8gPDFN50d0Go",
-            "playlisy_cover": "covers/dup_playlist_cover.webp",
+            "playlist_cover": "covers/dup_playlist_cover.webp",
             "playlist_cta": "Want more of the same?"        
     },
     "bite": {

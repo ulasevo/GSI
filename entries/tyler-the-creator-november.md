@@ -1,12 +1,12 @@
 ---
-artist: "Tyler,The Creator"
+artist: "Tyler, The Creator"
 track: "November"
 album: "Flower Boy"
 cover: "../covers/tyler-the-creator-november.jpg"
 accent: "#feaa26"
 ---
 
-# November — Tyler,The Creator
+# November — Tyler, The Creator
 
 ![cover](../covers/tyler-the-creator-november.jpg)
 

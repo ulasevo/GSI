@@ -180,6 +180,13 @@ def sync_entry_metadata(entry_path: Path, artist: str, track: str, album: str, c
             text = f"{new_frontmatter}\n\n{body}"
     else:
         text = f"{new_frontmatter}\n\n{text}"
+    text = re.sub(
+        r"^# .*$",
+        f"# {track} — {artist}",
+        text,
+        count=1,
+        flags=re.MULTILINE,
+    )
     text = re.sub(r"^\*{2}Album:.*$", ################### ^ means “beginning of a line.”
                                                         #  $ means “end of a line.”
                                                         # .* means “the remaining characters on that line.”
@@ -199,6 +206,16 @@ def sync_entry_metadata(entry_path: Path, artist: str, track: str, album: str, c
         if title_line in text:
             text = text.replace(title_line, f"{title_line}\n\n{cover_line}", 1)
     entry_path.write_text(text, encoding = "utf-8")
+
+
+def remove_stale_entry_pages(tracks: list[dict]) -> None:
+    expected_pages = {item["html_file"] for item in tracks}
+    for html_path in SITE_ENTRIES_DIR.glob("*.html"):
+        if html_path.name not in expected_pages:
+            html_path.unlink()
+            print(f" Removed stale generated page: {html_path}")
+
+
 def append_missing_sections(entry_path: Path, sections: list[str]) -> None:  # add new settings
     text = entry_path.read_text(encoding = "utf-8")
     missing_sections = [] # sections that exist in config but not in this entry
@@ -1218,6 +1235,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 
 def main() -> None:
     tracks = build_entries()
+    remove_stale_entry_pages(tracks)
     for item in tracks:
         build_entry_page(item)
     build_index_html(tracks)
