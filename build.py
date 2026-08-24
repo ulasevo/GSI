@@ -3,6 +3,7 @@ import json #so I can change the categories at ease via config.json
 import re # so I can clean file names?
 import html # escapes review text before placing it
 import colorsys # we need proper accent colors for material you effect
+import shutil # for copying files and folders
 from pathlib import Path # cross OS handling
 from urllib.parse import quote, quote_plus # allows search text to be URL safe
 import requests # web requests
@@ -13,6 +14,7 @@ ENTRIES_DIR = BASE / "entries" # markdown file generation path
 COVERS_DIR = BASE / "covers" # album cover saving path
 SITE_DIR = BASE / "site" #HTML index creation path
 SITE_ENTRIES_DIR = SITE_DIR / "entries" #review page
+SITE_COVERS_DIR = SITE_DIR / "covers"
 
 TRACKS_FILE = BASE / "tracks.csv" #list of song inputs
 CONFIG_FILE = BASE / "config.json" #settings file
@@ -116,6 +118,11 @@ def dominant_color(image_path: Path) -> str:
          best_color = colors[0][1] # extract values
     r, g, b = best_color
     return f"#{r:02x}{g:02x}{b:02x}" # hex color code
+def copy_site_covers() -> None:
+    if SITE_COVERS_DIR.exists():
+        shutil.rmtree(SITE_COVERS_DIR) # remove old covers
+    shutil.copytree(COVERS_DIR, SITE_COVERS_DIR) # copy new covers
+    print(f" Copied covers into generated site: {SITE_COVERS_DIR}")
 def playlist_visuals(playlist_cover: str, fallback_color: str) -> tuple[str, str]:
     playlist_cover = (playlist_cover or "").strip()
     if not playlist_cover:
@@ -124,7 +131,7 @@ def playlist_visuals(playlist_cover: str, fallback_color: str) -> tuple[str, str
     if not cover_path.exists():
         print(f" Playlist cover not found: {playlist_cover}")
         return "", fallback_color #prevent crash
-    browser_src = "../" + playlist_cover.replace("\\","/")
+    browser_src = playlist_cover.replace("\\","/")
     playlist_color = dominant_color(cover_path)
     return browser_src, playlist_color #extract and return color
 def make_frontmatter(artist: str, track: str, album: str, cover_file: str, accent: str) -> str: #markdown file metadata
@@ -377,7 +384,7 @@ def build_entry_page(item: dict) -> None: #HTML review page
     cover_html = ""
     bg_style = ""
     if item["cover_file"]:
-        cover_src = f"../../covers/{item['cover_file']}"
+        cover_src = f"../covers/{item['cover_file']}"
         cover_html = f'<img class = "cover" src = "{cover_src}" alt = "{html.escape(item["album"])} cover">'
         bg_style = f'background-image: linear-gradient(120deg, rgba(0,0,0,.78), rgba(0,0,0,.96)), url("{cover_src}");'
     section_cards = []
@@ -580,13 +587,17 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         safe_track = html.escape(item["track"])
         safe_artist = html.escape(item["artist"])
         safe_album = html.escape(item["album"])
+        safe_card_label = html.escape(f'{item["track"]} — {item["artist"]}', quote = True)
         cover_html = ""
         if item["cover_file"]:
-            cover_html = f'<img src="../covers/{item["cover_file"]}" alt="{safe_album} cover">'  # image tag
+            cover_html = f'<img src="covers/{item["cover_file"]}" alt="{safe_album} cover">'  # image tag
         tags = item.get("tags", "")
         tags_for_attr = tags.lower().replace(","," ")
         card = f"""
-        <a class="card" data-tags="{tags_for_attr}" href="entries/{item["html_file"]}" style="--accent: {item["accent"]};">
+        <a class="card"
+            data-tags="{tags_for_attr}"
+            aria-label="{safe_card_label}"
+            href="entries/{item["html_file"]}" style="--accent: {item["accent"]};">
             {cover_html}
             <div class="info">
                 <h2>{safe_track}</h2>
@@ -1006,14 +1017,96 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             transform: translateY(-12px);
             pointer-events: none;
         }}
+        .view-control {{
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
+            margin: 0 0 20px;
+        }}
+        .view-control-label {{
+            margin-right:4px;
+            color: rgba(255, 255, 255, .48);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .2em;
+        }}
+
+        .view-btn {{
+            padding: 7px 10px;
+            border: 1px solid rgba(255, 255, 255, .14);
+            border-radius: 6px;
+            background: #171719;
+            color: #aaa;
+            cursor: pointer;
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+            transform: skew(-7deg);
+            transition:
+                color .16s ease,
+                border-color .16s ease,
+                background .16s ease,
+                box-shadow .16s ease,
+                transform .16s ease;
+        }}
+
+        .view-btn:hover,
+        .view-btn:focus-visible {{
+            color: #fff;
+            border-color: rgba(255, 255, 255, .4);
+            transform: skew(-7deg) translateY(-2px);
+        }}
+
+        .view-btn.active {{
+            color: #fff;
+            border-color: color-mix(
+                in srgb,
+                var(--page-tint, #ffffff),
+                white 32%
+            );
+            background: color-mix(
+                in srgb,
+                var(--page-tint, #ffffff),
+                #151515 82%
+            );
+            box-shadow:
+                0 0 16px color-mix(
+                    in srgb,
+                    var(--page-tint, #ffffff),
+                    transparent 68%
+                );
+        }}
 
         .grid {{
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-            gap: 20px;
         }}
 
+        body[data-view="poster"] .grid {{
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 24px;
+        }}
+
+        body[data-view="wall"] .grid {{
+            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+            gap: 16px;
+        }}
+
+        body[data-view="gallery"] .grid {{
+            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+            gap: 9px;
+        }}
+
+        body[data-view="gallery"] .card {{
+            border-radius: 10px;
+        }}
+
+        body[data-view="gallery"] .card .info {{
+            display: none;
+        }}
         .card {{
+            view-transition-name: match-element;
             display: flex;
             flex-direction: column;
             text-decoration: none;
@@ -1110,8 +1203,72 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 min-width: 0;
                 align-self: flex-start;
             }}
-            .grid {{
-                grid-template-columns: minmax(0, 1fr);
+        body[data-view="poster"] .grid {{
+            grid-template-columns: minmax(0, 1fr);
+            gap: 18px;
+        }}
+
+        body[data-view="wall"] .grid {{
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 11px;
+        }}
+
+        body[data-view="gallery"] .grid {{
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 6px;
+        }}
+
+        body[data-view="wall"] .info {{
+            padding: 12px;
+        }}
+
+        body[data-view="wall"] .info h2 {{
+            margin-bottom: 6px;
+            font-size: 16px;
+            line-height: 1.15;
+        }}
+
+        body[data-view="wall"] .info p {{
+            margin-bottom: 5px;
+            font-size: 13px;
+        }}
+
+        body[data-view="wall"] .info span {{
+            font-size: 10px;
+        }}
+
+        body[data-view="gallery"] .card {{
+            border-width: 1px;
+            border-radius: 7px;
+        }}
+        ::view-transition-group(*) {{
+            animation-duration: 800ms;
+            animation-timing-function: cubic-bezier(.18, .78, .18, 1);
+        }}
+        html.view-changing::view-transition-old(root) {{
+            animation: archive-pull-away 800ms ease-in both;
+        }}
+        html.view-changing::view-transition-new(root) {{
+            animation: archive-focus-in 800ms ease-out both;
+        }}
+        @keyframes archive-pull-away {{
+            from {{
+                opacity: 1;
+                transform: scale(1);
+            }}
+            to {{
+                opacity: .68;
+                transform: scale(.965);
+            }}
+        }}
+        @keyframes archive-focus-in {{
+            from {{
+                opacity: .58;
+                transform: scale(1.035);
+                }}
+            to {{
+                opacity: 1;
+                transform: scale(1);
             }}
         }}
         @media (prefers-reduced-motion: reduce) {{
@@ -1124,18 +1281,35 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         }}
     </style>
 </head>
-<body>
+<body data-view="wall">
     <header class = "site-hero">
         <div class = "wordmark">GSI</div>
         <div class = "subtitle">{safe_page_title}</div>
     </header>
     {intro_html}
     {filters_html}
+    <div class="view-control" role="group" aria-label="Archive view">
+        <span class="view-control-label">VIEW</span>
+
+        <button class="view-btn" data-view="poster" aria-pressed="false">
+            Poster
+        </button>
+
+        <button class="view-btn active" data-view="wall" aria-pressed="true">
+            Wall
+        </button>
+
+        <button class="view-btn" data-view="gallery" aria-pressed="false">
+            Gallery
+        </button>
+    </div>
     <div class="grid">
         {''.join(cards)}
     </div>
 <script>
     document.addEventListener("DOMContentLoaded", () => {{ // wait until the page exists before selecting buttons/cards
+        const viewButtons = document.querySelectorAll(".view-btn");
+        const allowedViews = new Set(["poster", "wall", "gallery"]);
         const filterInfo = {filter_data_json}; // filter data generated from config.json
         const buttons = document.querySelectorAll(".filter-btn"); // all clickable filter buttons
         const cards = document.querySelectorAll(".card"); // all song cards
@@ -1147,6 +1321,42 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         const playlistCta = document.querySelector("#playlist-cta");
 
         let activeFilter = null; // no filter is active when page first loads
+        function storeView(viewName) {{
+            try {{
+                localStorage.setItem("gsi-view", viewName);
+            }} catch (error) {{
+                // the view still works if storage is unavailable.
+            }}
+        }}
+        function applyView(viewName, animate = true) {{
+            if (!allowedViews.has(viewName)) {{
+                viewName = "wall"; // default view
+            }}
+            const updateView = () => {{
+                document.body.dataset.view = viewName;
+                viewButtons.forEach(button => {{
+                    const isActive = button.dataset.view === viewName;
+                    button.classList.toggle("active", isActive);
+                    button.setAttribute("aria-pressed", String(isActive));
+                }});
+                storeView(viewName);
+            }};
+            const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+            if (animate && !reducedMotion && document.startViewTransition) {{
+                document.documentElement.classList.add("view-changing");
+                const transition = document.startViewTransition(updateView);
+                transition.finished.finally(() => {{
+                    document.documentElement.classList.remove("view-changing");
+                }});
+            }} else {{
+                updateView();
+            }}
+        }}
+        viewButtons.forEach(button => {{
+            button.addEventListener("click", () => {{
+                applyView(button.dataset.view);
+            }});
+        }});
         function hidePlaylist() {{
             playlistCard.classList.add("hidden");
             playlistCard.removeAttribute("href");
@@ -1221,7 +1431,13 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 setFilter(button.dataset.filter);
             }});
         }});
-
+        let savedView = "wall";
+        try {{
+            savedView = localStorage.getItem("gsi-view") || "wall";
+        }} catch (error) {{
+            savedView = "wall"; // fallback if localStorage is unavailable
+        }}
+        applyView(savedView, false); // set view to saved preference without animation
         clearFilter(); // initialize with all cards visible and description hidden
     }});
 </script>
@@ -1235,6 +1451,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 
 def main() -> None:
     tracks = build_entries()
+    copy_site_covers()
     remove_stale_entry_pages(tracks)
     for item in tracks:
         build_entry_page(item)
