@@ -1081,6 +1081,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 
         .grid {{
             display: grid;
+            view-transition-name: archive-grid;
         }}
 
         body[data-view="poster"] .grid {{
@@ -1106,7 +1107,6 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             display: none;
         }}
         .card {{
-            view-transition-name: match-element;
             display: flex;
             flex-direction: column;
             text-decoration: none;
@@ -1241,34 +1241,42 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             border-width: 1px;
             border-radius: 7px;
         }}
-        ::view-transition-group(*) {{
-            animation-duration: 800ms;
-            animation-timing-function: cubic-bezier(.18, .78, .18, 1);
         }}
-        html.view-changing::view-transition-old(root) {{
-            animation: archive-pull-away 800ms ease-in both;
+        :root {{
+            view-transition-name: none;
         }}
-        html.view-changing::view-transition-new(root) {{
-            animation: archive-focus-in 800ms ease-out both;
+        /* Animate one grid snapshot so changing views stays light on mobile. */
+        ::view-transition-group(archive-grid) {{
+            animation: none; /* prevent the browser from stretching the grid between sizes */
         }}
-        @keyframes archive-pull-away {{
+        /* Let the old wall settle downward instead of shrinking away. */
+        ::view-transition-old(archive-grid) {{
+            animation: archive-wall-out 700ms ease-in-out both;
+            mix-blend-mode: normal;
+        }}
+        /* Bring the new layout in gently without zooming its cards. */
+        ::view-transition-new(archive-grid) {{
+            animation: archive-wall-in 700ms ease-out both;
+            mix-blend-mode: normal;
+        }}
+        @keyframes archive-wall-out {{
             from {{
                 opacity: 1;
-                transform: scale(1);
+                transform: translateY(0);
             }}
             to {{
-                opacity: .68;
-                transform: scale(.965);
+                opacity: 0;
+                transform: translateY(8px);
             }}
         }}
-        @keyframes archive-focus-in {{
+        @keyframes archive-wall-in {{
             from {{
-                opacity: .58;
-                transform: scale(1.035);
+                opacity: 0;
+                transform: translateY(-8px);
                 }}
             to {{
                 opacity: 1;
-                transform: scale(1);
+                transform: translateY(0);
             }}
         }}
         @media (prefers-reduced-motion: reduce) {{
