@@ -1,3 +1,4 @@
+import argparse # command-line options such as the source-safe site build
 import csv #so I can read csv files per rows of organized data
 import json #so I can change the categories at ease via config.json
 import re # so I can clean file names?
@@ -238,9 +239,10 @@ def append_missing_sections(entry_path: Path, sections: list[str]) -> None:  # a
          ) # NEW ONES ONLY + invisible ones
     entry_path.write_text(text.rstrip() + addition + "\n", encoding = "utf-8") # append but don't overwrite
 
-def build_entries() -> list[dict]: # Main Builder for markdown and covers
+def build_entries(write_sources: bool = True) -> list[dict]: # collect tracks, optionally updating source files
     config = load_config() #read settings
     sections = config["sections"]
+    site_url = (config.get("site_url") or "").rstrip("/")
     force_refresh_covers = config.get("force_refresh_covers", False)
     built_tracks = [] #store metadata for HTML gallery
 
@@ -268,7 +270,7 @@ def build_entries() -> list[dict]: # Main Builder for markdown and covers
 
         has_local_cover = bool(manual_cover_file)
         needs_download = force_refresh_covers or not cover_path.exists()
-        should_download_cover = (not has_local_cover) and needs_download
+        should_download_cover = write_sources and (not has_local_cover) and needs_download
 
         if should_download_cover:
             if manual_cover_url:
@@ -312,14 +314,20 @@ def build_entries() -> list[dict]: # Main Builder for markdown and covers
                 cover_file = ""
         if manual_accent: # manual accent from tracks.csv beats automatic cover extraction
             accent = manual_accent
+        if not entry_path.exists() and not write_sources:
+            raise FileNotFoundError(
+                f"Safe build stopped: missing source entry {entry_path.name}"
+            )
         if not entry_path.exists():
             note = make_markdown_template(artist, track, album, cover_file, accent, sections)
             entry_path.write_text(note, encoding = "utf-8")
             print(f" Created entry: {entry_path}")
-        else:
+        elif write_sources:
             sync_entry_metadata(entry_path, artist, track, album, cover_file, accent)
             append_missing_sections(entry_path, sections)
             print(f" Updated metadata and checked sections: {entry_path}")
+        else:
+            print(f" Read entry without modifying source: {entry_path}")
 
         built_tracks.append({  # save data needed for the index
             "tags": tags,
@@ -331,6 +339,7 @@ def build_entries() -> list[dict]: # Main Builder for markdown and covers
             "html_file": f"{slug}.html",
             "cover_file": cover_file,
             "accent": accent,
+            "site_url": site_url,
             "spotify_url": spotify_url,
             "apple_url": apple_url
         })
@@ -381,6 +390,24 @@ def extract_sections_from_markdown(entry_path: Path) -> list[dict]:
 def build_entry_page(item: dict) -> None: #HTML review page
     entry_path = ENTRIES_DIR / item["entry_file"]
     sections = extract_sections_from_markdown(entry_path)
+    page_title_text = f'{item["track"]} — {item["artist"]}'
+    page_description_text = f'{item["track"]} by {item["artist"]}, from {item["album"]}, in GSI.'
+    safe_page_title = html.escape(page_title_text)
+    safe_page_description = html.escape(page_description_text, quote = True)
+    site_url = item.get("site_url", "")
+    entry_url = f'{site_url}/entries/{item["html_file"]}' if site_url else ""
+    cover_url = f'{site_url}/covers/{quote(item["cover_file"])}' if site_url and item["cover_file"] else ""
+    sharing_meta = ""
+    if entry_url:
+        sharing_meta = f"""
+    <link rel="canonical" href="{html.escape(entry_url, quote = True)}">
+    <meta property="og:url" content="{html.escape(entry_url, quote = True)}">
+    """
+    if cover_url:
+        sharing_meta += f"""
+    <meta property="og:image" content="{html.escape(cover_url, quote = True)}">
+    <meta name="twitter:card" content="summary_large_image">
+    """
     cover_html = ""
     bg_style = ""
     if item["cover_file"]:
@@ -404,7 +431,13 @@ def build_entry_page(item: dict) -> None: #HTML review page
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{html.escape(item["track"])} — {html.escape(item["artist"])}</title>
+    <meta name="description" content="{safe_page_description}">
+    <meta name="theme-color" content="{html.escape(item['accent'], quote = True)}">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="GSI">
+    <meta property="og:title" content="{safe_page_title}">
+    <meta property="og:description" content="{safe_page_description}">{sharing_meta}
+    <title>{safe_page_title}</title>
     <style>
         :root {{
             --accent: {item["accent"]};
@@ -581,6 +614,16 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     safe_project_title = html.escape(project_title)
     safe_page_title = html.escape(page_title)
     safe_intro = html.escape(intro)
+    safe_meta_description = html.escape(intro, quote = True)
+    site_url = (config.get("site_url") or "").rstrip("/")
+    homepage_url = f"{site_url}/" if site_url else ""
+    homepage_url_meta = ""
+    if homepage_url:
+        safe_homepage_url = html.escape(homepage_url, quote = True)
+        homepage_url_meta = f"""
+    <link rel="canonical" href="{safe_homepage_url}">
+    <meta property="og:url" content="{safe_homepage_url}">
+    """
     cards = [] # stores HTML chunks for every song card
 
     for item in tracks:
@@ -668,6 +711,12 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{safe_meta_description}">
+    <meta name="theme-color" content="#0d0d0f">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="GSI">
+    <meta property="og:title" content="{safe_page_title}">
+    <meta property="og:description" content="{safe_meta_description}">{homepage_url_meta}
     <title>{safe_project_title}</title>
     <style>
         body {{
@@ -1458,7 +1507,14 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     print(f"\nBuilt visual index: {index_path}")
 
 def main() -> None:
-    tracks = build_entries()
+    parser = argparse.ArgumentParser(description = "Build the GSI static website.")
+    parser.add_argument(
+        "--site-only",
+        action = "store_true",
+        help = "Generate site files without creating or updating entries and covers.",
+    )
+    args = parser.parse_args()
+    tracks = build_entries(write_sources = not args.site_only)
     copy_site_covers()
     remove_stale_entry_pages(tracks)
     for item in tracks:

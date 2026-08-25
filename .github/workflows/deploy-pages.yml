@@ -35,7 +35,7 @@ jobs:
         run: |
           python -m py_compile build.py
           python -m json.tool config.json > /dev/null
-          python build.py
+          python build.py --site-only
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
