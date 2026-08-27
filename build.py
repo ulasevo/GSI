@@ -1005,14 +1005,14 @@ def build_entry_page(item: dict) -> None: #HTML review page
         .cover-frame {{
             display:grid;
             place-items:center;
-            min-height:560px;
+            min-height:600px;
             padding:0;
             overflow:hidden;
         }}
         .page {{ max-width:1240px; }}
         .hero {{
-            grid-template-columns:minmax(460px,560px) minmax(0,1fr);
-            min-height:560px;
+            grid-template-columns:minmax(500px,600px) minmax(0,1fr);
+            min-height:600px;
         }}
         .cover {{
             width:100%;
@@ -2461,32 +2461,6 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         .filter-description[data-filter="bite"] .filter-room-label span:last-child {{
             margin-left:-.08em;
         }}
-        /* Small acid-green vampire mouths occupy Bite's otherwise empty middle ground. */
-        .filter-description[data-filter="bite"] .filter-decor span {{
-            position:absolute;
-            left:var(--fang-x);
-            top:var(--fang-y);
-            width:var(--fang-size);
-            aspect-ratio:1.65;
-            border:3px solid color-mix(in srgb,var(--page-tint),transparent 24%);
-            border-top:0;
-            border-radius:4px 4px 52% 52%;
-            opacity:.78;
-            transform:rotate(var(--fang-tilt));
-            filter:drop-shadow(0 0 10px color-mix(in srgb,var(--page-tint),transparent 62%));
-        }}
-        .filter-description[data-filter="bite"] .filter-decor span::before,
-        .filter-description[data-filter="bite"] .filter-decor span::after {{
-            content:"";
-            position:absolute;
-            top:-1px;
-            width:25%;
-            height:62%;
-            background:color-mix(in srgb,var(--page-tint),white 8%);
-            clip-path:polygon(0 0,100% 0,50% 100%);
-        }}
-        .filter-description[data-filter="bite"] .filter-decor span::before {{ left:10%; }}
-        .filter-description[data-filter="bite"] .filter-decor span::after {{ right:10%; }}
         .filter-description[data-filter="pop"] .filter-room-label {{ display:none; }}
         .filter-description[data-filter="pop"] .filter-decor span {{
             position:absolute;
@@ -2887,19 +2861,6 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                     pop.style.setProperty("--pop-delay", `${{delay}}ms`);
                     pop.style.setProperty("--pop-speed", `${{speed}}s`);
                     filterDecor.append(pop);
-                }});
-            }}
-            if (filterName === "bite") {{
-                const vampireMouths = [
-                    [57, 13, 54, -9], [50, 48, 38, 8], [61, 69, 72, -4]
-                ];
-                vampireMouths.forEach(([x, y, size, tilt]) => {{
-                    const mouth = document.createElement("span");
-                    mouth.style.setProperty("--fang-x", `${{x}}%`);
-                    mouth.style.setProperty("--fang-y", `${{y}}%`);
-                    mouth.style.setProperty("--fang-size", `${{size}}px`);
-                    mouth.style.setProperty("--fang-tilt", `${{tilt}}deg`);
-                    filterDecor.append(mouth);
                 }});
             }}
             filterCount.textContent = `${{String(info.count).padStart(2, "0")}} SIGNAL${{info.count === 1 ? "" : "S"}}`;
