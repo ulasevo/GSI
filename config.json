@@ -2,6 +2,12 @@
     "project_title": "GSI",
     "site_url": "https://ulasevo.github.io/GSI",
     "p53_current_slug": "wet-leg-mangetout",
+    "not_found": {
+        "eyebrow": "SIGNAL LOST / 404",
+        "title": "THIS FREQUENCY DOESN'T EXIST.",
+        "message": "The page slipped out of the archive. Take a song for the walk back.",
+        "recommendation_label": "INTERCEPTED SIGNAL"
+    },
     "page_title": "GSI: Ulaş's Genomic Stability Inducers",
     "intro": "Music is the one non-negotiable no matter how I am to feel, to cherish that and the songs that play the miniscule role in shaping who I am, I am creating this authentic web-page, you're welcome to linger. Note that neither me nor should you take this space too seriously. Nothing is critically acclaimed, everything is personal.",
     "newest_first": true,

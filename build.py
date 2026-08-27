@@ -455,6 +455,7 @@ def build_entry_page(item: dict) -> None: #HTML review page
     <meta property="og:site_name" content="GSI">
     <meta property="og:title" content="{safe_page_title}">
     <meta property="og:description" content="{safe_page_description}">{sharing_meta}
+    <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
     <title>{safe_page_title}</title>
     <style>
         :root {{
@@ -882,6 +883,7 @@ def build_p53_page(item: dict) -> None:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#25152b">
+    <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
     <title>{page_title}</title>
     <style>
         :root {{ --accent: {item["accent"]}; --p53: #ff58a6; --cyan: #35c9e9; }}
@@ -1084,11 +1086,19 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     site_url = (config.get("site_url") or "").rstrip("/")
     homepage_url = f"{site_url}/" if site_url else ""
     homepage_url_meta = ""
+    share_image_meta = ""
     if homepage_url:
         safe_homepage_url = html.escape(homepage_url, quote = True)
         homepage_url_meta = f"""
     <link rel="canonical" href="{safe_homepage_url}">
     <meta property="og:url" content="{safe_homepage_url}">
+    """
+        share_image_url = f"{site_url}/covers/GSI_share.png"
+        share_image_meta = f"""
+    <meta property="og:image" content="{html.escape(share_image_url, quote = True)}">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
     """
     cards = [] # stores HTML chunks for every song card
 
@@ -1222,7 +1232,8 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="GSI">
     <meta property="og:title" content="{safe_page_title}">
-    <meta property="og:description" content="{safe_meta_description}">{homepage_url_meta}
+    <meta property="og:description" content="{safe_meta_description}">{homepage_url_meta}{share_image_meta}
+    <link rel="icon" href="covers/GSI_favicon.svg" type="image/svg+xml">
     <title>{safe_project_title}</title>
     <style>
         body {{
@@ -1636,7 +1647,13 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 
         .grid {{
             display: grid;
-            view-transition-name: archive-grid;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 120ms ease, transform 120ms ease;
+        }}
+        .grid.view-switching {{
+            opacity: .18;
+            transform: translateY(5px);
         }}
 
         body[data-view="poster"] .grid {{
@@ -1858,7 +1875,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         .hero-copy {{
             display: flex;
             flex-direction: column;
-            justify-content: flex-end;
+            justify-content: center; /* balance the desktop panel against the tall P53 artwork */
             min-height: 330px;
             padding: clamp(22px, 4vw, 48px);
             overflow: hidden;
@@ -2239,43 +2256,6 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             .view-btn {{ flex: 1; }}
         }}
 
-        :root {{
-            view-transition-name: none;
-        }}
-        /* Animate one grid snapshot so changing views stays light on mobile. */
-        ::view-transition-group(archive-grid) {{
-            animation: none; /* prevent the browser from stretching the grid between sizes */
-        }}
-        /* Let the old wall settle downward instead of shrinking away. */
-        ::view-transition-old(archive-grid) {{
-            animation: archive-wall-out 700ms ease-in-out both;
-            mix-blend-mode: normal;
-        }}
-        /* Bring the new layout in gently without zooming its cards. */
-        ::view-transition-new(archive-grid) {{
-            animation: archive-wall-in 700ms ease-out both;
-            mix-blend-mode: normal;
-        }}
-        @keyframes archive-wall-out {{
-            from {{
-                opacity: 1;
-                transform: translateY(0);
-            }}
-            to {{
-                opacity: 0;
-                transform: translateY(8px);
-            }}
-        }}
-        @keyframes archive-wall-in {{
-            from {{
-                opacity: 0;
-                transform: translateY(-8px);
-                }}
-            to {{
-                opacity: 1;
-                transform: translateY(0);
-            }}
-        }}
         @media (prefers-reduced-motion: reduce) {{
             *, *::before, *::after {{
                 animation-duration: .01ms !important;
@@ -2322,6 +2302,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         const filterInfo = {filter_data_json}; // filter data generated from config.json
         const buttons = document.querySelectorAll(".filter-btn"); // all clickable filter buttons
         const cards = document.querySelectorAll(".card"); // all song cards
+        const grid = document.querySelector(".grid");
         const box = document.querySelector("#filter-description-box"); // whole description box
         const title = document.querySelector("#filter-title"); // filter description title
         const description = document.querySelector("#filter-description"); // filter description text
@@ -2342,6 +2323,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 // the view still works if storage is unavailable.
             }}
         }}
+        let viewSwitchTimer = null;
         function applyView(viewName, animate = true) {{
             if (!allowedViews.has(viewName)) {{
                 viewName = "wall"; // default view
@@ -2356,42 +2338,19 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 storeView(viewName);
             }};
             const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            const visibleCards = [...cards].filter(card => getComputedStyle(card).display !== "none");
-            const canRearrangeCards = animate && !reducedMotion && Element.prototype.animate && visibleCards.length <= 32;
-            if (canRearrangeCards) {{
-                const firstPositions = new Map(visibleCards.map(card => [card, card.getBoundingClientRect()]));
+            if (!animate || reducedMotion) {{
                 updateView();
-                document.body.classList.add("view-rearranging");
-                requestAnimationFrame(() => {{
-                    visibleCards.forEach((card, index) => {{
-                        const first = firstPositions.get(card);
-                        const last = card.getBoundingClientRect();
-                        const moveX = first.left - last.left;
-                        const moveY = first.top - last.top;
-                        card.animate(
-                            [
-                                {{ transform: `translate(${{moveX}}px, ${{moveY}}px)`, opacity: .68 }},
-                                {{ transform: "translate(0, 0)", opacity: 1 }}
-                            ],
-                            {{
-                                duration: 620,
-                                delay: Math.min(index * 12, 108),
-                                easing: "cubic-bezier(.2, .8, .2, 1)",
-                                fill: "both"
-                            }}
-                        );
-                    }});
-                    window.setTimeout(() => document.body.classList.remove("view-rearranging"), 780);
-                }});
-            }} else if (animate && !reducedMotion && document.startViewTransition) {{
-                document.documentElement.classList.add("view-changing");
-                const transition = document.startViewTransition(updateView);
-                transition.finished.finally(() => {{
-                    document.documentElement.classList.remove("view-changing");
-                }});
-            }} else {{
-                updateView();
+                return;
             }}
+            // Fade only the grid; moving every card made view changes stutter.
+            window.clearTimeout(viewSwitchTimer);
+            grid.classList.add("view-switching");
+            viewSwitchTimer = window.setTimeout(() => {{
+                updateView();
+                requestAnimationFrame(() => requestAnimationFrame(() => {{
+                    grid.classList.remove("view-switching");
+                }}));
+            }}, 110);
         }}
         viewButtons.forEach(button => {{
             button.addEventListener("click", () => {{
@@ -2529,6 +2488,105 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     index_path.write_text(index_html, encoding = "utf-8")
     print(f"\nBuilt visual index: {index_path}")
 
+def build_404_page(tracks: list[dict]) -> None:
+    config = load_config()
+    copy = config.get("not_found", {}) # editable 404 wording lives in config.json
+    site_url = (config.get("site_url") or "").rstrip("/")
+    site_path = "/" + site_url.split("/", 3)[-1].split("/", 1)[-1].strip("/") + "/" if ".github.io/" in site_url else "/"
+    recommendations = [
+        {
+            "track": item["track"],
+            "artist": item["artist"],
+            "album": item["album"],
+            "cover": item.get("cover_file", ""),
+            "url": f'entries/{item["html_file"]}',
+            "accent": item["accent"],
+        }
+        for item in tracks
+    ]
+    recommendation_json = json.dumps(recommendations, ensure_ascii = False).replace("</", "<\\/")
+    protein_drops = "".join(
+        f'<span style="--x:{(index * 17) % 101}%;--delay:-{index * .73:.2f}s;--speed:{9 + index % 7}s;--size:{34 + index % 5 * 13}px"></span>'
+        for index in range(18)
+    )
+    page = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#0d0d0f">
+    <link rel="icon" id="favicon" href="/covers/GSI_favicon.svg" type="image/svg+xml">
+    <title>Signal Lost — GSI</title>
+    <style>
+        :root {{ --pink:#ff4fa3; --cyan:#39c8e8; --paper:#f1ede3; --ink:#0d0d0f; }}
+        * {{ box-sizing:border-box; }}
+        body {{ margin:0; min-height:100vh; overflow:hidden; color:var(--paper); font-family:Arial,sans-serif; background:#0d0d0f; }}
+        body::before {{ content:""; position:fixed; inset:0; background:repeating-linear-gradient(92deg, transparent 0 54px, rgba(255,255,255,.025) 55px), radial-gradient(circle at 72% 20%, rgba(255,79,163,.16), transparent 36%); }}
+        .protein-rain {{ position:fixed; inset:0; overflow:hidden; opacity:.32; pointer-events:none; }}
+        .protein-rain span {{ position:absolute; left:var(--x); top:-100px; width:var(--size); aspect-ratio:1; border:3px solid var(--cyan); border-radius:62% 38% 67% 33% / 42% 58% 42% 58%; filter:drop-shadow(9px 4px 0 rgba(255,79,163,.56)); animation:dissolve var(--speed) linear var(--delay) infinite; }}
+        .protein-rain span::before, .protein-rain span::after {{ content:""; position:absolute; border:2px solid currentColor; border-radius:50%; }}
+        .protein-rain span::before {{ inset:18% -28% 24% 24%; transform:rotate(38deg); }}
+        .protein-rain span::after {{ inset:44% 18% -30% -20%; transform:rotate(-28deg); }}
+        @keyframes dissolve {{ 0% {{ transform:translateY(-15vh) rotate(0); opacity:0; }} 12% {{ opacity:.8; }} 72% {{ opacity:.34; filter:blur(0) drop-shadow(9px 4px 0 rgba(255,79,163,.5)); }} 100% {{ transform:translateY(125vh) rotate(220deg) scale(.35); opacity:0; filter:blur(5px); }} }}
+        main {{ position:relative; z-index:1; width:min(1160px, calc(100% - 36px)); min-height:100vh; margin:auto; display:grid; grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr); align-items:center; gap:clamp(24px,6vw,80px); }}
+        .eyebrow {{ color:var(--pink); font-size:12px; font-weight:900; letter-spacing:.24em; }}
+        h1 {{ max-width:780px; margin:16px 0 22px; font-family:Impact,Haettenschweiler,"Arial Black",sans-serif; font-size:clamp(68px,10vw,156px); line-height:.78; letter-spacing:-.045em; text-shadow:7px 0 0 rgba(57,200,232,.7); transform:skew(-4deg); }}
+        .message {{ max-width:620px; font-size:clamp(17px,2vw,23px); line-height:1.5; color:rgba(241,237,227,.72); }}
+        .home {{ display:inline-flex; margin-top:24px; padding:15px 22px; color:var(--ink); background:var(--paper); border-radius:24px 7px 24px 7px; font-size:12px; font-weight:900; letter-spacing:.15em; text-decoration:none; transition:transform .25s ease,border-radius .35s ease; }}
+        .home:hover,.home:focus-visible {{ transform:translateY(-4px) rotate(-1deg); border-radius:7px 24px 7px 24px; }}
+        .recommendation {{ overflow:hidden; color:var(--paper); text-decoration:none; border:2px solid var(--accent,var(--pink)); border-radius:18px 52px 18px 52px; background:#141417; box-shadow:10px 10px 0 color-mix(in srgb,var(--accent),transparent 65%); transition:transform .35s ease,border-radius .35s ease; }}
+        .recommendation:hover,.recommendation:focus-visible {{ transform:translateY(-7px) rotate(1deg); border-radius:52px 18px 52px 18px; }}
+        .recommendation img {{ display:block; width:100%; aspect-ratio:1; object-fit:cover; background:#222; }}
+        .signal-copy {{ padding:20px; }}
+        .signal-copy span {{ color:color-mix(in srgb,var(--accent),white 44%); font-size:10px; font-weight:900; letter-spacing:.2em; }}
+        .signal-copy strong {{ display:block; margin-top:10px; font-size:clamp(25px,4vw,44px); line-height:.95; }}
+        .signal-copy small {{ display:block; margin-top:8px; color:rgba(255,255,255,.64); font-size:15px; }}
+        @media(max-width:760px) {{ body {{ overflow:auto; }} main {{ min-height:100svh; grid-template-columns:1fr; padding:58px 0; }} h1 {{ font-size:clamp(64px,24vw,104px); }} .recommendation {{ width:min(100%,390px); }} }}
+        @media(prefers-reduced-motion:reduce) {{ *,*::before,*::after {{ animation-duration:.01ms!important; transition-duration:.01ms!important; }} }}
+    </style>
+</head>
+<body>
+    <div class="protein-rain" aria-hidden="true">{protein_drops}</div>
+    <main>
+        <section>
+            <div class="eyebrow">{html.escape(copy.get("eyebrow", "SIGNAL LOST / 404"))}</div>
+            <h1>{html.escape(copy.get("title", "THIS FREQUENCY DOESN'T EXIST."))}</h1>
+            <p class="message">{html.escape(copy.get("message", "The page slipped out of the archive."))}</p>
+            <a class="home" id="home-link" href="./">RETURN TO GSI / WALL</a>
+        </section>
+        <a class="recommendation" id="recommendation" href="#" style="--accent:#ff4fa3">
+            <img id="signal-cover" alt="">
+            <div class="signal-copy">
+                <span>{html.escape(copy.get("recommendation_label", "INTERCEPTED SIGNAL"))}</span>
+                <strong id="signal-track"></strong>
+                <small id="signal-artist"></small>
+            </div>
+        </a>
+    </main>
+    <script>
+        const tracks = {recommendation_json};
+        const deployedRoot = {json.dumps(site_path)};
+        const root = location.hostname.endsWith("github.io") ? deployedRoot : "/";
+        const selected = tracks[Math.floor(Math.random() * tracks.length)]; // new signal on every 404 visit
+        document.querySelector("#favicon").href = root + "covers/GSI_favicon.svg";
+        document.querySelector("#home-link").href = root;
+        const card = document.querySelector("#recommendation");
+        card.href = root + selected.url;
+        card.style.setProperty("--accent", selected.accent);
+        const cover = document.querySelector("#signal-cover");
+        cover.src = root + "covers/" + selected.cover;
+        cover.alt = selected.album + " cover";
+        document.querySelector("#signal-track").textContent = selected.track;
+        document.querySelector("#signal-artist").textContent = selected.artist;
+    </script>
+</body>
+</html>
+"""
+    not_found_path = SITE_DIR / "404.html"
+    not_found_path.write_text(page, encoding = "utf-8")
+    print(f"Built playful 404 page: {not_found_path}")
+
 def main() -> None:
     parser = argparse.ArgumentParser(description = "Build the GSI static website.")
     parser.add_argument(
@@ -2547,6 +2605,7 @@ def main() -> None:
     if p53_item:
         build_p53_page(p53_item)
     build_index_html(tracks)
+    build_404_page(tracks)
     print("\nDone.")
 
 if __name__ == "__main__":
