@@ -826,7 +826,7 @@ def build_entry_page(item: dict) -> None: #HTML review page
 <body>
     <main class="page">
         <header class="entry-nav">
-            <a class="back" href="../index.html"><span aria-hidden="true">←</span> GSI / WALL</a>
+            <a class="back" href="../index.html"><span aria-hidden="true">←</span> GSI</a>
             <span class="entry-signal">SIGNAL / {html.escape(item["artist"])}</span>
         </header>
 
@@ -1044,7 +1044,7 @@ def build_p53_page(item: dict) -> None:
 <body>
     <main class="p53-page">
         <header class="p53-nav">
-            <a href="../index.html">← GSI / WALL</a>
+            <a href="../index.html">← GSI</a>
             <span>P53 / TRANSMISSION</span>
         </header>
         <section class="transmission">
@@ -1918,7 +1918,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             letter-spacing: -.04em;
             white-space: nowrap;
         }}
-        .hero-architecture span:nth-child(1) {{ top: -10px; right: -18px; transform: rotate(3deg); }}
+        .hero-architecture span:nth-child(1) {{ top: -10px; right: -18px; transform: none; }}
         .hero-architecture span:nth-child(2) {{ top: 39%; left: -26px; color: transparent; -webkit-text-stroke: 2px color-mix(in srgb, var(--page-tint, #fff), transparent 82%); transform: scaleX(1.18); }}
         .hero-architecture span:nth-child(3) {{ right: -16px; bottom: -10px; transform: skew(-10deg); }}
         body.signal-transforming .hero-architecture {{ transform: translateX(12px) skew(-2deg); opacity: .72; }}
@@ -2181,48 +2181,62 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         .filter-description[data-filter="bassline"] .filter-room-label {{
             filter: drop-shadow(8px 0 0 color-mix(in srgb, var(--page-tint), transparent 90%));
             letter-spacing: -.05em;
+            transform-origin: center bottom;
+            animation: bass-pressure 2.8s cubic-bezier(.22,.7,.2,1) infinite;
         }}
-        body.signal-transforming .filter-description[data-filter="bassline"] .filter-room-label {{ animation: bass-hit 520ms steps(3,end) both; }}
-        @keyframes bass-hit {{ 0%,100% {{ transform:skew(-8deg) translateX(0); }} 35% {{ transform:skew(-12deg) translateX(13px); }} 65% {{ transform:skew(-5deg) translateX(-6px); }} }}
+        .filter-description[data-filter="bassline"] .filter-decor::before,
+        .filter-description[data-filter="bassline"] .filter-decor::after {{
+            inset: 9%;
+            border: 2px solid color-mix(in srgb,var(--page-tint),transparent 72%);
+            border-radius: 42px 10px 42px 10px;
+            animation: bass-wave 2.8s ease-out infinite;
+        }}
+        .filter-description[data-filter="bassline"] .filter-decor::after {{ animation-delay:.18s; }}
+        @keyframes bass-pressure {{ 0%,18%,48%,100% {{ transform:skew(-8deg) scale(1,1); }} 6% {{ transform:skew(-8deg) scale(1.055,.92); }} 30% {{ transform:skew(-8deg) scale(1.035,.95); }} }}
+        @keyframes bass-wave {{ 0%,5% {{ opacity:.52; transform:scale(.82); }} 28%,100% {{ opacity:0; transform:scale(1.12); }} }}
         .filter-description[data-filter="dreamy"] .filter-room-label {{
-            left: auto;
-            right: -9%;
-            bottom: 3%;
+            left: auto; right: -12%; bottom: -12%;
             color: transparent;
             -webkit-text-stroke: 3px color-mix(in srgb, var(--page-tint), transparent 72%);
-            transform: rotate(-14deg) scale(1.14);
-            animation: dreamy-drift 12s ease-in-out infinite alternate;
+            animation: dreamy-drift 8.5s ease-in-out infinite;
         }}
-        @keyframes dreamy-drift {{ to {{ transform:translate(-24px,-16px) rotate(-7deg) scale(1.2); }} }}
+        @keyframes dreamy-drift {{ 0% {{ transform:translate(0,0) rotate(-14deg) scale(1.14); }} 46% {{ transform:translate(-48vw,-235px) rotate(-4deg) scale(1.22); }} 78% {{ transform:translate(-77vw,-390px) rotate(8deg) scale(1.08); }} 100% {{ transform:translate(-92vw,-460px) rotate(13deg) scale(.96); }} }}
         .filter-description[data-filter="bite"] .filter-decor::after {{
             right: -24px; top: -34px; width: 230px; aspect-ratio: 1;
             background: url("covers/bite_playlist_cover.webp") center/cover;
             opacity: .2; transform: rotate(12deg);
-            clip-path: polygon(0 0,100% 0,100% 100%,78% 100%,72% 86%,61% 100%,48% 86%,35% 100%,20% 83%,0 93%);
+            -webkit-mask: radial-gradient(circle 34px at 88% 4%, transparent 96%, #000 100%);
+            mask: radial-gradient(circle 34px at 88% 4%, transparent 96%, #000 100%);
         }}
-        .filter-description[data-filter="pop"] .filter-decor::before {{
-            content: "POP  pop  POP  pop  POP  POP";
-            inset: 8% 2% auto 25%;
+        .filter-description[data-filter="bite"] .playlist-card img {{
+            -webkit-mask: radial-gradient(circle 38px at 82% 0, transparent 96%, #000 100%);
+            mask: radial-gradient(circle 38px at 82% 0, transparent 96%, #000 100%);
+        }}
+        .filter-description[data-filter="pop"] .filter-room-label {{ display:none; }}
+        .filter-description[data-filter="pop"] .filter-decor span {{
+            position:absolute;
+            left:var(--pop-x); top:var(--pop-y);
             color: color-mix(in srgb, var(--page-tint), transparent 78%);
-            font: 900 clamp(24px,4vw,58px)/1.45 Arial,sans-serif;
-            word-spacing: .7em;
-            opacity: .65;
+            font:900 var(--pop-size)/1 Arial,sans-serif;
+            animation:pop-signal 820ms cubic-bezier(.18,.85,.25,1.25) var(--pop-delay) both;
         }}
-        body.signal-transforming .filter-description[data-filter="pop"] .filter-decor::before {{ animation: pop-settle 620ms cubic-bezier(.2,.8,.2,1) both; }}
-        @keyframes pop-settle {{ from {{ opacity:0; transform:scale(.75) rotate(-4deg); }} to {{ opacity:.65; transform:none; }} }}
+        @keyframes pop-signal {{ 0% {{ opacity:0; transform:scale(.18) rotate(-9deg); }} 42% {{ opacity:.78; transform:scale(1.14) rotate(3deg); }} 68% {{ opacity:.58; transform:scale(1); }} 100% {{ opacity:0; transform:scale(.82) translateY(-12px); }} }}
         .filter-description[data-filter="distortion"] .filter-decor {{
-            background: linear-gradient(112deg,transparent 0 54%,color-mix(in srgb,var(--page-tint),transparent 82%) 54% 55%,transparent 55%), linear-gradient(78deg,transparent 0 71%,rgba(255,255,255,.08) 71% 72%,transparent 72%);
-            clip-path: polygon(0 0,47% 0,51% 8%,69% 0,100% 0,100% 39%,93% 46%,100% 58%,100% 100%,62% 100%,57% 91%,38% 100%,0 100%,0 64%,7% 57%,0 43%);
+            background:linear-gradient(113deg,transparent 0 35%,rgba(255,255,255,.12) 35% 35.5%,transparent 35.5% 61%,color-mix(in srgb,var(--page-tint),transparent 58%) 61% 61.7%,transparent 61.7%),linear-gradient(73deg,transparent 0 72%,rgba(255,255,255,.1) 72% 72.6%,transparent 72.6%);
         }}
-        .filter-description[data-filter="personal"] .filter-decor::before {{
-            content: "MEMORY / BODY / RECOVERY / DESIRE";
-            right:-28px; top:28px; width:320px;
-            color:color-mix(in srgb,var(--page-tint),transparent 72%);
-            font:900 13px/2.4 Arial,sans-serif; letter-spacing:.22em; transform:rotate(8deg);
+        .filter-description[data-filter="distortion"] .filter-decor::before,
+        .filter-description[data-filter="distortion"] .filter-decor::after {{
+            inset:0; background:color-mix(in srgb,var(--page-tint),transparent 88%); opacity:.62;
         }}
+        .filter-description[data-filter="distortion"] .filter-decor::before {{ clip-path:polygon(0 0,64% 0,55% 34%,61% 49%,49% 100%,0 100%); transform:translateX(-9px); }}
+        .filter-description[data-filter="distortion"] .filter-decor::after {{ clip-path:polygon(65% 0,100% 0,100% 100%,50% 100%,62% 49%,56% 34%); transform:translateX(11px); }}
+        .filter-description.filter-entering[data-filter="distortion"] .filter-decor::before {{ animation:distortion-left 720ms cubic-bezier(.2,.8,.2,1) both; }}
+        .filter-description.filter-entering[data-filter="distortion"] .filter-decor::after {{ animation:distortion-right 720ms cubic-bezier(.2,.8,.2,1) both; }}
+        @keyframes distortion-left {{ 0% {{ transform:translate(-28px,9px); }} 62% {{ transform:translate(5px,-2px); }} 100% {{ transform:translateX(-9px); }} }}
+        @keyframes distortion-right {{ 0% {{ transform:translate(34px,-8px); }} 62% {{ transform:translate(-5px,2px); }} 100% {{ transform:translateX(11px); }} }}
         .filter-description[data-filter="ulas"] .filter-decor::before,
         .filter-description[data-filter="ulas"] .filter-decor::after {{
-            width:90px; height:90px; border-color:color-mix(in srgb,var(--page-tint),transparent 42%); border-style:solid;
+            width:90px; height:90px; border-color:color-mix(in srgb,var(--page-tint),transparent 42%); border-style:solid; border-radius:30px 8px 30px 8px;
         }}
         .filter-description[data-filter="ulas"] .filter-decor::before {{ left:18px; top:18px; border-width:4px 0 0 4px; }}
         .filter-description[data-filter="ulas"] .filter-decor::after {{ right:18px; bottom:18px; border-width:0 4px 4px 0; }}
@@ -2463,6 +2477,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         const filterStartArtist = document.querySelector("#filter-start-artist");
         const filterFragments = document.querySelector("#filter-fragments");
         const filterRoomLabel = document.querySelector("#filter-room-label");
+        const filterDecor = document.querySelector("#filter-decor");
 
         let activeFilter = null; // no filter is active when page first loads
         function storeView(viewName) {{
@@ -2540,7 +2555,9 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             description.textContent = ""; // clear text
             box.removeAttribute("data-filter-label");
             box.removeAttribute("data-filter");
+            box.classList.remove("filter-entering");
             filterRoomLabel.replaceChildren();
+            filterDecor.replaceChildren();
             filterCount.textContent = "";
             filterStart.classList.add("hidden");
             filterStart.removeAttribute("href");
@@ -2566,11 +2583,32 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             description.hidden = !info.description;
             box.dataset.filterLabel = info.label;
             box.dataset.filter = filterName;
+            box.classList.remove("hidden"); // reveal before restarting entrance animations
+            box.classList.remove("filter-entering");
+            void box.offsetWidth; // restart filter-specific entrance effects
+            box.classList.add("filter-entering");
+            window.setTimeout(() => box.classList.remove("filter-entering"), 1000);
             filterRoomLabel.replaceChildren(...info.room_label_lines.map(line => {{
                 const span = document.createElement("span");
                 span.textContent = line;
                 return span;
             }}));
+            filterDecor.replaceChildren();
+            if (filterName === "pop") {{
+                const popSignals = [
+                    [12, 16, 26, 0], [72, 12, 52, 90], [42, 36, 34, 180],
+                    [82, 58, 24, 270], [18, 70, 58, 350], [58, 78, 30, 430], [34, 8, 20, 520]
+                ];
+                popSignals.forEach(([x, y, size, delay]) => {{
+                    const pop = document.createElement("span");
+                    pop.textContent = "POP";
+                    pop.style.setProperty("--pop-x", `${{x}}%`);
+                    pop.style.setProperty("--pop-y", `${{y}}%`);
+                    pop.style.setProperty("--pop-size", `${{size}}px`);
+                    pop.style.setProperty("--pop-delay", `${{delay}}ms`);
+                    filterDecor.append(pop);
+                }});
+            }}
             filterCount.textContent = `${{String(info.count).padStart(2, "0")}} SIGNAL${{info.count === 1 ? "" : "S"}}`;
             if (info.start_url) {{
                 filterStart.href = info.start_url;
@@ -2694,7 +2732,7 @@ def build_404_page(tracks: list[dict]) -> None:
         main {{ position:relative; z-index:1; width:min(1160px, calc(100% - 36px)); min-height:100vh; margin:auto; display:grid; grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr); align-items:center; gap:clamp(24px,6vw,80px); }}
         .eyebrow {{ color:var(--pink); font-size:12px; font-weight:900; letter-spacing:.24em; }}
         h1 {{ max-width:820px; margin:16px 0 22px; font-family:Impact,Haettenschweiler,"Arial Black",sans-serif; font-size:clamp(62px,8.8vw,142px); line-height:.79; letter-spacing:-.045em; text-shadow:8px 5px 0 rgba(0,0,0,.9), 12px 5px 0 rgba(255,79,163,.72), -6px -2px 0 rgba(57,200,232,.7); transform:skew(-4deg); }}
-        h1 em {{ display:block; width:max-content; color:var(--pink); font-style:normal; font-size:1.18em; line-height:.72; transform:translateX(clamp(18px,6vw,82px)) skew(7deg); text-shadow:7px 5px 0 #000, -5px 0 0 var(--cyan); }}
+        h1 em {{ display:block; width:max-content; color:var(--pink); font-style:normal; font-size:1.36em; line-height:.68; transform:translateX(clamp(18px,6vw,82px)) skew(7deg); text-shadow:7px 5px 0 #000, -5px 0 0 var(--cyan); }}
         .message {{ max-width:620px; font-size:clamp(17px,2vw,23px); line-height:1.5; color:rgba(241,237,227,.72); }}
         .home {{ display:inline-flex; margin-top:24px; padding:15px 22px; color:var(--ink); background:var(--paper); border-radius:24px 7px 24px 7px; font-size:12px; font-weight:900; letter-spacing:.15em; text-decoration:none; transition:transform .25s ease,border-radius .35s ease; }}
         .home:hover,.home:focus-visible {{ transform:translateY(-4px) rotate(-1deg); border-radius:7px 24px 7px 24px; }}
@@ -2719,7 +2757,7 @@ def build_404_page(tracks: list[dict]) -> None:
             <div class="eyebrow">{html.escape(copy.get("eyebrow", "SIGNAL LOST / 404"))}</div>
             <h1>{not_found_title}</h1>
             <p class="message">{html.escape(copy.get("message", "The page slipped out of the archive."))}</p>
-            <a class="home" id="home-link" href="./">RETURN TO GSI / WALL</a>
+            <a class="home" id="home-link" href="./">RETURN TO GSI</a>
         </section>
         <article class="recommendation" id="recommendation" style="--accent:#ff4fa3">
             <img id="signal-cover" alt="">
