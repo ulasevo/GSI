@@ -1005,9 +1005,14 @@ def build_entry_page(item: dict) -> None: #HTML review page
         .cover-frame {{
             display:grid;
             place-items:center;
-            min-height:390px;
+            min-height:560px;
             padding:0;
             overflow:hidden;
+        }}
+        .page {{ max-width:1240px; }}
+        .hero {{
+            grid-template-columns:minmax(460px,560px) minmax(0,1fr);
+            min-height:560px;
         }}
         .cover {{
             width:100%;
@@ -1064,6 +1069,10 @@ def build_entry_page(item: dict) -> None: #HTML review page
             .cover {{ min-height:0; aspect-ratio:1; object-fit:contain; }}
             .sections {{ grid-template-columns:1fr; padding:0; }}
             .section-card,.section-card:nth-child(even) {{ width:auto; }}
+        }}
+        @media(min-width:761px) and (max-width:980px) {{
+            .hero {{ grid-template-columns:minmax(350px,46%) minmax(0,1fr); min-height:430px; }}
+            .cover-frame {{ min-height:430px; }}
         }}
         @media(prefers-reduced-motion:reduce) {{
             .section-info-button[aria-expanded="true"]::after {{ animation:none; }}
@@ -2449,25 +2458,35 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             animation: dreamy-drift 8.5s linear infinite;
         }}
         @keyframes dreamy-drift {{ 0% {{ transform:translate(0,0) rotate(-14deg) scale(1.14); }} 25% {{ transform:translate(-35vw,-170px) rotate(-7deg) scale(1.2); }} 50% {{ transform:translate(-88vw,-430px) rotate(10deg) scale(1.02); }} 75% {{ transform:translate(-46vw,-145px) rotate(2deg) scale(1.18); }} 100% {{ transform:translate(0,0) rotate(-14deg) scale(1.14); }} }}
-        .filter-description[data-filter="bite"] .filter-decor::after {{
-            right: -24px; top: -34px; width: 230px; aspect-ratio: 1;
-            background: url("covers/bite_playlist_cover.webp") center/cover;
-            opacity: .2; transform: rotate(12deg);
-            -webkit-mask: radial-gradient(circle 34px at 88% 4%, transparent 96%, #000 100%);
-            mask: radial-gradient(circle 34px at 88% 4%, transparent 96%, #000 100%);
+        .filter-description[data-filter="bite"] .filter-room-label span:last-child {{
+            margin-left:-.08em;
         }}
-        .filter-description[data-filter="bite"] .playlist-card::before {{
+        /* Small acid-green vampire mouths occupy Bite's otherwise empty middle ground. */
+        .filter-description[data-filter="bite"] .filter-decor span {{
+            position:absolute;
+            left:var(--fang-x);
+            top:var(--fang-y);
+            width:var(--fang-size);
+            aspect-ratio:1.65;
+            border:3px solid color-mix(in srgb,var(--page-tint),transparent 24%);
+            border-top:0;
+            border-radius:4px 4px 52% 52%;
+            opacity:.78;
+            transform:rotate(var(--fang-tilt));
+            filter:drop-shadow(0 0 10px color-mix(in srgb,var(--page-tint),transparent 62%));
+        }}
+        .filter-description[data-filter="bite"] .filter-decor span::before,
+        .filter-description[data-filter="bite"] .filter-decor span::after {{
             content:"";
             position:absolute;
-            z-index:3;
-            top:-15px;
-            right:28px;
-            width:34px;
-            height:34px;
-            border-radius:50%;
-            background:color-mix(in srgb,var(--page-tint),#111 84%);
-            box-shadow:-25px 8px 0 color-mix(in srgb,var(--page-tint),#111 84%),22px 12px 0 color-mix(in srgb,var(--page-tint),#111 84%);
+            top:-1px;
+            width:25%;
+            height:62%;
+            background:color-mix(in srgb,var(--page-tint),white 8%);
+            clip-path:polygon(0 0,100% 0,50% 100%);
         }}
+        .filter-description[data-filter="bite"] .filter-decor span::before {{ left:10%; }}
+        .filter-description[data-filter="bite"] .filter-decor span::after {{ right:10%; }}
         .filter-description[data-filter="pop"] .filter-room-label {{ display:none; }}
         .filter-description[data-filter="pop"] .filter-decor span {{
             position:absolute;
@@ -2868,6 +2887,19 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                     pop.style.setProperty("--pop-delay", `${{delay}}ms`);
                     pop.style.setProperty("--pop-speed", `${{speed}}s`);
                     filterDecor.append(pop);
+                }});
+            }}
+            if (filterName === "bite") {{
+                const vampireMouths = [
+                    [57, 13, 54, -9], [50, 48, 38, 8], [61, 69, 72, -4]
+                ];
+                vampireMouths.forEach(([x, y, size, tilt]) => {{
+                    const mouth = document.createElement("span");
+                    mouth.style.setProperty("--fang-x", `${{x}}%`);
+                    mouth.style.setProperty("--fang-y", `${{y}}%`);
+                    mouth.style.setProperty("--fang-size", `${{size}}px`);
+                    mouth.style.setProperty("--fang-tilt", `${{tilt}}deg`);
+                    filterDecor.append(mouth);
                 }});
             }}
             filterCount.textContent = `${{String(info.count).padStart(2, "0")}} SIGNAL${{info.count === 1 ? "" : "S"}}`;
