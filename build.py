@@ -431,7 +431,7 @@ def build_entry_page(item: dict) -> None: #HTML review page
             safe_section_label = html.escape(f"About {section_title}", quote = True)
             help_id = f'section-help-{slugify(section_title)}'
             help_button = f'<button class="section-info-button" type="button" aria-label="{safe_section_label}" aria-controls="{help_id}" aria-expanded="false">i</button>'
-            help_panel = f'<p class="section-help" id="{help_id}" hidden>{safe_section_help}</p>'
+            help_panel = f'<div class="section-help" id="{help_id}" aria-hidden="true"><div><p>{safe_section_help}</p></div></div>'
         section_cards.append(f"""
         <section class="section-card">
             <div class="section-heading">
@@ -821,6 +821,186 @@ def build_entry_page(item: dict) -> None: #HTML review page
                 grid-column: 1;
             }}
         }}
+
+        /* GSI 1.09 listening shrine: quieter than the archive wall, but from the same signal system. */
+        .page {{ max-width: 1240px; }}
+        .entry-nav {{
+            min-height: 44px;
+            margin-bottom: 10px;
+            border-radius: 22px 7px 22px 7px;
+            background: linear-gradient(90deg, color-mix(in srgb,var(--accent),#111 88%), rgba(10,10,11,.78));
+            box-shadow: inset 4px 0 0 color-mix(in srgb,var(--accent),white 22%);
+        }}
+        .hero {{
+            grid-template-columns: minmax(280px, 380px) minmax(0,1fr);
+            min-height: 390px;
+            border-radius: 34px 9px 34px 9px;
+        }}
+        .cover {{ min-height: 390px; }}
+        .meta {{
+            justify-content: flex-end;
+            min-height: 390px;
+            padding: clamp(30px,4.5vw,58px);
+            isolation: isolate;
+        }}
+        .meta::before {{ content:none; }}
+        .entry-architecture {{
+            position:absolute;
+            inset:0;
+            z-index:-1;
+            overflow:hidden;
+            pointer-events:none;
+            font-family:Impact,Haettenschweiler,"Arial Black",sans-serif;
+            line-height:.72;
+        }}
+        .entry-architecture span {{
+            position:absolute;
+            white-space:nowrap;
+            color:rgba(255,255,255,.045);
+            font-size:clamp(78px,10vw,154px);
+            letter-spacing:-.045em;
+        }}
+        .entry-architecture span:nth-child(1) {{ top:-10px; right:-8px; }}
+        .entry-architecture span:nth-child(2) {{ top:36%; left:-18px; color:transparent; -webkit-text-stroke:2px color-mix(in srgb,var(--accent),white 8%); transform:scaleX(1.08); }}
+        .entry-architecture span:nth-child(3) {{ right:-10px; bottom:-8px; color:color-mix(in srgb,var(--accent),transparent 87%); }}
+        .meta h1 {{
+            max-width:820px;
+            font-size:clamp(42px,6vw,76px);
+            line-height:.9;
+            text-wrap:balance;
+        }}
+        .meta > p {{ font-size:17px; }}
+        .meta .album {{ color:color-mix(in srgb,var(--accent),white 60%); }}
+        .stream-block {{ margin-top:22px; }}
+        .stream-links {{ gap:7px; }}
+        .stream-link {{
+            position:relative;
+            padding-right:34px;
+            border-radius:20px 6px 20px 6px;
+        }}
+        .stream-link::after {{ content:"↗"; position:absolute; right:13px; transition:transform 240ms ease; }}
+        .stream-link:hover::after,.stream-link:focus-visible::after {{ transform:translate(3px,-3px); }}
+        .sections {{
+            position:relative;
+            display:flex;
+            flex-direction:column;
+            gap:14px;
+            max-width:1080px;
+            margin:24px auto 0;
+            padding-left:52px;
+        }}
+        .sections::before {{
+            content:"";
+            position:absolute;
+            left:19px;
+            top:18px;
+            bottom:18px;
+            width:2px;
+            background:linear-gradient(var(--accent),color-mix(in srgb,var(--accent),transparent 72%));
+            box-shadow:0 0 18px color-mix(in srgb,var(--accent),transparent 45%);
+        }}
+        .section-card,
+        .section-card:nth-child(even) {{
+            position:relative;
+            width:min(88%,900px);
+            margin:0;
+            padding:clamp(22px,3.4vw,34px);
+            border-radius:28px 8px 28px 8px;
+            background:linear-gradient(135deg,rgba(255,255,255,.055),transparent 38%),rgba(13,13,15,.94);
+            box-shadow:0 18px 50px rgba(0,0,0,.23);
+            transition:border-radius 480ms cubic-bezier(.2,.8,.2,1),transform 360ms cubic-bezier(.2,.8,.2,1),border-color 220ms ease;
+        }}
+        .section-card:nth-child(even) {{
+            align-self:flex-end;
+            border-radius:8px 28px 8px 28px;
+        }}
+        .section-card::before {{
+            content:"";
+            position:absolute;
+            left:-43px;
+            top:29px;
+            width:14px;
+            height:14px;
+            border:3px solid #0b0b0c;
+            border-radius:50%;
+            background:var(--accent);
+            box-shadow:0 0 0 2px color-mix(in srgb,var(--accent),white 22%),0 0 18px var(--accent);
+        }}
+        .section-card:hover {{
+            transform:translateX(4px);
+            border-radius:8px 28px 8px 28px;
+            border-color:color-mix(in srgb,var(--accent),white 35%);
+        }}
+        .section-card:nth-child(even):hover {{ transform:translateX(-4px); border-radius:28px 8px 28px 8px; }}
+        .section-heading {{ justify-content:space-between; }}
+        .section-card h2 {{ font-size:clamp(24px,2.7vw,34px); }}
+        .section-info-button {{
+            position:relative;
+            width:34px;
+            height:34px;
+            flex-basis:34px;
+            overflow:visible;
+            transition:transform 420ms cubic-bezier(.2,.8,.2,1),border-radius 420ms cubic-bezier(.2,.8,.2,1),background 220ms ease;
+        }}
+        .section-info-button::after {{
+            content:"";
+            position:absolute;
+            inset:-5px;
+            border:2px solid transparent;
+            border-top-color:color-mix(in srgb,var(--accent),white 44%);
+            border-radius:50%;
+            opacity:0;
+        }}
+        .section-info-button[aria-expanded="true"] {{
+            transform:rotate(45deg) scale(.94);
+            border-radius:50% 22% 50% 50%;
+            background:color-mix(in srgb,var(--accent),#111 58%);
+        }}
+        .section-info-button[aria-expanded="true"]::after {{ opacity:1; animation:info-orbit 720ms cubic-bezier(.2,.8,.2,1) both; }}
+        @keyframes info-orbit {{ from {{ transform:rotate(-160deg) scale(.7); }} to {{ transform:rotate(0) scale(1); }} }}
+        .section-help {{
+            display:grid;
+            grid-template-rows:0fr;
+            margin:0;
+            padding:0;
+            border:0;
+            opacity:0;
+            transform:translateY(-8px) scale(.985);
+            background:transparent;
+            transition:grid-template-rows 420ms cubic-bezier(.2,.8,.2,1),opacity 260ms ease,transform 420ms cubic-bezier(.2,.8,.2,1),margin 420ms ease;
+        }}
+        .section-help > div {{ overflow:hidden; }}
+        .section-help p {{
+            margin:0;
+            padding:14px 16px;
+            color:color-mix(in srgb,var(--accent),white 82%) !important;
+            font-size:14px !important;
+            line-height:1.45;
+            border:1px solid color-mix(in srgb,var(--accent),transparent 44%);
+            border-left:4px solid var(--accent);
+            border-radius:5px 18px 18px 5px;
+            background:color-mix(in srgb,var(--accent),#111 82%);
+            box-shadow:inset 0 0 24px color-mix(in srgb,var(--accent),transparent 88%);
+        }}
+        .section-help.open {{
+            grid-template-rows:1fr;
+            margin:14px 0 2px;
+            opacity:1;
+            transform:none;
+        }}
+        @media(max-width:760px) {{
+            .hero {{ grid-template-columns:1fr; min-height:0; }}
+            .cover {{ min-height:0; }}
+            .meta {{ min-height:270px; justify-content:flex-end; }}
+            .entry-architecture span {{ font-size:clamp(68px,24vw,108px); }}
+            .sections {{ padding-left:34px; }}
+            .sections::before {{ left:9px; }}
+            .section-card,.section-card:nth-child(even) {{ width:100%; align-self:stretch; }}
+            .section-card::before {{ left:-32px; }}
+        }}
+        @media(prefers-reduced-motion:reduce) {{
+            .section-info-button[aria-expanded="true"]::after {{ animation:none; }}
+        }}
     </style>
 </head>
 <body>
@@ -833,7 +1013,7 @@ def build_entry_page(item: dict) -> None: #HTML review page
         <section class="hero">
             <div class="cover-frame">{cover_html}</div>
             <div class="meta">
-                <div class="entry-kicker">GENOME STABILITY INDUCER</div>
+                <div class="entry-architecture" aria-hidden="true"><span>GENOME</span><span>STABILITY</span><span>INDUCER</span></div>
                 <h1>{html.escape(item["track"])}</h1>
                 <p>{html.escape(item["artist"])}</p>
                 <p class="album">{html.escape(item["album"])}</p>
@@ -849,8 +1029,9 @@ def build_entry_page(item: dict) -> None: #HTML review page
         document.querySelectorAll(".section-info-button").forEach(button => {{
             button.addEventListener("click", () => {{
                 const help = button.closest(".section-card").querySelector(".section-help");
-                const willOpen = help.hidden;
-                help.hidden = !willOpen;
+                const willOpen = button.getAttribute("aria-expanded") !== "true";
+                help.classList.toggle("open", willOpen);
+                help.setAttribute("aria-hidden", String(!willOpen));
                 button.setAttribute("aria-expanded", String(willOpen));
             }});
         }});
