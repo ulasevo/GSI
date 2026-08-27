@@ -1005,14 +1005,14 @@ def build_entry_page(item: dict) -> None: #HTML review page
         .cover-frame {{
             display:grid;
             place-items:center;
-            min-height:600px;
+            min-height:720px;
             padding:0;
             overflow:hidden;
         }}
-        .page {{ max-width:1240px; }}
+        .page {{ max-width:1480px; }}
         .hero {{
-            grid-template-columns:minmax(500px,600px) minmax(0,1fr);
-            min-height:600px;
+            grid-template-columns:minmax(620px,720px) minmax(0,1fr);
+            min-height:720px;
         }}
         .cover {{
             width:100%;
@@ -1067,10 +1067,11 @@ def build_entry_page(item: dict) -> None: #HTML review page
         @media(max-width:760px) {{
             .cover-frame {{ min-height:0; }}
             .cover {{ min-height:0; aspect-ratio:1; object-fit:contain; }}
+            .hero {{ grid-template-columns:1fr; min-height:0; }}
             .sections {{ grid-template-columns:1fr; padding:0; }}
             .section-card,.section-card:nth-child(even) {{ width:auto; }}
         }}
-        @media(min-width:761px) and (max-width:980px) {{
+        @media(min-width:761px) and (max-width:1100px) {{
             .hero {{ grid-template-columns:minmax(350px,46%) minmax(0,1fr); min-height:430px; }}
             .cover-frame {{ min-height:430px; }}
         }}
@@ -2663,8 +2664,12 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 min-height: 48px;
             }}
             .filter-btn.active {{ flex-basis: 100%; }}
-            body.filter-active .filter-description {{ padding: 24px 18px; }}
+            body.filter-active .filter-description {{
+                max-height:none;
+                padding:24px 18px;
+            }}
             .filter-description h2 {{ font-size: clamp(42px, 17vw, 74px); }}
+            .playlist-card {{ width:min(100%,260px); }}
             .view-control {{ width: auto; }}
             .view-btn {{ flex: 1; }}
         }}
