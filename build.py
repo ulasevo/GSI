@@ -16,6 +16,7 @@ COVERS_DIR = BASE / "covers" # album cover saving path
 SITE_DIR = BASE / "site" #HTML index creation path
 SITE_ENTRIES_DIR = SITE_DIR / "entries" #review page
 SITE_COVERS_DIR = SITE_DIR / "covers"
+SITE_P53_DIR = SITE_DIR / "p53"
 
 TRACKS_FILE = BASE / "tracks.csv" #list of song inputs
 CONFIG_FILE = BASE / "config.json" #settings file
@@ -24,6 +25,7 @@ ENTRIES_DIR.mkdir(exist_ok = True) #creates entry folder, but not on repeat
 COVERS_DIR.mkdir(exist_ok = True)
 SITE_DIR.mkdir(exist_ok = True)
 SITE_ENTRIES_DIR.mkdir(exist_ok = True) #creates entries
+SITE_P53_DIR.mkdir(exist_ok = True)
 
 def slugify(text: str) -> str: #safe file name
     text = text.lower().strip()
@@ -388,6 +390,8 @@ def extract_sections_from_markdown(entry_path: Path) -> list[dict]:
         sections.append({"title": title, "content": content})
     return sections
 def build_entry_page(item: dict) -> None: #HTML review page
+    config = load_config()
+    section_info = config.get("section_info", {})
     entry_path = ENTRIES_DIR / item["entry_file"]
     sections = extract_sections_from_markdown(entry_path)
     page_title_text = f'{item["track"]} — {item["artist"]}'
@@ -418,9 +422,23 @@ def build_entry_page(item: dict) -> None: #HTML review page
     for section in sections:
         if not section["content"].strip():
             continue
+        section_title = section["title"]
+        section_help = (section_info.get(section_title) or "").strip()
+        help_button = ""
+        help_panel = ""
+        if section_help:
+            safe_section_help = html.escape(section_help)
+            safe_section_label = html.escape(f"About {section_title}", quote = True)
+            help_id = f'section-help-{slugify(section_title)}'
+            help_button = f'<button class="section-info-button" type="button" aria-label="{safe_section_label}" aria-controls="{help_id}" aria-expanded="false">i</button>'
+            help_panel = f'<p class="section-help" id="{help_id}" hidden>{safe_section_help}</p>'
         section_cards.append(f"""
         <section class="section-card">
-            <h2>{html.escape(section["title"])}</h2>
+            <div class="section-heading">
+                <h2>{html.escape(section_title)}</h2>
+                {help_button}
+            </div>
+            {help_panel}
             {simple_markdown_to_html(section["content"])}
         </section>
         """)
@@ -568,24 +586,253 @@ def build_entry_page(item: dict) -> None: #HTML review page
             color: #e6e6e6;
         }}
 
+        /* GSI 1.09 entry room: structured like a close-view archive sheet. */
+        body {{
+            background-attachment: fixed;
+            background-color: #0b0b0c;
+            background-blend-mode: normal;
+        }}
+        body::before {{
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(0deg, transparent 0 5px, rgba(255,255,255,.018) 5px 6px),
+                radial-gradient(circle at 82% 10%, color-mix(in srgb, var(--accent), transparent 78%), transparent 34%);
+            mix-blend-mode: screen;
+        }}
+        .page {{
+            position: relative;
+            max-width: 1180px;
+            padding-top: 22px;
+        }}
+        .entry-nav {{
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 18px;
+            min-height: 48px;
+            margin-bottom: 14px;
+            padding: 0 14px;
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 18px 6px 18px 6px;
+            background: rgba(10,10,11,.74);
+            backdrop-filter: blur(12px);
+        }}
+        .back {{
+            margin: 0;
+            padding: 11px 4px;
+            font-size: 13px;
+            font-weight: 900;
+            letter-spacing: .12em;
+            transition: color 180ms ease, transform 360ms cubic-bezier(.2,.8,.2,1);
+        }}
+        .back:hover,
+        .back:focus-visible {{
+            color: #fff;
+            transform: translateX(-4px);
+        }}
+        .entry-signal {{
+            color: rgba(255,255,255,.46);
+            font-size: 10px;
+            font-weight: 850;
+            letter-spacing: .18em;
+            text-transform: uppercase;
+        }}
+        .hero {{
+            grid-template-columns: minmax(260px, 430px) minmax(0, 1fr);
+            align-items: stretch;
+            gap: 0;
+            padding: 0;
+            overflow: hidden;
+            border-radius: 38px 10px 38px 10px;
+            border-color: color-mix(in srgb, var(--accent), white 24%);
+            background:
+                linear-gradient(125deg, rgba(255,255,255,.06), transparent 36%),
+                color-mix(in srgb, #111113, var(--accent) 12%);
+        }}
+        .cover-frame {{
+            position: relative;
+            min-height: 100%;
+            background: color-mix(in srgb, var(--accent), #080808 82%);
+        }}
+        .cover-frame::after {{
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            border: 1px solid rgba(255,255,255,.18);
+            box-shadow: inset -18px 0 46px rgba(0,0,0,.28);
+        }}
+        .cover {{
+            height: 100%;
+            min-height: 430px;
+            border-radius: 0;
+            object-fit: cover;
+            box-shadow: none;
+        }}
+        .meta {{
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: clamp(28px, 5vw, 68px);
+            overflow: hidden;
+        }}
+        .meta::before {{
+            content: "GSI";
+            position: absolute;
+            right: -18px;
+            top: -28px;
+            color: color-mix(in srgb, var(--accent), transparent 82%);
+            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+            font-size: clamp(120px, 20vw, 260px);
+            line-height: 1;
+            transform: rotate(7deg);
+            pointer-events: none;
+        }}
+        .entry-kicker {{
+            position: relative;
+            margin-bottom: 12px;
+            color: color-mix(in srgb, var(--accent), white 48%);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .22em;
+        }}
+        .meta h1 {{
+            position: relative;
+            max-width: 760px;
+            font-size: clamp(44px, 7vw, 92px);
+            line-height: .92;
+            letter-spacing: -.055em;
+            text-wrap: balance;
+        }}
+        .meta p {{
+            position: relative;
+        }}
+        .stream-block {{
+            position: relative;
+            margin-top: 30px;
+        }}
+        .stream-link {{
+            min-height: 38px;
+            padding-inline: 16px;
+            border-radius: 18px 6px 18px 6px;
+            font-weight: 760;
+            transition:
+                transform 360ms cubic-bezier(.2,.8,.2,1),
+                border-radius 360ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 180ms ease;
+        }}
+        .stream-link:hover,
+        .stream-link:focus-visible {{
+            border-radius: 6px 18px 6px 18px;
+            transform: translateY(-3px) scale(1.02);
+        }}
+        .sections {{
+            grid-template-columns: repeat(12, minmax(0, 1fr));
+            gap: 16px;
+            margin-top: 18px;
+        }}
+        .section-card {{
+            grid-column: span 7;
+            padding: clamp(22px, 4vw, 38px);
+            border-radius: 26px 8px 26px 8px;
+            background:
+                linear-gradient(145deg, rgba(255,255,255,.055), transparent 36%),
+                rgba(14,14,15,.92);
+            border-color: color-mix(in srgb, var(--accent), white 16%);
+        }}
+        .section-card:nth-child(even) {{
+            grid-column: 5 / span 8;
+            border-radius: 8px 26px 8px 26px;
+        }}
+        .section-heading {{
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }}
+        .section-card h2 {{
+            margin: 0;
+            font-size: clamp(22px, 3vw, 34px);
+            letter-spacing: -.025em;
+        }}
+        .section-info-button {{
+            width: 30px;
+            height: 30px;
+            flex: 0 0 30px;
+            border: 1px solid color-mix(in srgb, var(--accent), white 30%);
+            border-radius: 50%;
+            background: color-mix(in srgb, var(--accent), #111 78%);
+            color: #fff;
+            cursor: pointer;
+            font: 900 14px/1 Georgia, serif;
+            transition: transform 360ms cubic-bezier(.2,.8,.2,1), border-radius 360ms cubic-bezier(.2,.8,.2,1);
+        }}
+        .section-info-button:hover,
+        .section-info-button:focus-visible,
+        .section-info-button[aria-expanded="true"] {{
+            transform: rotate(10deg) scale(1.12);
+            border-radius: 10px 50% 50% 50%;
+        }}
+        .section-help {{
+            margin: 14px 0 2px;
+            padding: 12px 14px;
+            border-left: 3px solid var(--accent);
+            color: color-mix(in srgb, var(--accent), white 70%) !important;
+            font-size: 14px !important;
+            background: color-mix(in srgb, var(--accent), transparent 90%);
+        }}
+
         @media (max-width: 760px) {{
+            .entry-nav {{
+                position: sticky;
+                top: 8px;
+                z-index: 10;
+            }}
+            .entry-signal {{
+                max-width: 42%;
+                overflow: hidden;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+            }}
             .hero {{
                 grid-template-columns: 1fr;
+                border-radius: 28px 8px 28px 8px;
             }}
-
+            .cover {{
+                min-height: 0;
+                aspect-ratio: 1;
+            }}
+            .meta {{
+                padding: 26px 22px 30px;
+            }}
             .meta h1 {{
                 font-size: 34px;
+            }}
+            .sections {{
+                display: grid;
+                grid-template-columns: 1fr;
+            }}
+            .section-card,
+            .section-card:nth-child(even) {{
+                grid-column: 1;
             }}
         }}
     </style>
 </head>
 <body>
     <main class="page">
-        <a class="back" href="../index.html">← Back to GSI</a>
+        <header class="entry-nav">
+            <a class="back" href="../index.html"><span aria-hidden="true">←</span> GSI / WALL</a>
+            <span class="entry-signal">SIGNAL / {html.escape(item["artist"])}</span>
+        </header>
 
         <section class="hero">
-            {cover_html}
+            <div class="cover-frame">{cover_html}</div>
             <div class="meta">
+                <div class="entry-kicker">GENOME STABILITY INDUCER</div>
                 <h1>{html.escape(item["track"])}</h1>
                 <p>{html.escape(item["artist"])}</p>
                 <p class="album">{html.escape(item["album"])}</p>
@@ -597,12 +844,231 @@ def build_entry_page(item: dict) -> None: #HTML review page
             {''.join(section_cards)}
         </div>
     </main>
+    <script>
+        document.querySelectorAll(".section-info-button").forEach(button => {{
+            button.addEventListener("click", () => {{
+                const help = button.closest(".section-card").querySelector(".section-help");
+                const willOpen = help.hidden;
+                help.hidden = !willOpen;
+                button.setAttribute("aria-expanded", String(willOpen));
+            }});
+        }});
+    </script>
 </body>
 </html>
 """
 
     output_path = SITE_ENTRIES_DIR / item["html_file"] # final generated review page path
     output_path.write_text(html_page, encoding="utf-8") # save page)
+
+
+def build_p53_page(item: dict) -> None:
+    """Build the current P53 transmission without inventing editorial content."""
+    entry_path = ENTRIES_DIR / item["entry_file"]
+    sections = [section for section in extract_sections_from_markdown(entry_path) if section["content"].strip()]
+    cover_src = f'../covers/{item["cover_file"]}' if item.get("cover_file") else ""
+    cover_html = f'<img class="signal-cover" src="{cover_src}" alt="{html.escape(item["album"], quote = True)} cover">' if cover_src else ""
+    note_html = "".join(
+        f'<section class="transmission-note"><h2>{html.escape(section["title"])}</h2>{simple_markdown_to_html(section["content"])}</section>'
+        for section in sections
+    )
+    if not note_html:
+        note_html = '<section class="transmission-note pending"><h2>TRANSMISSION NOTES</h2><p>EDITORIAL SIGNAL PENDING</p></section>'
+    streaming_links_html = make_streaming_links(item)
+    page_title = html.escape(f'P53 — {item["track"]}')
+    html_page = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#25152b">
+    <title>{page_title}</title>
+    <style>
+        :root {{ --accent: {item["accent"]}; --p53: #ff58a6; --cyan: #35c9e9; }}
+        * {{ box-sizing: border-box; }}
+        body {{
+            margin: 0;
+            min-height: 100vh;
+            overflow-x: hidden;
+            color: #faf6ee;
+            font-family: Arial, sans-serif;
+            background:
+                linear-gradient(118deg, rgba(8,10,9,.88), rgba(31,15,36,.92)),
+                url("../covers/P53_cover.png") center / cover fixed;
+        }}
+        body::before {{
+            content: "";
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            background:
+                repeating-linear-gradient(0deg, transparent 0 6px, rgba(255,255,255,.035) 6px 7px),
+                radial-gradient(circle at 84% 14%, rgba(255,88,166,.23), transparent 30%);
+            mix-blend-mode: screen;
+        }}
+        .p53-page {{
+            position: relative;
+            width: min(1240px, calc(100% - 36px));
+            margin: 0 auto;
+            padding: 22px 0 80px;
+        }}
+        .p53-nav {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 14px;
+            padding: 13px 16px;
+            border: 1px solid rgba(255,255,255,.18);
+            border-radius: 20px 6px 20px 6px;
+            background: rgba(13,10,17,.82);
+        }}
+        .p53-nav a {{
+            color: #ff8bc2;
+            text-decoration: none;
+            font-size: 12px;
+            font-weight: 950;
+            letter-spacing: .14em;
+            transition: transform 360ms cubic-bezier(.2,.8,.2,1), color 180ms ease;
+        }}
+        .p53-nav a:hover,
+        .p53-nav a:focus-visible {{ color: #fff; transform: translateX(-4px); }}
+        .p53-nav span {{ color: rgba(255,255,255,.5); font-size: 10px; font-weight: 900; letter-spacing: .18em; }}
+        .transmission {{
+            display: grid;
+            grid-template-columns: minmax(300px, .9fr) minmax(0, 1.1fr);
+            min-height: 650px;
+            overflow: hidden;
+            border: 2px solid #ff65ad;
+            border-radius: 18px 62px 18px 62px;
+            background: rgba(16,12,22,.91);
+            box-shadow: 10px 10px 0 rgba(53,201,233,.42), -7px -5px 0 rgba(255,88,166,.28), 0 40px 100px rgba(0,0,0,.46);
+        }}
+        .protein-panel {{
+            position: relative;
+            min-height: 100%;
+            overflow: hidden;
+        }}
+        .protein-panel > img {{ width: 100%; height: 100%; object-fit: cover; display: block; }}
+        .protein-panel::after {{
+            content: "P53";
+            position: absolute;
+            left: 18px;
+            bottom: 10px;
+            color: rgba(255,255,255,.78);
+            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+            font-size: clamp(90px, 15vw, 220px);
+            line-height: .8;
+            text-shadow: 7px 0 var(--p53), -6px 0 var(--cyan);
+            animation: protein-pulse 5s ease-in-out infinite;
+        }}
+        .signal-panel {{
+            position: relative;
+            display: grid;
+            align-content: end;
+            padding: clamp(30px, 6vw, 76px);
+            background:
+                linear-gradient(150deg, color-mix(in srgb, var(--accent), transparent 82%), transparent 44%),
+                rgba(14,11,20,.94);
+        }}
+        .signal-panel::before {{
+            content: "CURRENT SIGNAL";
+            position: absolute;
+            right: 24px;
+            top: 22px;
+            color: #ff82bd;
+            font-size: 10px;
+            font-weight: 950;
+            letter-spacing: .22em;
+        }}
+        .signal-cover {{
+            width: min(230px, 54%);
+            margin-bottom: 26px;
+            border: 2px solid color-mix(in srgb, var(--accent), white 30%);
+            border-radius: 30px 8px 30px 8px;
+            box-shadow: 0 22px 54px rgba(0,0,0,.4);
+            transform: rotate(-2deg);
+        }}
+        .signal-code {{ color: var(--cyan); font-size: 11px; font-weight: 950; letter-spacing: .2em; }}
+        h1 {{ margin: 10px 0 8px; font-size: clamp(58px, 9vw, 126px); line-height: .82; letter-spacing: -.055em; text-wrap: balance; }}
+        .artist {{ margin: 0; font-size: clamp(20px, 3vw, 32px); }}
+        .album {{ margin: 6px 0 0; color: color-mix(in srgb, var(--accent), white 66%); }}
+        .stream-block {{ margin-top: 28px; }}
+        .stream-label {{ margin-bottom: 9px; color: #ff96c8; font-size: 12px; font-weight: 800; }}
+        .stream-links {{ display: flex; flex-wrap: wrap; gap: 8px; }}
+        .stream-link {{
+            padding: 11px 16px;
+            color: #fff;
+            text-decoration: none;
+            font-weight: 800;
+            border: 1px solid rgba(255,255,255,.24);
+            border-radius: 18px 5px 18px 5px;
+            background: rgba(255,255,255,.07);
+            transition: transform 360ms cubic-bezier(.2,.8,.2,1), border-radius 360ms cubic-bezier(.2,.8,.2,1);
+        }}
+        .stream-link:hover,
+        .stream-link:focus-visible {{ transform: translateY(-3px); border-radius: 5px 18px 5px 18px; }}
+        .p53-details {{ display: grid; grid-template-columns: .7fr 1.3fr; gap: 16px; margin-top: 18px; }}
+        .p53-about,
+        .transmission-note {{
+            padding: clamp(22px, 4vw, 38px);
+            border: 1px solid rgba(255,255,255,.16);
+            border-radius: 28px 8px 28px 8px;
+            background: rgba(12,11,15,.88);
+        }}
+        .p53-about h2,
+        .transmission-note h2 {{ margin: 0 0 14px; color: #ff7fbb; font-size: 24px; }}
+        .p53-about p,
+        .transmission-note p {{ margin: 0; color: rgba(255,255,255,.76); line-height: 1.6; }}
+        .pending {{ border-style: dashed; }}
+        .pending p {{ color: rgba(255,255,255,.38); font-size: 11px; font-weight: 950; letter-spacing: .18em; }}
+        @keyframes protein-pulse {{
+            0%, 82%, 100% {{ transform: scale(1); filter: none; }}
+            88% {{ transform: scale(1.035); filter: saturate(1.2); }}
+            92% {{ transform: scale(.99); }}
+        }}
+        @media (max-width: 760px) {{
+            .transmission {{ grid-template-columns: 1fr; min-height: 0; border-radius: 14px 38px 14px 38px; }}
+            .protein-panel {{ min-height: 360px; }}
+            .signal-panel {{ padding: 30px 22px 34px; }}
+            .signal-cover {{ width: 150px; }}
+            .p53-details {{ grid-template-columns: 1fr; }}
+        }}
+        @media (prefers-reduced-motion: reduce) {{
+            *, *::before, *::after {{ animation-duration: .01ms !important; transition-duration: .01ms !important; }}
+        }}
+    </style>
+</head>
+<body>
+    <main class="p53-page">
+        <header class="p53-nav">
+            <a href="../index.html">← GSI / WALL</a>
+            <span>P53 / TRANSMISSION</span>
+        </header>
+        <section class="transmission">
+            <div class="protein-panel"><img src="../covers/P53_cover.png" alt="Expressive P53 protein artwork"></div>
+            <div class="signal-panel">
+                {cover_html}
+                <span class="signal-code">GENOME GUARD / ACTIVE</span>
+                <h1>{html.escape(item["track"])}</h1>
+                <p class="artist">{html.escape(item["artist"])}</p>
+                <p class="album">{html.escape(item["album"])}</p>
+                {streaming_links_html}
+            </div>
+        </section>
+        <div class="p53-details">
+            <aside class="p53-about">
+                <h2>WHY P53?</h2>
+                <p class="pending">EDITORIAL SIGNAL PENDING</p>
+            </aside>
+            {note_html}
+        </div>
+    </main>
+</body>
+</html>
+"""
+    (SITE_P53_DIR / "latest.html").write_text(html_page, encoding = "utf-8")
+    print(f"\nBuilt P53 transmission: {SITE_P53_DIR / 'latest.html'}")
 
 
 def build_index_html(tracks: list[dict]) -> None:  #sample homepage
@@ -673,8 +1139,18 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         playlist_cover = (filter_settings.get("playlist_cover") or "").strip()
         playlist_cta = (filter_settings.get("playlist_cta") or "Want more of the same?").strip()
         playlist_src, playlist_color = playlist_visuals(playlist_cover, color)
+        filter_tracks = [
+            item for item in tracks
+            if filter_key in [tag.strip().lower() for tag in item.get("tags", "").split(",")]
+        ]
+        start_track = filter_tracks[0] if filter_tracks else None
+        preview_covers = [
+            f'covers/{item["cover_file"]}'
+            for item in filter_tracks
+            if item.get("cover_file")
+        ][:4]
         filter_buttons.append(
-            f'<button class="filter-btn" data-filter="{safe_filter_key}" aria-pressed="false">{safe_label}</button>'
+            f'<button class="filter-btn filter-{safe_filter_key}" data-filter="{safe_filter_key}" aria-pressed="false"><span>{safe_label}</span></button>'
         )
 
         filter_data[filter_key] = {
@@ -684,7 +1160,12 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             "playlist_url": playlist_url,
             "playlist_cover": playlist_src,
             "playlist_color": playlist_color,
-            "playlist_cta": playlist_cta
+            "playlist_cta": playlist_cta,
+            "count": len(filter_tracks),
+            "start_title": start_track["track"] if start_track else "",
+            "start_artist": start_track["artist"] if start_track else "",
+            "start_url": "p53/latest.html" if filter_key == "p53" and start_track else (f'entries/{start_track["html_file"]}' if start_track else ""),
+            "preview_covers": preview_covers
         }
 
     filters_html = f"""
@@ -694,8 +1175,15 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         </div>
         <div class="filter-description hidden" id="filter-description-box">
             <div class="filter-copy">
+                <div class="filter-count" id="filter-count"></div>
                 <h2 id="filter-title"></h2>
                 <p id="filter-description"></p>
+                <a class="filter-start hidden" id="filter-start" href="#">
+                    <span>START HERE</span>
+                    <strong id="filter-start-title"></strong>
+                    <small id="filter-start-artist"></small>
+                </a>
+                <div class="filter-fragments" id="filter-fragments" aria-hidden="true"></div>
             </div>
             <a class="playlist-card hidden" id="playlist-card" href="#" target="_blank" rel="noopener noreferrer">
                 <img id="playlist-cover" alt="Playlist cover">
@@ -704,6 +1192,24 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         </div>
     </section>
     """
+
+    p53_slug = (config.get("p53_current_slug") or "").strip()
+    p53_item = next((item for item in tracks if item["slug"] == p53_slug), None)
+    p53_html = ""
+    if p53_item:
+        p53_html = f"""
+        <a class="p53-broadcast" href="p53/latest.html" aria-label="Open the current P53 signal: {html.escape(p53_item['track'], quote = True)} by {html.escape(p53_item['artist'], quote = True)}">
+            <div class="p53-art">
+                <img src="covers/P53_cover.png" alt="P53 protein artwork">
+            </div>
+            <div class="p53-copy">
+                <span class="p53-label">P53 / CURRENT SIGNAL</span>
+                <strong>{html.escape(p53_item['track'])}</strong>
+                <small>{html.escape(p53_item['artist'])}</small>
+                <span class="p53-open">OPEN TRANSMISSION ↗</span>
+            </div>
+        </a>
+        """
 
     filter_data_json = json.dumps(filter_data).replace("</", "<\\/") # turns Python dict into JavaScript object text
     index_html = f"""<!DOCTYPE html>
@@ -1291,6 +1797,448 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             border-radius: 7px;
         }}
         }}
+        /* GSI 1.09: expressive controls mounted onto a distressed signal wall. */
+        body {{
+            --surface: #101012;
+            --paper: #e8e2d3;
+            --ink: #111114;
+            --signal-pink: #ff4f9a;
+            --signal-cyan: #32c9e8;
+            padding: clamp(18px, 4vw, 54px);
+            background:
+                radial-gradient(circle at 78% 4%, color-mix(in srgb, var(--page-tint, #687080), transparent 80%), transparent 32%),
+                linear-gradient(118deg, rgba(255,255,255,.035), transparent 28%),
+                repeating-linear-gradient(96deg, rgba(255,255,255,.018) 0 1px, transparent 1px 16px),
+                #0b0b0d;
+        }}
+        body::before {{
+            opacity: .28;
+            mix-blend-mode: soft-light;
+        }}
+        body::after {{
+            inset: 0;
+            filter: none;
+            opacity: .72;
+            background:
+                linear-gradient(90deg, transparent 0 48%, rgba(255,255,255,.018) 48% 49%, transparent 49%),
+                radial-gradient(circle at 18% 88%, color-mix(in srgb, var(--page-tint, #ffffff), transparent 90%), transparent 34%);
+        }}
+        .signal-transform {{
+            position: fixed;
+            inset: -15%;
+            z-index: 20;
+            pointer-events: none;
+            opacity: 0;
+            background:
+                linear-gradient(104deg, transparent 0 34%, color-mix(in srgb, var(--page-tint), transparent 48%) 42%, transparent 50%),
+                repeating-linear-gradient(0deg, transparent 0 8px, rgba(255,255,255,.08) 8px 9px);
+            mix-blend-mode: screen;
+            transform: translateX(-65%) skewX(-12deg);
+        }}
+        body.signal-transforming .signal-transform {{
+            animation: signal-sweep 700ms cubic-bezier(.2,.8,.2,1) both;
+        }}
+        @keyframes signal-sweep {{
+            0% {{ opacity: 0; transform: translateX(-65%) skewX(-12deg); }}
+            28% {{ opacity: .72; }}
+            100% {{ opacity: 0; transform: translateX(65%) skewX(-12deg); }}
+        }}
+        .site-hero {{
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(310px, .75fr);
+            gap: clamp(20px, 4vw, 54px);
+            align-items: stretch;
+            margin-bottom: 24px;
+            padding: 0;
+        }}
+        .site-hero::before,
+        .site-hero::after {{
+            content: none;
+        }}
+        .hero-copy {{
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            min-height: 330px;
+            padding: clamp(22px, 4vw, 48px);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,.13);
+            border-radius: 52px 14px 52px 14px;
+            background:
+                linear-gradient(140deg, rgba(255,255,255,.07), transparent 38%),
+                rgba(14,14,16,.86);
+            box-shadow: 0 28px 80px rgba(0,0,0,.3);
+        }}
+        .hero-label {{
+            margin: 0 0 18px 4px;
+            color: rgba(255,255,255,.56);
+            font-size: 11px;
+            font-weight: 900;
+            letter-spacing: .28em;
+        }}
+        .wordmark {{
+            align-self: flex-start;
+            padding: 12px 28px 16px 22px;
+            border-radius: 44px 12px 44px 12px;
+            color: var(--ink);
+            background: var(--paper);
+            -webkit-text-stroke: 0;
+            text-shadow: 6px 0 0 var(--signal-pink), -5px 0 0 var(--signal-cyan);
+            box-shadow: 12px 12px 0 color-mix(in srgb, var(--page-tint, #7b5cff), #000 34%);
+            transform: rotate(-2deg);
+            animation: none;
+            transition:
+                border-radius 500ms cubic-bezier(.2,.8,.2,1),
+                transform 500ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 240ms ease;
+        }}
+        .wordmark::before,
+        .wordmark::after {{
+            content: none;
+        }}
+        .wordmark:hover {{
+            animation: none;
+            border-radius: 12px 44px 12px 44px;
+            transform: rotate(1deg) scale(1.025);
+            text-shadow: 6px 0 0 var(--signal-pink), -5px 0 0 var(--signal-cyan);
+        }}
+        .hero-copy .intro {{
+            max-width: 760px;
+            max-height: none;
+            margin: 28px 0 0;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: none;
+            box-shadow: none;
+        }}
+        .hero-copy .intro p {{
+            margin: 0;
+            color: rgba(255,255,255,.72);
+            font-size: clamp(14px, 1.6vw, 18px);
+            line-height: 1.55;
+        }}
+        body.filter-active .hero-copy .intro {{
+            max-height: none;
+            margin-top: 28px;
+            padding: 0;
+            opacity: .36;
+            transform: none;
+        }}
+        .p53-broadcast {{
+            position: relative;
+            display: grid;
+            grid-template-rows: minmax(0, 1fr) auto;
+            min-height: 330px;
+            overflow: hidden;
+            color: #f8f5eb;
+            text-decoration: none;
+            border: 2px solid #ff72b5;
+            border-radius: 16px 54px 16px 54px;
+            background: #283625;
+            box-shadow: 0 0 0 6px rgba(255,79,154,.08), 0 26px 70px rgba(0,0,0,.38);
+            transition:
+                transform 520ms cubic-bezier(.2,.8,.2,1),
+                border-radius 520ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 220ms ease;
+        }}
+        .p53-broadcast:hover,
+        .p53-broadcast:focus-visible {{
+            transform: translateY(-7px) rotate(.5deg);
+            border-radius: 54px 16px 54px 16px;
+            box-shadow: 8px 8px 0 #22bce3, -7px -5px 0 rgba(255,79,154,.52), 0 32px 80px rgba(0,0,0,.42);
+        }}
+        .p53-art {{
+            min-height: 0;
+            overflow: hidden;
+        }}
+        .p53-art img {{
+            width: 100%;
+            height: 100%;
+            min-height: 190px;
+            object-fit: cover;
+            display: block;
+            transition: transform 900ms cubic-bezier(.2,.8,.2,1), filter 300ms ease;
+        }}
+        .p53-broadcast:hover .p53-art img {{
+            transform: scale(1.045) rotate(-1deg);
+            filter: saturate(1.12) contrast(1.04);
+        }}
+        .p53-copy {{
+            display: grid;
+            padding: 18px 20px 20px;
+            background: rgba(18,15,29,.9);
+        }}
+        .p53-label,
+        .p53-open {{
+            color: #ff87c0;
+            font-size: 10px;
+            font-weight: 950;
+            letter-spacing: .17em;
+        }}
+        .p53-copy strong {{
+            margin-top: 7px;
+            font-size: clamp(25px, 3vw, 42px);
+            line-height: 1;
+        }}
+        .p53-copy small {{
+            margin-top: 5px;
+            color: rgba(255,255,255,.68);
+        }}
+        .p53-open {{
+            margin-top: 16px;
+            color: #45d4ef;
+        }}
+        .filter-panel {{
+            margin-bottom: 20px;
+            padding: clamp(14px, 2vw, 22px);
+            border: 1px solid rgba(255,255,255,.12);
+            border-radius: 28px 8px 28px 8px;
+            background: rgba(12,12,14,.82);
+        }}
+        .filter-row {{
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-bottom: 0;
+        }}
+        .filter-btn {{
+            flex: 1 1 112px;
+            min-height: 52px;
+            padding: 12px 16px;
+            border-radius: 20px 7px 20px 7px;
+            transform: none;
+            box-shadow: none;
+            transition:
+                flex-grow 520ms cubic-bezier(.2,.8,.2,1),
+                border-radius 520ms cubic-bezier(.2,.8,.2,1),
+                transform 360ms cubic-bezier(.2,.8,.2,1),
+                color 180ms ease,
+                background 220ms ease;
+        }}
+        .filter-btn span {{
+            display: inline-block;
+            transition: transform 420ms cubic-bezier(.2,.8,.2,1), letter-spacing 420ms cubic-bezier(.2,.8,.2,1);
+        }}
+        .filter-btn:hover,
+        .filter-btn:focus-visible {{
+            transform: translateY(-3px);
+            border-radius: 7px 20px 7px 20px;
+        }}
+        .filter-btn.active {{
+            flex-grow: 2.25;
+            border-radius: 32px 8px 32px 8px;
+            transform: translateY(-2px);
+        }}
+        .filter-btn.active span {{
+            transform: scale(1.08);
+            letter-spacing: .14em;
+        }}
+        .filter-btn.filter-p53 {{
+            color: #160d18;
+            border-color: #ff78b9;
+            background: linear-gradient(110deg, #ff64aa, #57d6e9);
+        }}
+        .filter-description {{
+            position: relative;
+            display: grid;
+            grid-template-columns: minmax(0, 1fr) minmax(250px, 340px);
+            align-items: stretch;
+            gap: clamp(18px, 4vw, 52px);
+            isolation: isolate;
+        }}
+        body.filter-active .filter-description {{
+            min-height: 350px;
+            margin-top: 16px;
+            padding: clamp(24px, 4vw, 46px);
+            overflow: hidden;
+            border-radius: 42px 10px 42px 10px;
+        }}
+        .filter-description::before {{
+            content: attr(data-filter-label);
+            position: absolute;
+            left: -12px;
+            bottom: -34px;
+            z-index: -1;
+            color: color-mix(in srgb, var(--page-tint), transparent 85%);
+            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+            font-size: clamp(100px, 19vw, 270px);
+            line-height: .8;
+            text-transform: uppercase;
+            white-space: nowrap;
+            transform: skew(-8deg);
+        }}
+        .filter-copy {{
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+            justify-content: center;
+            min-height: 0;
+        }}
+        .filter-count {{
+            margin-bottom: 12px;
+            color: color-mix(in srgb, var(--page-tint), white 60%);
+            font-size: 11px;
+            font-weight: 950;
+            letter-spacing: .2em;
+        }}
+        .filter-description h2 {{
+            margin: 0 0 14px;
+            font-size: clamp(44px, 8vw, 104px);
+            line-height: .82;
+            letter-spacing: -.055em;
+            text-wrap: balance;
+        }}
+        .filter-description p {{
+            max-width: 680px;
+            font-size: 16px;
+        }}
+        .filter-start {{
+            display: grid;
+            grid-template-columns: auto 1fr;
+            column-gap: 12px;
+            align-items: center;
+            margin-top: 24px;
+            padding: 12px 16px;
+            color: #fff;
+            text-decoration: none;
+            border: 1px solid color-mix(in srgb, var(--page-tint), white 28%);
+            border-radius: 20px 6px 20px 6px;
+            background: color-mix(in srgb, var(--page-tint), #111 82%);
+            transition: transform 360ms cubic-bezier(.2,.8,.2,1), border-radius 360ms cubic-bezier(.2,.8,.2,1);
+        }}
+        .filter-start:hover,
+        .filter-start:focus-visible {{
+            transform: translateX(5px);
+            border-radius: 6px 20px 6px 20px;
+        }}
+        .filter-start > span {{
+            grid-row: span 2;
+            color: color-mix(in srgb, var(--page-tint), white 60%);
+            font-size: 9px;
+            font-weight: 950;
+            letter-spacing: .15em;
+        }}
+        .filter-start strong {{ font-size: 15px; }}
+        .filter-start small {{ color: rgba(255,255,255,.58); }}
+        .filter-start.hidden {{ display: none; }}
+        .filter-fragments {{
+            display: flex;
+            min-height: 54px;
+            margin-top: 20px;
+            padding-left: 8px;
+        }}
+        .filter-fragments img {{
+            width: 58px;
+            height: 58px;
+            object-fit: cover;
+            margin-left: -8px;
+            border: 2px solid color-mix(in srgb, var(--page-tint), white 36%);
+            border-radius: 16px 4px 16px 4px;
+            transform: rotate(calc((var(--fragment-index) - 1.5) * 3deg));
+            box-shadow: 0 8px 16px rgba(0,0,0,.3);
+        }}
+        .playlist-card {{
+            width: 100%;
+            min-width: 0;
+            align-self: center;
+            border-radius: 14px 38px 14px 38px;
+            transform: rotate(1.2deg);
+            transition: transform 520ms cubic-bezier(.2,.8,.2,1), border-radius 520ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms ease;
+        }}
+        .playlist-card:hover,
+        .playlist-card:focus-visible {{
+            transform: translateY(-7px) rotate(-.6deg) scale(1.015);
+            border-radius: 38px 14px 38px 14px;
+        }}
+        .playlist-card-text {{
+            padding: 16px 18px;
+        }}
+        .view-control {{
+            width: fit-content;
+            gap: 4px;
+            padding: 5px;
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 20px 7px 20px 7px;
+            background: rgba(10,10,12,.74);
+        }}
+        .view-btn {{
+            min-height: 38px;
+            padding-inline: 14px;
+            border-radius: 15px 5px 15px 5px;
+            transform: none;
+        }}
+        .view-btn:hover,
+        .view-btn:focus-visible {{
+            transform: translateY(-2px);
+            border-radius: 5px 15px 5px 15px;
+        }}
+        .view-btn.active {{
+            border-radius: 18px 5px 18px 5px;
+            transform: scale(1.04);
+        }}
+        .card {{
+            border-radius: 24px 8px 24px 8px;
+            transition:
+                transform 420ms cubic-bezier(.2,.8,.2,1),
+                border-radius 420ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 220ms ease,
+                border-color 180ms ease;
+        }}
+        .card:hover,
+        .card:focus-visible {{
+            border-radius: 8px 24px 8px 24px;
+            transform: translateY(-8px) scale(1.02) rotate(-.35deg);
+        }}
+        body.view-rearranging .card {{
+            pointer-events: none;
+            will-change: transform, opacity;
+        }}
+        body[data-view="gallery"] .card {{
+            border-radius: 12px 4px 12px 4px;
+        }}
+        @media (max-width: 820px) {{
+            .site-hero {{
+                grid-template-columns: 1fr;
+            }}
+            .hero-copy {{
+                min-height: 0;
+            }}
+            .p53-broadcast {{
+                grid-template-columns: 132px minmax(0, 1fr);
+                grid-template-rows: 1fr;
+                min-height: 166px;
+                border-radius: 12px 34px 12px 34px;
+            }}
+            .p53-art img {{ min-height: 100%; }}
+            .filter-btn {{ flex-basis: calc(33.333% - 5px); }}
+            .filter-btn.active {{ flex-grow: 1.8; }}
+            .filter-description {{ grid-template-columns: 1fr; }}
+            body.filter-active .filter-description {{ min-height: 0; }}
+            .playlist-card {{
+                width: min(100%, 330px);
+                justify-self: start;
+            }}
+        }}
+        @media (max-width: 520px) {{
+            .wordmark {{
+                font-size: clamp(72px, 25vw, 108px);
+                padding: 9px 20px 13px 15px;
+            }}
+            .hero-copy .intro p {{ font-size: 14px; }}
+            .p53-copy {{ padding: 15px; }}
+            .p53-copy strong {{ font-size: 25px; }}
+            .filter-btn {{
+                flex-basis: calc(50% - 5px);
+                min-height: 48px;
+            }}
+            .filter-btn.active {{ flex-basis: 100%; }}
+            body.filter-active .filter-description {{ padding: 24px 18px; }}
+            .filter-description h2 {{ font-size: clamp(42px, 17vw, 74px); }}
+            .view-control {{ width: auto; }}
+            .view-btn {{ flex: 1; }}
+        }}
+
         :root {{
             view-transition-name: none;
         }}
@@ -1339,11 +2287,15 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     </style>
 </head>
 <body data-view="wall">
-    <header class = "site-hero">
-        <div class = "wordmark">GSI</div>
-        <div class = "subtitle">{safe_page_title}</div>
+    <div class="signal-transform" aria-hidden="true"></div>
+    <header class="site-hero">
+        <div class="hero-copy">
+            <div class="hero-label">GENOME STABILITY INDUCERS</div>
+            <div class="wordmark">GSI</div>
+            {intro_html}
+        </div>
+        {p53_html}
     </header>
-    {intro_html}
     {filters_html}
     <div class="view-control" role="group" aria-label="Archive view">
         <span class="view-control-label">VIEW</span>
@@ -1376,6 +2328,11 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         const playlistCard = document.querySelector("#playlist-card");
         const playlistCover = document.querySelector("#playlist-cover");
         const playlistCta = document.querySelector("#playlist-cta");
+        const filterCount = document.querySelector("#filter-count");
+        const filterStart = document.querySelector("#filter-start");
+        const filterStartTitle = document.querySelector("#filter-start-title");
+        const filterStartArtist = document.querySelector("#filter-start-artist");
+        const filterFragments = document.querySelector("#filter-fragments");
 
         let activeFilter = null; // no filter is active when page first loads
         function storeView(viewName) {{
@@ -1399,7 +2356,34 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 storeView(viewName);
             }};
             const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            if (animate && !reducedMotion && document.startViewTransition) {{
+            const visibleCards = [...cards].filter(card => getComputedStyle(card).display !== "none");
+            const canRearrangeCards = animate && !reducedMotion && Element.prototype.animate && visibleCards.length <= 32;
+            if (canRearrangeCards) {{
+                const firstPositions = new Map(visibleCards.map(card => [card, card.getBoundingClientRect()]));
+                updateView();
+                document.body.classList.add("view-rearranging");
+                requestAnimationFrame(() => {{
+                    visibleCards.forEach((card, index) => {{
+                        const first = firstPositions.get(card);
+                        const last = card.getBoundingClientRect();
+                        const moveX = first.left - last.left;
+                        const moveY = first.top - last.top;
+                        card.animate(
+                            [
+                                {{ transform: `translate(${{moveX}}px, ${{moveY}}px)`, opacity: .68 }},
+                                {{ transform: "translate(0, 0)", opacity: 1 }}
+                            ],
+                            {{
+                                duration: 620,
+                                delay: Math.min(index * 12, 108),
+                                easing: "cubic-bezier(.2, .8, .2, 1)",
+                                fill: "both"
+                            }}
+                        );
+                    }});
+                    window.setTimeout(() => document.body.classList.remove("view-rearranging"), 780);
+                }});
+            }} else if (animate && !reducedMotion && document.startViewTransition) {{
                 document.documentElement.classList.add("view-changing");
                 const transition = document.startViewTransition(updateView);
                 transition.finished.finally(() => {{
@@ -1421,6 +2405,13 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             playlistCover.style.display = "none";
             playlistCta.textContent = "";
         }}
+        function triggerSignalTransform() {{
+            if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+            document.body.classList.remove("signal-transforming");
+            void document.body.offsetWidth; // restart the short transformation on repeated filter changes
+            document.body.classList.add("signal-transforming");
+            window.setTimeout(() => document.body.classList.remove("signal-transforming"), 720);
+        }}
         function clearFilter() {{ // return to default homepage state
             activeFilter = null; // forget active filter
             document.body.classList.remove("filter-active");
@@ -1438,6 +2429,11 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             box.classList.add("hidden"); // hide description panel
             title.textContent = ""; // clear title
             description.textContent = ""; // clear text
+            box.removeAttribute("data-filter-label");
+            filterCount.textContent = "";
+            filterStart.classList.add("hidden");
+            filterStart.removeAttribute("href");
+            filterFragments.replaceChildren();
             hidePlaylist();
         }}
 
@@ -1448,17 +2444,44 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             }}
 
             activeFilter = filterName; // remember active filter
+            triggerSignalTransform();
             document.body.classList.add("filter-active"); // we attach and remove a CSS class whose appearance is controlled by javascript
             const info = filterInfo[filterName]; // get label/description/color from config.json
 
             document.documentElement.style.setProperty("--page-tint", info.color); // update glow/tint
             title.textContent = info.label; // update panel title
             description.textContent = info.description; // update panel text
+            description.hidden = !info.description;
+            box.dataset.filterLabel = info.label;
+            filterCount.textContent = `${{String(info.count).padStart(2, "0")}} SIGNAL${{info.count === 1 ? "" : "S"}}`;
+            if (info.start_url) {{
+                filterStart.href = info.start_url;
+                filterStartTitle.textContent = info.start_title;
+                filterStartArtist.textContent = info.start_artist;
+                filterStart.classList.remove("hidden");
+            }} else {{
+                filterStart.classList.add("hidden");
+                filterStart.removeAttribute("href");
+            }}
+            filterFragments.replaceChildren(...info.preview_covers.map((src, index) => {{
+                const image = document.createElement("img");
+                image.src = src;
+                image.alt = "";
+                image.style.setProperty("--fragment-index", index);
+                return image;
+            }}));
             box.classList.remove("hidden"); // show description panel
-            if (info.playlist_url) {{
-                playlistCard.href = info.playlist_url;
+            if (info.playlist_url || info.playlist_cover) {{
+                playlistCard.href = info.playlist_url || info.start_url;
+                if (info.playlist_url) {{
+                    playlistCard.target = "_blank";
+                }} else {{
+                    playlistCard.removeAttribute("target");
+                }}
                 playlistCard.style.setProperty("--playlist-accent", info.playlist_color || info.color);
-                playlistCta.textContent = `${{info.playlist_cta || "Want more of the same?"}} ↗`;
+                playlistCta.textContent = info.playlist_url
+                    ? `${{info.playlist_cta || "Want more of the same?"}} ↗`
+                    : "CURRENT SIGNAL ↗";
                 if (info.playlist_cover) {{
                     playlistCover.src = info.playlist_cover;
                     playlistCover.style.display = "block";
@@ -1519,6 +2542,10 @@ def main() -> None:
     remove_stale_entry_pages(tracks)
     for item in tracks:
         build_entry_page(item)
+    p53_slug = (load_config().get("p53_current_slug") or "").strip()
+    p53_item = next((item for item in tracks if item["slug"] == p53_slug), None)
+    if p53_item:
+        build_p53_page(p53_item)
     build_index_html(tracks)
     print("\nDone.")
 

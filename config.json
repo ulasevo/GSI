@@ -1,6 +1,7 @@
 {
     "project_title": "GSI",
     "site_url": "https://ulasevo.github.io/GSI",
+    "p53_current_slug": "wet-leg-mangetout",
     "page_title": "GSI: Ulaş's Genomic Stability Inducers",
     "intro": "Music is the one non-negotiable no matter how I am to feel, to cherish that and the songs that play the miniscule role in shaping who I am, I am creating this authentic web-page, you're welcome to linger. Note that neither me nor should you take this space too seriously. Nothing is critically acclaimed, everything is personal.",
     "newest_first": true,
@@ -61,6 +62,14 @@
         "playlist_url":"https://music.apple.com/tr/playlist/bop/pl.u-DdAN8AdC0VX2XyW",
             "playlist_cover":"covers/bop_playlist_cover.webp",
             "playlist_cta":"Want more of the same?"
+    },
+    "p53": {
+        "label": "P53",
+        "description": "",
+        "color": "#ff4fa3",
+        "playlist_url": "",
+        "playlist_cover": "covers/P53_cover.png",
+        "playlist_cta": ""
     }
 
 },
@@ -72,5 +81,14 @@
         "Lore",
         "Reading",
         "Comment"
-    ]
+    ],
+    "section_info": {
+        "Charge": "The force, momentum or emotional voltage the song carries.",
+        "Sonical Attraction": "The sounds, textures and production details that pull me back.",
+        "Lyric/Vocal Detail": "Words, delivery and voices that stay with me.",
+        "Version of ulaş": "The version of me this song holds, recalls or calls forward.",
+        "Lore": "The history, context and memories gathered around the song.",
+        "Reading": "What I hear the song saying, implying or becoming.",
+        "Comment": "Anything that refuses a cleaner category."
+    }
 }
