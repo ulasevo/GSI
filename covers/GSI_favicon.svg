@@ -1,7 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="18" fill="#f2eee3"/>
-  <path d="M8 16h48v34H8z" fill="#0d0d0f" stroke="#ff4fa3" stroke-width="3"/>
-  <path d="M11 13h44" stroke="#38c8e8" stroke-width="4"/>
-  <text x="8" y="42" fill="#f2eee3" font-family="Arial Black, Arial, sans-serif" font-size="27" font-weight="900" letter-spacing="-2">GSI</text>
-  <circle cx="53" cy="53" r="5" fill="#d8e645"/>
+  <rect width="64" height="64" rx="15" fill="#0d0d0f"/>
+  <g transform="rotate(-3 32 32)">
+    <rect x="8" y="13" width="49" height="40" rx="12" fill="#ff4fa3" transform="translate(3 3)"/>
+    <rect x="8" y="13" width="49" height="40" rx="12" fill="#35c9e9" transform="translate(-3 -2)"/>
+    <rect x="8" y="13" width="49" height="40" rx="12" fill="#f1ede3"/>
+    <text x="10" y="43" fill="#0d0d0f" font-family="Impact, Arial Black, Arial, sans-serif" font-size="30" font-weight="900" letter-spacing="-2.4">GSI</text>
+  </g>
 </svg>

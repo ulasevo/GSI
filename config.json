@@ -4,7 +4,7 @@
     "p53_current_slug": "wet-leg-mangetout",
     "not_found": {
         "eyebrow": "SIGNAL LOST / 404",
-        "title": "THIS FREQUENCY DOESN'T EXIST.",
+        "title": "THIS FREQUENCY DOES NOT EXIST.",
         "message": "The page slipped out of the archive. Take a song for the walk back.",
         "recommendation_label": "INTERCEPTED SIGNAL"
     },
@@ -15,6 +15,7 @@
     "filters": {
         "personal": {
             "label": "Personal",
+            "room_label_lines": ["PERSONAL"],
             "description": "Songs that got tangled with memory, body, recovery, desire or some version of me.",
             "color": "#d64b6a",
             "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls",
@@ -23,6 +24,7 @@
     },
     "bassline": {
         "label": "Bassline",
+        "room_label_lines": ["BASSSSSSS", "LINE"],
         "description": "the type'a bass that makes you zone out and vibe in. Click and figure out what makes each song special",
         "color": "#7b5cff",
         "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls",
@@ -31,6 +33,7 @@
     },
     "ulas": {
         "label": "Ulaş's Selection",
+        "room_label_lines": ["ULAŞ'S", "SELECTION"],
         "description": "the ever changing list of songs that I hand-picked for you to delve into",
         "color":"#ff6b35",
         "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls",
@@ -39,6 +42,7 @@
     },
     "dreamy": {
         "label": "Dreamy",
+        "room_label_lines": ["DREAMY"],
         "description": "A song carries the potential to make you feel like you're not breathing the same air for its duration, these songs make full use of that potential and promise to be packed with their own atmosphere.",
         "color": "#c5c9d6",
         "playlist_url": "https://music.apple.com/tr/playlist/dup/pl.u-mJy8gPDFN50d0Go",
@@ -47,6 +51,7 @@
     },
     "bite": {
         "label": "Bite",
+        "room_label_lines": ["BITE", "BITE", "BITE"],
         "description": "Careful, these songs have teeth! But they're quite fun to listen to if you keep your distance. Please do not feed them, though.",
         "color": "#d8d34a",
         "playlist_url":"https://music.apple.com/tr/playlist/bite/pl.u-76oNl2mTvXYjY4g",
@@ -55,6 +60,7 @@
     },
     "pop": {
         "label": "POP",
+        "room_label_lines": ["POP"],
         "description": "Uplifting, beautifully mixed, stupid but with identity",
         "color": "#49d9ef",
         "playlist_url":"https://music.apple.com/tr/playlist/pl.u-aZb0k79F1Mr5r9W?a=join&it=vpMwQBYSvA1x1GjfgN1DG&l=tr",
@@ -63,6 +69,7 @@
     },
     "distortion": {
         "label": "Distortion",
+        "room_label_lines": ["DISTORTION"],
         "description": "Tracks that let the riffs breathe, sometimes so much so that you won't hear the lyrics. But that's part of the fun, right?",
         "color": "#665cf0",
         "playlist_url":"https://music.apple.com/tr/playlist/bop/pl.u-DdAN8AdC0VX2XyW",
@@ -71,6 +78,7 @@
     },
     "p53": {
         "label": "P53",
+        "room_label_lines": ["P53"],
         "description": "",
         "color": "#ff4fa3",
         "playlist_url": "",

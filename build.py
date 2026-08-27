@@ -1176,6 +1176,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             "start_artist": start_track["artist"] if start_track else "",
             "start_url": "p53/latest.html" if filter_key == "p53" and start_track else (f'entries/{start_track["html_file"]}' if start_track else ""),
             "preview_covers": preview_covers
+            ,"room_label_lines": filter_settings.get("room_label_lines") or [label]
         }
 
     filters_html = f"""
@@ -1184,6 +1185,8 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             {''.join(filter_buttons)}
         </div>
         <div class="filter-description hidden" id="filter-description-box">
+            <div class="filter-room-label" id="filter-room-label" aria-hidden="true"></div>
+            <div class="filter-decor" id="filter-decor" aria-hidden="true"></div>
             <div class="filter-copy">
                 <div class="filter-count" id="filter-count"></div>
                 <h2 id="filter-title"></h2>
@@ -1212,11 +1215,15 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             <div class="p53-art">
                 <img src="covers/P53_cover.png" alt="P53 protein artwork">
             </div>
-            <div class="p53-copy">
-                <span class="p53-label">P53 / CURRENT SIGNAL</span>
-                <strong>{html.escape(p53_item['track'])}</strong>
-                <small>{html.escape(p53_item['artist'])}</small>
-                <span class="p53-open">OPEN TRANSMISSION ↗</span>
+            <div class="p53-overlay">
+                <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover">
+                <div class="p53-signal-copy">
+                    <span>CURRENT SIGNAL</span>
+                    <strong>{html.escape(p53_item['track'])}</strong>
+                    <small>{html.escape(p53_item['artist'])}</small>
+                    <b aria-hidden="true">↗</b>
+                </div>
+                <div class="p53-radio">RADIO P53</div>
             </div>
         </a>
         """
@@ -1873,6 +1880,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             content: none;
         }}
         .hero-copy {{
+            position: relative;
             display: flex;
             flex-direction: column;
             justify-content: center; /* balance the desktop panel against the tall P53 artwork */
@@ -1883,15 +1891,39 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             border-radius: 52px 14px 52px 14px;
             background:
                 linear-gradient(140deg, rgba(255,255,255,.07), transparent 38%),
+                linear-gradient(115deg, color-mix(in srgb, var(--page-tint, #fff), transparent 91%), transparent 58%),
                 rgba(14,14,16,.86);
             box-shadow: 0 28px 80px rgba(0,0,0,.3);
+            isolation: isolate;
+            transition: background 520ms ease, border-radius 520ms cubic-bezier(.2,.8,.2,1), border-color 300ms ease;
         }}
-        .hero-label {{
-            margin: 0 0 18px 4px;
-            color: rgba(255,255,255,.56);
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: .28em;
+        body.filter-active .hero-copy {{
+            border-color: color-mix(in srgb, var(--page-tint), white 20%);
+            border-radius: 18px 58px 18px 58px;
+        }}
+        .hero-architecture {{
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+            line-height: .72;
+            transition: transform 650ms cubic-bezier(.2,.8,.2,1), opacity 300ms ease;
+        }}
+        .hero-architecture span {{
+            position: absolute;
+            color: color-mix(in srgb, var(--page-tint, #fff), transparent 89%);
+            font-size: clamp(72px, 9vw, 142px);
+            letter-spacing: -.04em;
+            white-space: nowrap;
+        }}
+        .hero-architecture span:nth-child(1) {{ top: -10px; right: -18px; transform: rotate(3deg); }}
+        .hero-architecture span:nth-child(2) {{ top: 39%; left: -26px; color: transparent; -webkit-text-stroke: 2px color-mix(in srgb, var(--page-tint, #fff), transparent 82%); transform: scaleX(1.18); }}
+        .hero-architecture span:nth-child(3) {{ right: -16px; bottom: -10px; transform: skew(-10deg); }}
+        body.signal-transforming .hero-architecture {{ transform: translateX(12px) skew(-2deg); opacity: .72; }}
+        body.signal-transforming .hero-copy {{
+            box-shadow: inset 8px 0 0 color-mix(in srgb, var(--page-tint), transparent 34%), 0 28px 80px rgba(0,0,0,.3);
         }}
         .wordmark {{
             align-self: flex-start;
@@ -1944,8 +1976,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         }}
         .p53-broadcast {{
             position: relative;
-            display: grid;
-            grid-template-rows: minmax(0, 1fr) auto;
+            display: block;
             min-height: 330px;
             overflow: hidden;
             color: #f8f5eb;
@@ -1966,13 +1997,14 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             box-shadow: 8px 8px 0 #22bce3, -7px -5px 0 rgba(255,79,154,.52), 0 32px 80px rgba(0,0,0,.42);
         }}
         .p53-art {{
-            min-height: 0;
+            position: absolute;
+            inset: 0;
             overflow: hidden;
         }}
         .p53-art img {{
             width: 100%;
             height: 100%;
-            min-height: 190px;
+            min-height: 100%;
             object-fit: cover;
             display: block;
             transition: transform 900ms cubic-bezier(.2,.8,.2,1), filter 300ms ease;
@@ -1981,30 +2013,75 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             transform: scale(1.045) rotate(-1deg);
             filter: saturate(1.12) contrast(1.04);
         }}
-        .p53-copy {{
+        .p53-overlay {{
+            position: absolute;
+            inset: 0;
             display: grid;
-            padding: 18px 20px 20px;
-            background: rgba(18,15,29,.9);
+            grid-template-columns: auto minmax(0, 1fr);
+            grid-template-rows: 1fr auto;
+            align-items: end;
+            gap: 14px;
+            padding: 20px;
+            background: linear-gradient(180deg, transparent 34%, rgba(12,10,18,.22) 55%, rgba(12,10,18,.94) 100%);
         }}
-        .p53-label,
-        .p53-open {{
-            color: #ff87c0;
+        .p53-album {{
+            grid-row: 2;
+            width: 82px;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,.78);
+            border-radius: 15px 5px 15px 5px;
+            box-shadow: 6px 6px 0 rgba(53,201,233,.58);
+            transform: rotate(-3deg);
+        }}
+        .p53-signal-copy {{
+            grid-column: 2;
+            grid-row: 1;
+            align-self: end;
+            justify-self: end;
+            max-width: 72%;
+            text-align: right;
+        }}
+        .p53-signal-copy span {{
+            color: #5ee4fa;
             font-size: 10px;
             font-weight: 950;
             letter-spacing: .17em;
         }}
-        .p53-copy strong {{
-            margin-top: 7px;
-            font-size: clamp(25px, 3vw, 42px);
+        .p53-signal-copy strong {{
+            display: block;
+            margin-top: 6px;
+            font-size: clamp(21px, 2.1vw, 31px);
             line-height: 1;
         }}
-        .p53-copy small {{
+        .p53-signal-copy small {{
+            display: block;
             margin-top: 5px;
             color: rgba(255,255,255,.68);
         }}
-        .p53-open {{
-            margin-top: 16px;
-            color: #45d4ef;
+        .p53-signal-copy b {{
+            display: inline-grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            margin-top: 10px;
+            border-radius: 50% 50% 16% 50%;
+            color: #111;
+            background: #ff79bb;
+            font-size: 18px;
+        }}
+        .p53-radio {{
+            grid-column: 2;
+            grid-row: 2;
+            align-self: end;
+            justify-self: end;
+            color: #f4ed50;
+            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+            font-size: clamp(36px, 4.6vw, 68px);
+            line-height: .78;
+            letter-spacing: -.035em;
+            text-align: right;
+            text-shadow: 4px 0 0 rgba(255,79,163,.72), -3px 0 0 rgba(53,201,233,.7);
         }}
         .filter-panel {{
             margin-bottom: 20px;
@@ -2071,8 +2148,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             overflow: hidden;
             border-radius: 42px 10px 42px 10px;
         }}
-        .filter-description::before {{
-            content: attr(data-filter-label);
+        .filter-room-label {{
             position: absolute;
             left: -12px;
             bottom: -34px;
@@ -2082,8 +2158,78 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             font-size: clamp(100px, 19vw, 270px);
             line-height: .8;
             text-transform: uppercase;
-            white-space: nowrap;
             transform: skew(-8deg);
+            pointer-events: none;
+        }}
+        .filter-room-label span {{
+            display: block;
+            white-space: nowrap;
+        }}
+        .filter-room-label span + span {{ margin-left: .16em; }}
+        .filter-decor {{
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+        }}
+        .filter-decor::before,
+        .filter-decor::after {{
+            content: "";
+            position: absolute;
+        }}
+        .filter-description[data-filter="bassline"] .filter-room-label {{
+            filter: drop-shadow(8px 0 0 color-mix(in srgb, var(--page-tint), transparent 90%));
+            letter-spacing: -.05em;
+        }}
+        body.signal-transforming .filter-description[data-filter="bassline"] .filter-room-label {{ animation: bass-hit 520ms steps(3,end) both; }}
+        @keyframes bass-hit {{ 0%,100% {{ transform:skew(-8deg) translateX(0); }} 35% {{ transform:skew(-12deg) translateX(13px); }} 65% {{ transform:skew(-5deg) translateX(-6px); }} }}
+        .filter-description[data-filter="dreamy"] .filter-room-label {{
+            left: auto;
+            right: -9%;
+            bottom: 3%;
+            color: transparent;
+            -webkit-text-stroke: 3px color-mix(in srgb, var(--page-tint), transparent 72%);
+            transform: rotate(-14deg) scale(1.14);
+            animation: dreamy-drift 12s ease-in-out infinite alternate;
+        }}
+        @keyframes dreamy-drift {{ to {{ transform:translate(-24px,-16px) rotate(-7deg) scale(1.2); }} }}
+        .filter-description[data-filter="bite"] .filter-decor::after {{
+            right: -24px; top: -34px; width: 230px; aspect-ratio: 1;
+            background: url("covers/bite_playlist_cover.webp") center/cover;
+            opacity: .2; transform: rotate(12deg);
+            clip-path: polygon(0 0,100% 0,100% 100%,78% 100%,72% 86%,61% 100%,48% 86%,35% 100%,20% 83%,0 93%);
+        }}
+        .filter-description[data-filter="pop"] .filter-decor::before {{
+            content: "POP  pop  POP  pop  POP  POP";
+            inset: 8% 2% auto 25%;
+            color: color-mix(in srgb, var(--page-tint), transparent 78%);
+            font: 900 clamp(24px,4vw,58px)/1.45 Arial,sans-serif;
+            word-spacing: .7em;
+            opacity: .65;
+        }}
+        body.signal-transforming .filter-description[data-filter="pop"] .filter-decor::before {{ animation: pop-settle 620ms cubic-bezier(.2,.8,.2,1) both; }}
+        @keyframes pop-settle {{ from {{ opacity:0; transform:scale(.75) rotate(-4deg); }} to {{ opacity:.65; transform:none; }} }}
+        .filter-description[data-filter="distortion"] .filter-decor {{
+            background: linear-gradient(112deg,transparent 0 54%,color-mix(in srgb,var(--page-tint),transparent 82%) 54% 55%,transparent 55%), linear-gradient(78deg,transparent 0 71%,rgba(255,255,255,.08) 71% 72%,transparent 72%);
+            clip-path: polygon(0 0,47% 0,51% 8%,69% 0,100% 0,100% 39%,93% 46%,100% 58%,100% 100%,62% 100%,57% 91%,38% 100%,0 100%,0 64%,7% 57%,0 43%);
+        }}
+        .filter-description[data-filter="personal"] .filter-decor::before {{
+            content: "MEMORY / BODY / RECOVERY / DESIRE";
+            right:-28px; top:28px; width:320px;
+            color:color-mix(in srgb,var(--page-tint),transparent 72%);
+            font:900 13px/2.4 Arial,sans-serif; letter-spacing:.22em; transform:rotate(8deg);
+        }}
+        .filter-description[data-filter="ulas"] .filter-decor::before,
+        .filter-description[data-filter="ulas"] .filter-decor::after {{
+            width:90px; height:90px; border-color:color-mix(in srgb,var(--page-tint),transparent 42%); border-style:solid;
+        }}
+        .filter-description[data-filter="ulas"] .filter-decor::before {{ left:18px; top:18px; border-width:4px 0 0 4px; }}
+        .filter-description[data-filter="ulas"] .filter-decor::after {{ right:18px; bottom:18px; border-width:0 4px 4px 0; }}
+        @media (max-width:760px) {{
+            .filter-room-label {{ font-size:clamp(82px,28vw,150px); }}
+            .filter-description[data-filter="ulas"] .filter-room-label {{ font-size:clamp(66px,22vw,118px); }}
+            .hero-architecture span {{ font-size:clamp(62px,24vw,112px); }}
         }}
         .filter-copy {{
             display: flex;
@@ -2222,9 +2368,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 min-height: 0;
             }}
             .p53-broadcast {{
-                grid-template-columns: 132px minmax(0, 1fr);
-                grid-template-rows: 1fr;
-                min-height: 166px;
+                min-height: 280px; /* leave room for Radio P53 and the album transmission */
                 border-radius: 12px 34px 12px 34px;
             }}
             .p53-art img {{ min-height: 100%; }}
@@ -2243,8 +2387,10 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 padding: 9px 20px 13px 15px;
             }}
             .hero-copy .intro p {{ font-size: 14px; }}
-            .p53-copy {{ padding: 15px; }}
-            .p53-copy strong {{ font-size: 25px; }}
+            .p53-overlay {{ padding: 15px; gap: 10px; }}
+            .p53-album {{ width: 68px; }}
+            .p53-signal-copy {{ max-width: 78%; }}
+            .p53-radio {{ font-size: 38px; }}
             .filter-btn {{
                 flex-basis: calc(50% - 5px);
                 min-height: 48px;
@@ -2270,7 +2416,9 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     <div class="signal-transform" aria-hidden="true"></div>
     <header class="site-hero">
         <div class="hero-copy">
-            <div class="hero-label">GENOME STABILITY INDUCERS</div>
+            <div class="hero-architecture" aria-hidden="true">
+                <span>GENOME</span><span>STABILITY</span><span>INDUCERS</span>
+            </div>
             <div class="wordmark">GSI</div>
             {intro_html}
         </div>
@@ -2314,6 +2462,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         const filterStartTitle = document.querySelector("#filter-start-title");
         const filterStartArtist = document.querySelector("#filter-start-artist");
         const filterFragments = document.querySelector("#filter-fragments");
+        const filterRoomLabel = document.querySelector("#filter-room-label");
 
         let activeFilter = null; // no filter is active when page first loads
         function storeView(viewName) {{
@@ -2374,6 +2523,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         function clearFilter() {{ // return to default homepage state
             activeFilter = null; // forget active filter
             document.body.classList.remove("filter-active");
+            document.body.removeAttribute("data-active-filter");
             document.documentElement.style.setProperty("--page-tint", "#ffffff"); // reset tint/glow
 
             buttons.forEach(button => {{ // remove active look from every button
@@ -2389,6 +2539,8 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             title.textContent = ""; // clear title
             description.textContent = ""; // clear text
             box.removeAttribute("data-filter-label");
+            box.removeAttribute("data-filter");
+            filterRoomLabel.replaceChildren();
             filterCount.textContent = "";
             filterStart.classList.add("hidden");
             filterStart.removeAttribute("href");
@@ -2405,6 +2557,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             activeFilter = filterName; // remember active filter
             triggerSignalTransform();
             document.body.classList.add("filter-active"); // we attach and remove a CSS class whose appearance is controlled by javascript
+            document.body.dataset.activeFilter = filterName;
             const info = filterInfo[filterName]; // get label/description/color from config.json
 
             document.documentElement.style.setProperty("--page-tint", info.color); // update glow/tint
@@ -2412,6 +2565,12 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             description.textContent = info.description; // update panel text
             description.hidden = !info.description;
             box.dataset.filterLabel = info.label;
+            box.dataset.filter = filterName;
+            filterRoomLabel.replaceChildren(...info.room_label_lines.map(line => {{
+                const span = document.createElement("span");
+                span.textContent = line;
+                return span;
+            }}));
             filterCount.textContent = `${{String(info.count).padStart(2, "0")}} SIGNAL${{info.count === 1 ? "" : "S"}}`;
             if (info.start_url) {{
                 filterStart.href = info.start_url;
@@ -2501,10 +2660,14 @@ def build_404_page(tracks: list[dict]) -> None:
             "cover": item.get("cover_file", ""),
             "url": f'entries/{item["html_file"]}',
             "accent": item["accent"],
+            "spotify": item.get("spotify_url") or f'https://open.spotify.com/search/{quote(item["artist"] + " " + item["track"], safe="")}',
+            "apple": item.get("apple_url") or f'https://music.apple.com/search?term={quote_plus(item["artist"] + " " + item["track"])}',
         }
         for item in tracks
     ]
     recommendation_json = json.dumps(recommendations, ensure_ascii = False).replace("</", "<\\/")
+    not_found_title = html.escape(copy.get("title", "THIS FREQUENCY DOES NOT EXIST."))
+    not_found_title = not_found_title.replace(" NOT ", ' <em>NOT</em> ')
     protein_drops = "".join(
         f'<span style="--x:{(index * 17) % 101}%;--delay:-{index * .73:.2f}s;--speed:{9 + index % 7}s;--size:{34 + index % 5 * 13}px"></span>'
         for index in range(18)
@@ -2523,26 +2686,29 @@ def build_404_page(tracks: list[dict]) -> None:
         * {{ box-sizing:border-box; }}
         body {{ margin:0; min-height:100vh; overflow:hidden; color:var(--paper); font-family:Arial,sans-serif; background:#0d0d0f; }}
         body::before {{ content:""; position:fixed; inset:0; background:repeating-linear-gradient(92deg, transparent 0 54px, rgba(255,255,255,.025) 55px), radial-gradient(circle at 72% 20%, rgba(255,79,163,.16), transparent 36%); }}
-        .protein-rain {{ position:fixed; inset:0; overflow:hidden; opacity:.32; pointer-events:none; }}
-        .protein-rain span {{ position:absolute; left:var(--x); top:-100px; width:var(--size); aspect-ratio:1; border:3px solid var(--cyan); border-radius:62% 38% 67% 33% / 42% 58% 42% 58%; filter:drop-shadow(9px 4px 0 rgba(255,79,163,.56)); animation:dissolve var(--speed) linear var(--delay) infinite; }}
-        .protein-rain span::before, .protein-rain span::after {{ content:""; position:absolute; border:2px solid currentColor; border-radius:50%; }}
-        .protein-rain span::before {{ inset:18% -28% 24% 24%; transform:rotate(38deg); }}
-        .protein-rain span::after {{ inset:44% 18% -30% -20%; transform:rotate(-28deg); }}
+        .protein-rain {{ position:fixed; inset:0; overflow:hidden; opacity:.3; pointer-events:none; }}
+        .protein-rain span {{ position:absolute; left:var(--x); top:-100px; width:var(--size); aspect-ratio:1; background:url("covers/P53_cover.png") center/420%; border-radius:62% 38% 67% 33% / 42% 58% 42% 58%; clip-path:polygon(46% 0,64% 11%,72% 30%,95% 41%,83% 58%,96% 78%,72% 92%,51% 78%,30% 100%,18% 73%,0 58%,17% 39%,8% 17%,32% 21%); filter:grayscale(.6) contrast(1.35) drop-shadow(7px 4px 0 rgba(255,79,163,.45)); animation:dissolve var(--speed) linear var(--delay) infinite; }}
+        .protein-rain span:nth-child(3n) {{ background-position:20% 74%; }}
+        .protein-rain span:nth-child(3n+1) {{ background-position:78% 28%; }}
         @keyframes dissolve {{ 0% {{ transform:translateY(-15vh) rotate(0); opacity:0; }} 12% {{ opacity:.8; }} 72% {{ opacity:.34; filter:blur(0) drop-shadow(9px 4px 0 rgba(255,79,163,.5)); }} 100% {{ transform:translateY(125vh) rotate(220deg) scale(.35); opacity:0; filter:blur(5px); }} }}
         main {{ position:relative; z-index:1; width:min(1160px, calc(100% - 36px)); min-height:100vh; margin:auto; display:grid; grid-template-columns:minmax(0,1.25fr) minmax(280px,.75fr); align-items:center; gap:clamp(24px,6vw,80px); }}
         .eyebrow {{ color:var(--pink); font-size:12px; font-weight:900; letter-spacing:.24em; }}
-        h1 {{ max-width:780px; margin:16px 0 22px; font-family:Impact,Haettenschweiler,"Arial Black",sans-serif; font-size:clamp(68px,10vw,156px); line-height:.78; letter-spacing:-.045em; text-shadow:7px 0 0 rgba(57,200,232,.7); transform:skew(-4deg); }}
+        h1 {{ max-width:820px; margin:16px 0 22px; font-family:Impact,Haettenschweiler,"Arial Black",sans-serif; font-size:clamp(62px,8.8vw,142px); line-height:.79; letter-spacing:-.045em; text-shadow:8px 5px 0 rgba(0,0,0,.9), 12px 5px 0 rgba(255,79,163,.72), -6px -2px 0 rgba(57,200,232,.7); transform:skew(-4deg); }}
+        h1 em {{ display:block; width:max-content; color:var(--pink); font-style:normal; font-size:1.18em; line-height:.72; transform:translateX(clamp(18px,6vw,82px)) skew(7deg); text-shadow:7px 5px 0 #000, -5px 0 0 var(--cyan); }}
         .message {{ max-width:620px; font-size:clamp(17px,2vw,23px); line-height:1.5; color:rgba(241,237,227,.72); }}
         .home {{ display:inline-flex; margin-top:24px; padding:15px 22px; color:var(--ink); background:var(--paper); border-radius:24px 7px 24px 7px; font-size:12px; font-weight:900; letter-spacing:.15em; text-decoration:none; transition:transform .25s ease,border-radius .35s ease; }}
         .home:hover,.home:focus-visible {{ transform:translateY(-4px) rotate(-1deg); border-radius:7px 24px 7px 24px; }}
-        .recommendation {{ overflow:hidden; color:var(--paper); text-decoration:none; border:2px solid var(--accent,var(--pink)); border-radius:18px 52px 18px 52px; background:#141417; box-shadow:10px 10px 0 color-mix(in srgb,var(--accent),transparent 65%); transition:transform .35s ease,border-radius .35s ease; }}
-        .recommendation:hover,.recommendation:focus-visible {{ transform:translateY(-7px) rotate(1deg); border-radius:52px 18px 52px 18px; }}
+        .recommendation {{ overflow:hidden; color:var(--paper); border:2px solid var(--accent,var(--pink)); border-radius:18px 52px 18px 52px; background:#141417; box-shadow:10px 10px 0 color-mix(in srgb,var(--accent),transparent 65%); }}
         .recommendation img {{ display:block; width:100%; aspect-ratio:1; object-fit:cover; background:#222; }}
         .signal-copy {{ padding:20px; }}
         .signal-copy span {{ color:color-mix(in srgb,var(--accent),white 44%); font-size:10px; font-weight:900; letter-spacing:.2em; }}
         .signal-copy strong {{ display:block; margin-top:10px; font-size:clamp(25px,4vw,44px); line-height:.95; }}
         .signal-copy small {{ display:block; margin-top:8px; color:rgba(255,255,255,.64); font-size:15px; }}
-        @media(max-width:760px) {{ body {{ overflow:auto; }} main {{ min-height:100svh; grid-template-columns:1fr; padding:58px 0; }} h1 {{ font-size:clamp(64px,24vw,104px); }} .recommendation {{ width:min(100%,390px); }} }}
+        .signal-actions {{ display:grid; grid-template-columns:1fr 1fr; gap:7px; margin-top:16px; }}
+        .signal-actions a {{ padding:11px 10px; color:var(--paper); border:1px solid rgba(255,255,255,.22); border-radius:16px 5px 16px 5px; font-size:10px; font-weight:900; letter-spacing:.08em; text-align:center; text-decoration:none; transition:transform .22s ease,border-radius .3s ease; }}
+        .signal-actions a:hover,.signal-actions a:focus-visible {{ transform:translateY(-3px); border-radius:5px 16px 5px 16px; }}
+        .signal-actions .read {{ grid-column:1/-1; color:color-mix(in srgb,var(--accent),white 45%); }}
+        @media(max-width:760px) {{ body {{ overflow-x:hidden; overflow-y:auto; }} main {{ min-height:100svh; grid-template-columns:1fr; padding:58px 0; }} h1 {{ font-size:clamp(58px,20.5vw,90px); }} .recommendation {{ width:min(100%,390px); }} }}
         @media(prefers-reduced-motion:reduce) {{ *,*::before,*::after {{ animation-duration:.01ms!important; transition-duration:.01ms!important; }} }}
     </style>
 </head>
@@ -2551,18 +2717,23 @@ def build_404_page(tracks: list[dict]) -> None:
     <main>
         <section>
             <div class="eyebrow">{html.escape(copy.get("eyebrow", "SIGNAL LOST / 404"))}</div>
-            <h1>{html.escape(copy.get("title", "THIS FREQUENCY DOESN'T EXIST."))}</h1>
+            <h1>{not_found_title}</h1>
             <p class="message">{html.escape(copy.get("message", "The page slipped out of the archive."))}</p>
             <a class="home" id="home-link" href="./">RETURN TO GSI / WALL</a>
         </section>
-        <a class="recommendation" id="recommendation" href="#" style="--accent:#ff4fa3">
+        <article class="recommendation" id="recommendation" style="--accent:#ff4fa3">
             <img id="signal-cover" alt="">
             <div class="signal-copy">
                 <span>{html.escape(copy.get("recommendation_label", "INTERCEPTED SIGNAL"))}</span>
                 <strong id="signal-track"></strong>
                 <small id="signal-artist"></small>
+                <div class="signal-actions">
+                    <a id="signal-spotify" href="#" target="_blank" rel="noopener noreferrer">SPOTIFY ↗</a>
+                    <a id="signal-apple" href="#" target="_blank" rel="noopener noreferrer">APPLE MUSIC ↗</a>
+                    <a class="read" id="signal-read" href="#">READ IN GSI</a>
+                </div>
             </div>
-        </a>
+        </article>
     </main>
     <script>
         const tracks = {recommendation_json};
@@ -2572,13 +2743,15 @@ def build_404_page(tracks: list[dict]) -> None:
         document.querySelector("#favicon").href = root + "covers/GSI_favicon.svg";
         document.querySelector("#home-link").href = root;
         const card = document.querySelector("#recommendation");
-        card.href = root + selected.url;
         card.style.setProperty("--accent", selected.accent);
         const cover = document.querySelector("#signal-cover");
         cover.src = root + "covers/" + selected.cover;
         cover.alt = selected.album + " cover";
         document.querySelector("#signal-track").textContent = selected.track;
         document.querySelector("#signal-artist").textContent = selected.artist;
+        document.querySelector("#signal-spotify").href = selected.spotify;
+        document.querySelector("#signal-apple").href = selected.apple;
+        document.querySelector("#signal-read").href = root + selected.url;
     </script>
 </body>
 </html>
