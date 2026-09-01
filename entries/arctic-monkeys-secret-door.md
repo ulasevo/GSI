@@ -3,7 +3,7 @@ artist: "Arctic Monkeys"
 track: "Secret Door"
 album: "Humbug (Bonus Track Version)"
 cover: "../covers/arctic-monkeys-secret-door.jpg"
-accent: "#0a1214"
+accent: "#510942"
 ---
 
 # Secret Door — Arctic Monkeys
@@ -11,7 +11,7 @@ accent: "#0a1214"
 ![cover](../covers/arctic-monkeys-secret-door.jpg)
 
 **Album:** Humbug (Bonus Track Version)
-**Accent:** `#0a1214`
+**Accent:** `#510942`
 
 ## Charge
 

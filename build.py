@@ -1243,7 +1243,7 @@ def build_p53_page(item: dict, output_name: str) -> None:
             font-family: Arial, sans-serif;
             background:
                 linear-gradient(118deg, rgba(8,10,9,.88), rgba(31,15,36,.92)),
-                url("../covers/P53_cover.png") center / cover fixed;
+                url("../covers/P53_cover.jpg") center / cover fixed;
         }}
         body::before {{
             content: "";
@@ -1395,7 +1395,7 @@ def build_p53_page(item: dict, output_name: str) -> None:
             <a href="index.html">ARCHIVE →</a>
         </header>
         <section class="transmission">
-            <div class="protein-panel"><img src="../covers/P53_cover.png" alt="Expressive P53 protein artwork"></div>
+            <div class="protein-panel"><img src="../covers/P53_cover.jpg" alt="Expressive P53 protein artwork"></div>
             <div class="signal-panel">
                 {cover_html}
                 <span class="signal-code">GENOME GUARD / ACTIVE</span>
@@ -1439,7 +1439,7 @@ def build_p53_archive(history: list[dict], current_slug: str) -> None:
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#25152b"><link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
 <title>Radio P53 Archive — GSI</title><style>
-*{{box-sizing:border-box}} body{{margin:0;min-height:100vh;color:#faf6ee;font-family:Arial,sans-serif;background:linear-gradient(118deg,rgba(8,10,9,.9),rgba(31,15,36,.94)),url("../covers/P53_cover.png") center/cover fixed}}
+*{{box-sizing:border-box}} body{{margin:0;min-height:100vh;color:#faf6ee;font-family:Arial,sans-serif;background:linear-gradient(118deg,rgba(8,10,9,.9),rgba(31,15,36,.94)),url("../covers/P53_cover.jpg") center/cover fixed}}
 main{{width:min(1240px,calc(100% - 36px));margin:auto;padding:22px 0 80px}} nav{{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:20px 6px;background:rgba(13,10,17,.86)}} nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}}
 header{{padding:clamp(42px,8vw,96px) 0 38px}} header span,.current,.sequence{{color:#ff7fbb;font-size:10px;font-weight:950;letter-spacing:.2em}} h1{{margin:10px 0 0;font-size:clamp(64px,12vw,160px);line-height:.8;letter-spacing:-.06em}} header p{{max-width:660px;color:rgba(255,255,255,.66);line-height:1.6}}
 .archive-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}} .archive-card{{display:grid;grid-template-columns:150px 1fr;min-height:150px;overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 22%);border-radius:28px 8px 28px 8px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 82%),rgba(12,11,15,.94));transition:transform .3s ease,border-radius .3s ease}} .archive-card:hover{{transform:translateY(-4px);border-radius:8px 28px 8px 28px}} .archive-card img,.cover-missing{{width:150px;height:150px;object-fit:cover}} .cover-missing{{display:grid;place-items:center;background:#17131b;color:#ff69ad;font-size:42px;font-weight:950}} .archive-card>div{{display:flex;flex-direction:column;justify-content:center;padding:18px}} .archive-card h2{{margin:8px 0 3px;font-size:clamp(24px,3vw,38px);line-height:.9}} .archive-card p{{margin:0 0 5px}} .archive-card small{{color:rgba(255,255,255,.58)}}
@@ -1532,7 +1532,11 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             item for item in tracks
             if filter_key in [tag.strip().lower() for tag in item.get("tags", "").split(",")]
         ]
-        start_track = filter_tracks[0] if filter_tracks else None
+        if filter_key == "p53":
+            current_p53_slug = (config.get("p53_current_slug") or "").strip()
+            start_track = next((item for item in filter_tracks if item.get("slug") == current_p53_slug), None)
+        else:
+            start_track = filter_tracks[0] if filter_tracks else None
         preview_covers = [
             f'covers/{item["cover_file"]}'
             for item in filter_tracks
@@ -1592,7 +1596,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         p53_html = f"""
         <a class="p53-broadcast" href="p53/latest.html" aria-label="Open the current P53 signal: {html.escape(p53_item['track'], quote = True)} by {html.escape(p53_item['artist'], quote = True)}">
             <div class="p53-art">
-                <img src="covers/P53_cover.png" alt="P53 protein artwork">
+                <img src="covers/P53_cover.jpg" alt="P53 protein artwork">
             </div>
             <div class="p53-overlay">
                 <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover">
@@ -3107,7 +3111,7 @@ def build_404_page(tracks: list[dict]) -> None:
         body {{ margin:0; min-height:100vh; overflow:hidden; color:var(--paper); font-family:Arial,sans-serif; background:#0d0d0f; }}
         body::before {{ content:""; position:fixed; inset:0; background:repeating-linear-gradient(92deg, transparent 0 54px, rgba(255,255,255,.025) 55px), radial-gradient(circle at 72% 20%, rgba(255,79,163,.16), transparent 36%); }}
         .protein-rain {{ position:fixed; inset:0; overflow:hidden; opacity:.3; pointer-events:none; }}
-        .protein-rain span {{ position:absolute; left:var(--x); top:-100px; width:var(--size); aspect-ratio:1; background:url("covers/P53_cover.png") center/420%; border-radius:62% 38% 67% 33% / 42% 58% 42% 58%; clip-path:polygon(46% 0,64% 11%,72% 30%,95% 41%,83% 58%,96% 78%,72% 92%,51% 78%,30% 100%,18% 73%,0 58%,17% 39%,8% 17%,32% 21%); filter:grayscale(.6) contrast(1.35) drop-shadow(7px 4px 0 rgba(255,79,163,.45)); animation:dissolve var(--speed) linear var(--delay) infinite; }}
+        .protein-rain span {{ position:absolute; left:var(--x); top:-100px; width:var(--size); aspect-ratio:1; background:url("covers/P53_cover.jpg") center/420%; border-radius:62% 38% 67% 33% / 42% 58% 42% 58%; clip-path:polygon(46% 0,64% 11%,72% 30%,95% 41%,83% 58%,96% 78%,72% 92%,51% 78%,30% 100%,18% 73%,0 58%,17% 39%,8% 17%,32% 21%); filter:grayscale(.6) contrast(1.35) drop-shadow(7px 4px 0 rgba(255,79,163,.45)); animation:dissolve var(--speed) linear var(--delay) infinite; }}
         .protein-rain span:nth-child(3n) {{ background-position:20% 74%; }}
         .protein-rain span:nth-child(3n+1) {{ background-position:78% 28%; }}
         @keyframes dissolve {{ 0% {{ transform:translateY(-15vh) rotate(0); opacity:0; }} 12% {{ opacity:.8; }} 72% {{ opacity:.34; filter:blur(0) drop-shadow(9px 4px 0 rgba(255,79,163,.5)); }} 100% {{ transform:translateY(125vh) rotate(220deg) scale(.35); opacity:0; filter:blur(5px); }} }}
