@@ -62,7 +62,7 @@ def ordered_tracks(rows: list[dict], config: dict) -> list[dict]:
 
 def search_itunes_cover(artist: str, track: str, album: str) -> str | None: #retrieves cover link
     query = quote_plus(f"{artist} {track} {album}")
-    url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=1"  # iTunes search
+    url = f"https://itunes.apple.com/search?term={query}&entity=song&limit=25"  # inspect several results instead of trusting the first
 
     response = requests.get(url, timeout = 15)
     response.raise_for_status() # yields error
@@ -70,7 +70,30 @@ def search_itunes_cover(artist: str, track: str, album: str) -> str | None: #ret
     data = response.json()
     if data["resultCount"] == 0:
         return None
-    artwork_url = data["results"][0].get("artworkUrl100") # gives 100"100 cover
+    wanted_artist = slugify(artist)
+    wanted_track = slugify(track)
+    wanted_album = slugify(album)
+
+    def result_score(result: dict) -> int:
+        result_artist = slugify(result.get("artistName", ""))
+        result_track = slugify(result.get("trackName", ""))
+        result_album = slugify(result.get("collectionName", ""))
+        score = 0
+        if result_artist == wanted_artist:
+            score += 8
+        if result_track == wanted_track:
+            score += 10
+        if result_album == wanted_album:
+            score += 7
+        elif wanted_album and (wanted_album in result_album or result_album in wanted_album):
+            score += 4
+        return score
+
+    ranked_results = sorted(data["results"], key = result_score, reverse = True)
+    best_result = ranked_results[0]
+    if result_score(best_result) < 12:
+        return None
+    artwork_url = best_result.get("artworkUrl100") # gives 100x100 cover
     if artwork_url is None:
         return None
     return artwork_url.replace("100x100bb", "600x600bb") # ENLARGE
@@ -1121,9 +1144,42 @@ def build_entry_page(item: dict) -> None: #HTML review page
     output_path.write_text(html_page, encoding="utf-8") # save page)
 
 
-def build_p53_page(item: dict) -> None:
-    """Build the current P53 transmission from explicitly editable P53 copy."""
+def prepare_p53_history(config: dict, tracks: list[dict], download_missing: bool = True) -> list[dict]:
+    """Resolve P53 history without creating or changing Markdown entry sources."""
+    tracks_by_slug = {item["slug"]: item for item in tracks}
+    prepared = []
+    for record in config.get("p53_history", []):
+        slug = (record.get("slug") or slugify(f'{record.get("artist", "")} {record.get("track", "")}')).strip()
+        item = dict(tracks_by_slug.get(slug, {}))
+        item.update(record)
+        item["slug"] = slug
+        item.setdefault("spotify_url", "")
+        item.setdefault("apple_url", "")
+        item.setdefault("accent", "")
+        cover_file = (item.get("cover_file") or f"{slug}.jpg").strip()
+        cover_path = COVERS_DIR / cover_file
+        if not cover_path.exists() and download_missing:
+            try:
+                cover_url = search_itunes_cover(item["artist"], item["track"], item["album"])
+            except requests.RequestException as error:
+                print(f" P53 cover search failed for {item['track']}: {error}")
+                cover_url = None
+            if cover_url and download_cover(cover_url, cover_path):
+                print(f" Cached P53 cover: {cover_path}")
+            else:
+                print(f" No verified P53 cover found for {item['track']}.")
+        item["cover_file"] = cover_file if cover_path.exists() else ""
+        if cover_path.exists() and not item.get("accent"):
+            item["accent"] = dominant_color(cover_path)
+        item["accent"] = item.get("accent") or "#444444"
+        prepared.append(item)
+    return prepared
+
+
+def build_p53_page(item: dict, output_name: str) -> None:
+    """Build one permanent P53 transmission from explicitly editable P53 copy."""
     config = load_config()
+    signal_label = "CURRENT SIGNAL" if item["slug"] == (config.get("p53_current_slug") or "").strip() else "ARCHIVED SIGNAL"
     about_text = (config.get("p53_about") or "").strip()
     transmission_notes = config.get("p53_transmission_notes") or {}
     transmission_note = str(transmission_notes.get(item["slug"], "")).strip()
@@ -1232,7 +1288,7 @@ def build_p53_page(item: dict) -> None:
                 rgba(14,11,20,.94);
         }}
         .signal-panel::before {{
-            content: "CURRENT SIGNAL";
+            content: "{signal_label}";
             position: absolute;
             right: 24px;
             top: 22px;
@@ -1303,6 +1359,7 @@ def build_p53_page(item: dict) -> None:
         <header class="p53-nav">
             <a href="../index.html">← GSI</a>
             <span>P53 / TRANSMISSION</span>
+            <a href="index.html">ARCHIVE →</a>
         </header>
         <section class="transmission">
             <div class="protein-panel"><img src="../covers/P53_cover.png" alt="Expressive P53 protein artwork"></div>
@@ -1326,8 +1383,38 @@ def build_p53_page(item: dict) -> None:
 </body>
 </html>
 """
-    (SITE_P53_DIR / "latest.html").write_text(html_page, encoding = "utf-8")
-    print(f"\nBuilt P53 transmission: {SITE_P53_DIR / 'latest.html'}")
+    output_path = SITE_P53_DIR / output_name
+    output_path.write_text(html_page, encoding = "utf-8")
+    print(f"Built P53 transmission: {output_path}")
+
+
+def build_p53_archive(history: list[dict], current_slug: str) -> None:
+    """Build the stable Radio P53 history doorway, newest signal first."""
+    cards = []
+    for index, item in enumerate(history):
+        current_label = '<span class="current">CURRENT SIGNAL</span>' if item["slug"] == current_slug else f'<span class="sequence">SIGNAL {index + 1:02d}</span>'
+        cover_html = (
+            f'<img src="../covers/{html.escape(item["cover_file"], quote = True)}" alt="{html.escape(item["album"], quote = True)} cover">'
+            if item.get("cover_file") else '<div class="cover-missing" aria-hidden="true">P53</div>'
+        )
+        cards.append(f'''
+        <a class="archive-card" href="{html.escape(item["slug"], quote = True)}.html" style="--accent:{item["accent"]}">
+            {cover_html}
+            <div>{current_label}<h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small></div>
+        </a>''')
+    page = f'''<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#25152b"><link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
+<title>Radio P53 Archive — GSI</title><style>
+*{{box-sizing:border-box}} body{{margin:0;min-height:100vh;color:#faf6ee;font-family:Arial,sans-serif;background:linear-gradient(118deg,rgba(8,10,9,.9),rgba(31,15,36,.94)),url("../covers/P53_cover.png") center/cover fixed}}
+main{{width:min(1240px,calc(100% - 36px));margin:auto;padding:22px 0 80px}} nav{{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:20px 6px;background:rgba(13,10,17,.86)}} nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}}
+header{{padding:clamp(42px,8vw,96px) 0 38px}} header span,.current,.sequence{{color:#ff7fbb;font-size:10px;font-weight:950;letter-spacing:.2em}} h1{{margin:10px 0 0;font-size:clamp(64px,12vw,160px);line-height:.8;letter-spacing:-.06em}} header p{{max-width:660px;color:rgba(255,255,255,.66);line-height:1.6}}
+.archive-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}} .archive-card{{display:grid;grid-template-columns:150px 1fr;min-height:150px;overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 22%);border-radius:28px 8px 28px 8px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 82%),rgba(12,11,15,.94));transition:transform .3s ease,border-radius .3s ease}} .archive-card:hover{{transform:translateY(-4px);border-radius:8px 28px 8px 28px}} .archive-card img,.cover-missing{{width:150px;height:150px;object-fit:cover}} .cover-missing{{display:grid;place-items:center;background:#17131b;color:#ff69ad;font-size:42px;font-weight:950}} .archive-card>div{{display:flex;flex-direction:column;justify-content:center;padding:18px}} .archive-card h2{{margin:8px 0 3px;font-size:clamp(24px,3vw,38px);line-height:.9}} .archive-card p{{margin:0 0 5px}} .archive-card small{{color:rgba(255,255,255,.58)}}
+@media(max-width:760px){{.archive-grid{{grid-template-columns:1fr}}.archive-card{{grid-template-columns:112px 1fr;min-height:112px}}.archive-card img,.cover-missing{{width:112px;height:112px}}}}
+</style></head><body><main><nav><a href="../index.html">← GSI</a><span>RADIO P53 / ARCHIVE</span><a href="latest.html">LATEST →</a></nav><header><span>EXTRACELLULAR SIGNALS / RETAINED</span><h1>RADIO P53</h1><p>Tracks I have or had on loop. The current transmission stays at the top; older signals remain here instead of dissolving from the archive.</p></header><section class="archive-grid">{''.join(cards)}</section></main></body></html>'''
+    output_path = SITE_P53_DIR / "index.html"
+    output_path.write_text(page, encoding = "utf-8")
+    print(f"Built P53 archive: {output_path}")
 
 
 def build_index_html(tracks: list[dict]) -> None:  #sample homepage
@@ -3065,14 +3152,20 @@ def main() -> None:
     )
     args = parser.parse_args()
     tracks = build_entries(write_sources = not args.site_only)
+    config = load_config()
+    p53_history = prepare_p53_history(config, tracks, download_missing = True)
     copy_site_covers()
     remove_stale_entry_pages(tracks)
     for item in tracks:
         build_entry_page(item)
-    p53_slug = (load_config().get("p53_current_slug") or "").strip()
-    p53_item = next((item for item in tracks if item["slug"] == p53_slug), None)
+    p53_slug = (config.get("p53_current_slug") or "").strip()
+    for item in p53_history:
+        build_p53_page(item, f'{item["slug"]}.html')
+    p53_item = next((item for item in p53_history if item["slug"] == p53_slug), None)
     if p53_item:
-        build_p53_page(p53_item)
+        build_p53_page(p53_item, "latest.html")
+    if p53_history:
+        build_p53_archive(p53_history, p53_slug)
     build_index_html(tracks)
     build_404_page(tracks)
     print("\nDone.")
