@@ -1176,6 +1176,39 @@ def prepare_p53_history(config: dict, tracks: list[dict], download_missing: bool
     return prepared
 
 
+def merge_p53_into_archive(tracks: list[dict], p53_history: list[dict]) -> list[dict]:
+    """Expose opted-in P53 signals as cards without manufacturing Markdown reviews."""
+    merged = [dict(item) for item in tracks]
+    by_slug = {item["slug"]: item for item in merged}
+    for p53_order, signal in enumerate(p53_history):
+        if not signal.get("show_in_archive", False):
+            continue
+        existing = by_slug.get(signal["slug"])
+        if existing:
+            tags = [tag.strip() for tag in existing.get("tags", "").split(",") if tag.strip()]
+            if "p53" not in [tag.lower() for tag in tags]:
+                tags.append("p53")
+            existing["tags"] = ",".join(tags)
+            existing["page_url"] = f'entries/{existing["html_file"]}'
+            existing["p53_order"] = p53_order
+            continue
+
+        archive_item = dict(signal)
+        archive_item["tags"] = "p53"
+        archive_item["page_url"] = f'p53/{signal["slug"]}.html'
+        archive_item["p53_order"] = p53_order
+        archive_item.setdefault("spotify_url", "")
+        archive_item.setdefault("apple_url", "")
+        merged.append(archive_item)
+        by_slug[archive_item["slug"]] = archive_item
+
+    for item in merged:
+        if not item.get("page_url"):
+            item["page_url"] = f'entries/{item["html_file"]}'
+        item.setdefault("p53_order", 999)
+    return merged
+
+
 def build_p53_page(item: dict, output_name: str) -> None:
     """Build one permanent P53 transmission from explicitly editable P53 copy."""
     config = load_config()
@@ -1456,11 +1489,13 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             cover_html = f'<img src="covers/{item["cover_file"]}" alt="{safe_album} cover">'  # image tag
         tags = item.get("tags", "")
         tags_for_attr = tags.lower().replace(","," ")
+        p53_order = int(item.get("p53_order", 999))
         card = f"""
         <a class="card"
             data-tags="{tags_for_attr}"
+            data-p53-order="{p53_order}"
             aria-label="{safe_card_label}"
-            href="entries/{item["html_file"]}" style="--accent: {item["accent"]};">
+            href="{html.escape(item["page_url"], quote = True)}" style="--accent: {item["accent"]}; --p53-order: {p53_order};">
             {cover_html}
             <div class="info">
                 <h2>{safe_track}</h2>
@@ -1518,7 +1553,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             "count": len(filter_tracks),
             "start_title": start_track["track"] if start_track else "",
             "start_artist": start_track["artist"] if start_track else "",
-            "start_url": "p53/latest.html" if filter_key == "p53" and start_track else (f'entries/{start_track["html_file"]}' if start_track else ""),
+            "start_url": "p53/latest.html" if filter_key == "p53" and start_track else (start_track.get("page_url", "") if start_track else ""),
             "preview_covers": preview_covers
             ,"room_label_lines": filter_settings.get("room_label_lines") or [label]
         }
@@ -2002,6 +2037,8 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             transform: translateY(0);
             transition: opacity 120ms ease, transform 120ms ease;
         }}
+        body[data-active-filter="p53"] .card {{ order: 999; }}
+        body[data-active-filter="p53"] .card[data-tags~="p53"] {{ order: var(--p53-order); }}
         .grid.view-switching {{
             opacity: .18;
             transform: translateY(5px);
@@ -3041,7 +3078,7 @@ def build_404_page(tracks: list[dict]) -> None:
             "artist": item["artist"],
             "album": item["album"],
             "cover": item.get("cover_file", ""),
-            "url": f'entries/{item["html_file"]}',
+            "url": item.get("page_url") or f'entries/{item["html_file"]}',
             "accent": item["accent"],
             "spotify": item.get("spotify_url") or f'https://open.spotify.com/search/{quote(item["artist"] + " " + item["track"], safe="")}',
             "apple": item.get("apple_url") or f'https://music.apple.com/search?term={quote_plus(item["artist"] + " " + item["track"])}',
@@ -3154,6 +3191,7 @@ def main() -> None:
     tracks = build_entries(write_sources = not args.site_only)
     config = load_config()
     p53_history = prepare_p53_history(config, tracks, download_missing = True)
+    archive_tracks = merge_p53_into_archive(tracks, p53_history)
     copy_site_covers()
     remove_stale_entry_pages(tracks)
     for item in tracks:
@@ -3166,8 +3204,8 @@ def main() -> None:
         build_p53_page(p53_item, "latest.html")
     if p53_history:
         build_p53_archive(p53_history, p53_slug)
-    build_index_html(tracks)
-    build_404_page(tracks)
+    build_index_html(archive_tracks)
+    build_404_page(archive_tracks)
     print("\nDone.")
 
 if __name__ == "__main__":
