@@ -1,7 +1,12 @@
 {
     "project_title": "GSI",
     "site_url": "https://ulasevo.github.io/GSI",
-    "p53_current_slug": "wet-leg-mangetout",
+    "p53_current_slug": "arctic-monkeys-secret-door",
+    "p53_about": "This protein is one of the most integral factors in inducing genome stability, its makeup also increases during damage or stress; and Radio P53 is a composition of the tracks I have or had on loop.",
+    "p53_transmission_notes": {
+        "wet-leg-mangetout": "Bienvenue.",
+        "arctic-monkeys-secret-door": "I guess the \"OooOo\" by the crowd in the background is supposed to represent the parade of fools singing, fantastic song."
+    },
     "not_found": {
         "eyebrow": "SIGNAL LOST / 404",
         "title": "THIS FREQUENCY DOES NOT EXIST.",

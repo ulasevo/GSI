@@ -1122,17 +1122,17 @@ def build_entry_page(item: dict) -> None: #HTML review page
 
 
 def build_p53_page(item: dict) -> None:
-    """Build the current P53 transmission without inventing editorial content."""
-    entry_path = ENTRIES_DIR / item["entry_file"]
-    sections = [section for section in extract_sections_from_markdown(entry_path) if section["content"].strip()]
+    """Build the current P53 transmission from explicitly editable P53 copy."""
+    config = load_config()
+    about_text = (config.get("p53_about") or "").strip()
+    transmission_notes = config.get("p53_transmission_notes") or {}
+    transmission_note = str(transmission_notes.get(item["slug"], "")).strip()
     cover_src = f'../covers/{item["cover_file"]}' if item.get("cover_file") else ""
     cover_html = f'<img class="signal-cover" src="{cover_src}" alt="{html.escape(item["album"], quote = True)} cover">' if cover_src else ""
-    note_html = "".join(
-        f'<section class="transmission-note"><h2>{html.escape(section["title"])}</h2>{simple_markdown_to_html(section["content"])}</section>'
-        for section in sections
+    note_html = (
+        f'<section class="transmission-note"><h2>TRANSMISSION NOTES</h2>{simple_markdown_to_html(transmission_note)}</section>'
+        if transmission_note else ""
     )
-    if not note_html:
-        note_html = '<section class="transmission-note pending"><h2>TRANSMISSION NOTES</h2><p>EDITORIAL SIGNAL PENDING</p></section>'
     streaming_links_html = make_streaming_links(item)
     page_title = html.escape(f'P53 — {item["track"]}')
     html_page = f"""<!DOCTYPE html>
@@ -1269,6 +1269,7 @@ def build_p53_page(item: dict) -> None:
         .stream-link:hover,
         .stream-link:focus-visible {{ transform: translateY(-3px); border-radius: 5px 18px 5px 18px; }}
         .p53-details {{ display: grid; grid-template-columns: .7fr 1.3fr; gap: 16px; margin-top: 18px; }}
+        .p53-details > :only-child {{ grid-column: 1 / -1; }}
         .p53-about,
         .transmission-note {{
             padding: clamp(22px, 4vw, 38px);
@@ -1280,8 +1281,6 @@ def build_p53_page(item: dict) -> None:
         .transmission-note h2 {{ margin: 0 0 14px; color: #ff7fbb; font-size: 24px; }}
         .p53-about p,
         .transmission-note p {{ margin: 0; color: rgba(255,255,255,.76); line-height: 1.6; }}
-        .pending {{ border-style: dashed; }}
-        .pending p {{ color: rgba(255,255,255,.38); font-size: 11px; font-weight: 950; letter-spacing: .18em; }}
         @keyframes protein-pulse {{
             0%, 82%, 100% {{ transform: scale(1); filter: none; }}
             88% {{ transform: scale(1.035); filter: saturate(1.2); }}
@@ -1319,7 +1318,7 @@ def build_p53_page(item: dict) -> None:
         <div class="p53-details">
             <aside class="p53-about">
                 <h2>WHY P53?</h2>
-                <p class="pending">EDITORIAL SIGNAL PENDING</p>
+                <p>{html.escape(about_text)}</p>
             </aside>
             {note_html}
         </div>

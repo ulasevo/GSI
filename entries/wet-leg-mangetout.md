@@ -21,7 +21,7 @@ accent: "#6f4730"
 ## Sonical Attraction
 
 <!-- What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence. -->
-
+The vocal's tonality does a good job in expressing exhaustion and carelessness into humiliation by the end. The ending verse is especially good, in that I found myself anticipating it as I'm looping through the song.
 
 ## Lyric/Vocal Detail
 
@@ -41,9 +41,9 @@ accent: "#6f4730"
 ## Reading
 
 <!-- What do I think the song is doing or narrating? -->
-
+the entire song is built around the word mangetout sounding like most do, spelling like man get out and then the true meaning which is green beans with edible pods.
 
 ## Comment
 
 <!-- Free field. Final take, vibe, joke, conclusion, or whatever does not fit elsewhere. -->
-
+ Its very clever, and this band gives me a sort of billie eilish + arctic monkeys + cocaine ever since I found them out.
