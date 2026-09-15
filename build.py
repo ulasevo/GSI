@@ -17,6 +17,8 @@ SITE_DIR = BASE / "site" #HTML index creation path
 SITE_ENTRIES_DIR = SITE_DIR / "entries" #review page
 SITE_COVERS_DIR = SITE_DIR / "covers"
 SITE_P53_DIR = SITE_DIR / "p53"
+SITE_ARTISTS_DIR = SITE_DIR / "artists"
+SITE_ALBUMS_DIR = SITE_DIR / "albums"
 
 TRACKS_FILE = BASE / "tracks.csv" #list of song inputs
 CONFIG_FILE = BASE / "config.json" #settings file
@@ -26,6 +28,8 @@ COVERS_DIR.mkdir(exist_ok = True)
 SITE_DIR.mkdir(exist_ok = True)
 SITE_ENTRIES_DIR.mkdir(exist_ok = True) #creates entries
 SITE_P53_DIR.mkdir(exist_ok = True)
+SITE_ARTISTS_DIR.mkdir(exist_ok = True)
+SITE_ALBUMS_DIR.mkdir(exist_ok = True)
 
 def slugify(text: str) -> str: #safe file name
     text = text.lower().strip()
@@ -412,7 +416,7 @@ def extract_sections_from_markdown(entry_path: Path) -> list[dict]:
         content = text[start:end].strip()
         sections.append({"title": title, "content": content})
     return sections
-def build_entry_page(item: dict) -> None: #HTML review page
+def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) -> None: #HTML review page
     config = load_config()
     section_info = config.get("section_info", {})
     entry_path = ENTRIES_DIR / item["entry_file"]
@@ -466,6 +470,44 @@ def build_entry_page(item: dict) -> None: #HTML review page
         </section>
         """)
     streaming_links_html = make_streaming_links(item) ##
+    p53_current_slug = (config.get("p53_current_slug") or "").strip()
+    in_p53 = any(record.get("slug") == item["slug"] for record in config.get("p53_history", []))
+    p53_counterpart_html = ""
+    if in_p53:
+        p53_label = "CURRENT P53 TRANSMISSION" if item["slug"] == p53_current_slug else "P53 TRANSMISSION"
+        p53_counterpart_html = f'<a class="p53-counterpart" data-base-href="../p53/{item["slug"]}.html" href="../p53/{item["slug"]}.html">{p53_label} <span>OPEN ↗</span></a>'
+    filter_labels = {
+        key: settings.get("label", key)
+        for key, settings in config.get("filters", {}).items()
+    }
+    filter_labels_json = json.dumps(filter_labels).replace("</", "<\\/")
+    filter_keys = [
+        tag.strip().lower()
+        for tag in item.get("tags", "").split(",")
+        if tag.strip().lower() in filter_labels
+    ]
+    filter_receipt_links = "".join(
+        f'<a data-filter-route="{html.escape(filter_key, quote=True)}" href="../index.html?filter={quote(filter_key)}">{html.escape(filter_labels[filter_key])}</a>'
+        for filter_key in filter_keys
+        if filter_key != "p53"
+    )
+    also_paths = []
+    artist_room_exists = (artist_counts or {}).get(item["artist"], 0) >= 2
+    artist_slug = slugify(item["artist"])
+    artist_href = f'../artists/{slugify(item["artist"])}.html'
+    artist_display = (
+        f'<a class="artist-link" data-artist-base-href="{artist_href}" href="{artist_href}">{html.escape(item["artist"])}</a>'
+        if artist_room_exists else html.escape(item["artist"])
+    )
+    if artist_room_exists:
+        also_paths.append(f'<a data-artist-base-href="{artist_href}" href="{artist_href}">ARTIST PAGE : {html.escape(item["artist"])}</a>')
+    if in_p53:
+        also_paths.append(f'<a href="../p53/{item["slug"]}.html">RADIO P53</a>')
+    if filter_receipt_links:
+        also_paths.append(filter_receipt_links)
+    also_appears_html = ""
+    if also_paths:
+        also_appears_html = f'<aside class="also-appears" id="also-appears"><span>ALSO APPEARS IN</span><div>{"".join(also_paths)}</div></aside>'
 
     html_page = f"""<!DOCTYPE html>
 <html lang="en">
@@ -1087,12 +1129,69 @@ def build_entry_page(item: dict) -> None: #HTML review page
             padding-bottom:12px;
             border-bottom:1px solid color-mix(in srgb,var(--accent),transparent 68%);
         }}
+        /* One visible path is clearer than a duplicate back button plus a tiny breadcrumb. */
+        .entry-nav {{ margin-bottom:14px; }}
+        .signal-trace {{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            overflow:auto;
+            padding:14px 16px;
+            border:1px solid color-mix(in srgb,var(--accent),transparent 62%);
+            border-radius:20px 6px 20px 6px;
+            background:rgba(12,11,15,.82);
+            color:rgba(255,255,255,.64);
+            font-size:12px;
+            font-weight:900;
+            letter-spacing:.14em;
+            white-space:nowrap;
+        }}
+        .signal-trace a {{ color:color-mix(in srgb,var(--accent),white 42%); text-decoration:none; }}
+        .signal-trace a:hover,.signal-trace a:focus-visible {{ color:#fff; }}
+        .signal-trace .hidden {{ display:none; }}
+        .signal-trace .trace-separator {{ color:rgba(255,255,255,.28); }}
+        .signal-trace .trace-current {{ min-width:0; overflow:hidden; color:rgba(255,255,255,.78); text-overflow:ellipsis; white-space:nowrap; }}
+        .entry-reading-layout {{ margin-top:14px; }}
+        .entry-reading-layout .sections {{ margin-top:0; }}
+        .p53-counterpart {{
+            display:inline-flex;
+            gap:8px;
+            margin:10px 0 0;
+            padding:7px 9px;
+            color:color-mix(in srgb,var(--accent),white 35%);
+            border:1px solid color-mix(in srgb,var(--accent),transparent 36%);
+            border-radius:16px 5px 16px 5px;
+            background:color-mix(in srgb,var(--accent),transparent 90%);
+            font-size:9px;
+            font-weight:950;
+            letter-spacing:.11em;
+            text-decoration:none;
+            transition:transform 240ms ease,border-radius 300ms ease;
+        }}
+        .p53-counterpart:hover,.p53-counterpart:focus-visible {{ transform:translateY(-2px); border-radius:5px 16px 5px 16px; }}
+        .artist-link {{ color:inherit; text-decoration:none; }}
+        .artist-link:hover,.artist-link:focus-visible {{ color:color-mix(in srgb,var(--accent),white 30%); text-decoration:underline; }}
+        .also-appears {{
+            display:flex;
+            align-items:baseline;
+            flex-wrap:wrap;
+            gap:8px 13px;
+            margin-top:14px;
+            padding:12px 2px 0;
+            border-top:1px solid color-mix(in srgb,var(--accent),transparent 60%);
+        }}
+        .also-appears > span {{ color:rgba(255,255,255,.4); font-size:9px; font-weight:950; letter-spacing:.16em; }}
+        .also-appears div {{ display:flex; flex-wrap:wrap; gap:7px; }}
+        .also-appears a {{ color:color-mix(in srgb,var(--accent),white 30%); font-size:11px; font-weight:850; text-decoration:none; }}
+        .also-appears a:not(:last-child)::after {{ content:" ·"; color:rgba(255,255,255,.32); }}
         @media(max-width:760px) {{
             .cover-frame {{ min-height:0; }}
             .cover {{ min-height:0; aspect-ratio:1; object-fit:contain; }}
             .hero {{ grid-template-columns:1fr; min-height:0; }}
             .sections {{ grid-template-columns:1fr; padding:0; }}
             .section-card,.section-card:nth-child(even) {{ width:auto; }}
+            .signal-trace {{ width:100%; min-width:0; font-size:11px; overscroll-behavior-inline:contain; scrollbar-width:none; }}
+            .also-appears {{ align-items:flex-start; flex-direction:column; }}
         }}
         @media(min-width:761px) and (max-width:1100px) {{
             .hero {{ grid-template-columns:minmax(350px,46%) minmax(0,1fr); min-height:430px; }}
@@ -1106,8 +1205,15 @@ def build_entry_page(item: dict) -> None: #HTML review page
 <body>
     <main class="page">
         <header class="entry-nav">
-            <a class="back" href="../index.html"><span aria-hidden="true">←</span> GSI</a>
-            <span class="entry-signal">SIGNAL / {html.escape(item["artist"])}</span>
+            <nav class="signal-trace" aria-label="GSI path">
+                <a id="trace-archive" href="../index.html">GSI</a>
+                <span id="trace-context-separator" class="trace-separator hidden">→</span>
+                <a id="trace-filter" class="hidden" href="../index.html"></a>
+                <span id="trace-filter-separator" class="trace-separator hidden">→</span>
+                <a id="trace-artist" class="hidden" href="../index.html"></a>
+                <span class="trace-entry-separator trace-separator">→</span>
+                <span class="trace-current">{html.escape(item["track"])}</span>
+            </nav>
         </header>
 
         <section class="hero">
@@ -1115,15 +1221,19 @@ def build_entry_page(item: dict) -> None: #HTML review page
             <div class="meta">
                 <div class="entry-architecture" aria-hidden="true"><span>GENOME</span><span>STABILITY</span><span>INDUCER</span></div>
                 <h1>{html.escape(item["track"])}</h1>
-                <p>{html.escape(item["artist"])}</p>
+                <p>{artist_display}</p>
                 <p class="album">{html.escape(item["album"])}</p>
+                {p53_counterpart_html}
                 {streaming_links_html}
             </div>
         </section>
 
-        <div class="sections">
-            {''.join(section_cards)}
+        <div class="entry-reading-layout">
+            <div class="sections">
+                {''.join(section_cards)}
+            </div>
         </div>
+        {also_appears_html}
     </main>
     <script>
         document.querySelectorAll(".section-info-button").forEach(button => {{
@@ -1135,6 +1245,49 @@ def build_entry_page(item: dict) -> None: #HTML review page
                 button.setAttribute("aria-expanded", String(willOpen));
             }});
         }});
+        // Preserve the filter and view that led here, without replacing browser Back.
+        const archiveState = new URLSearchParams(window.location.search);
+        const filterLabels = {filter_labels_json};
+        const expectedArtistRoute = {json.dumps(artist_slug)};
+        const artistName = {json.dumps(item["artist"])};
+        const hasArtistRoom = {str(artist_room_exists).lower()};
+        const filter = archiveState.get("filter");
+        const artistRoute = archiveState.get("artist");
+        const view = archiveState.get("view");
+        const archiveParams = new URLSearchParams();
+        if (filter && Object.hasOwn(filterLabels, filter)) archiveParams.set("filter", filter);
+        if (["poster", "wall", "gallery"].includes(view)) archiveParams.set("view", view);
+        const archiveHref = `../index.html${{archiveParams.size ? `?${{archiveParams}}` : ""}}`;
+        document.querySelectorAll("#trace-archive").forEach(link => link.href = archiveHref);
+        document.querySelectorAll("[data-artist-base-href]").forEach(link => {{
+            link.href = `${{link.dataset.artistBaseHref}}${{archiveParams.size ? `?${{archiveParams}}` : ""}}`;
+        }});
+        document.querySelectorAll("[data-filter-route]").forEach(link => {{
+            if (link.dataset.filterRoute === filter) link.hidden = true;
+        }});
+        const alsoAppears = document.querySelector("#also-appears");
+        if (alsoAppears && !alsoAppears.querySelector("a:not([hidden])")) alsoAppears.hidden = true;
+        document.querySelectorAll(".p53-counterpart[data-base-href]").forEach(link => {{
+            const p53Params = new URLSearchParams(archiveParams);
+            if (hasArtistRoom && artistRoute === expectedArtistRoute) p53Params.set("artist", artistRoute);
+            link.href = `${{link.dataset.baseHref}}${{p53Params.size ? `?${{p53Params}}` : ""}}`;
+        }});
+        if (filter && Object.hasOwn(filterLabels, filter)) {{
+            const traceFilter = document.querySelector("#trace-filter");
+            traceFilter.textContent = filterLabels[filter];
+            traceFilter.href = archiveHref;
+            traceFilter.classList.remove("hidden");
+            document.querySelector("#trace-context-separator").classList.remove("hidden");
+            document.querySelector("#trace-filter-separator").classList.remove("hidden");
+        }}
+        if (hasArtistRoom && artistRoute === expectedArtistRoute) {{
+            const artistHref = `../artists/${{expectedArtistRoute}}.html`;
+            const traceArtist = document.querySelector("#trace-artist");
+            traceArtist.textContent = artistName.toUpperCase();
+            traceArtist.href = artistHref;
+            traceArtist.classList.remove("hidden");
+            document.querySelector("#trace-context-separator").classList.remove("hidden");
+        }}
     </script>
 </body>
 </html>
@@ -1212,7 +1365,21 @@ def merge_p53_into_archive(tracks: list[dict], p53_history: list[dict]) -> list[
 def build_p53_page(item: dict, output_name: str) -> None:
     """Build one permanent P53 transmission from explicitly editable P53 copy."""
     config = load_config()
-    signal_label = "CURRENT SIGNAL" if item["slug"] == (config.get("p53_current_slug") or "").strip() else "ARCHIVED SIGNAL"
+    filter_labels_json = json.dumps({key: settings.get("label", key) for key, settings in config.get("filters", {}).items()}).replace("</", "<\\/")
+    site_url = (config.get("site_url") or "").rstrip("/")
+    p53_permalink = f"{site_url}/p53/{item['slug']}.html" if site_url else ""
+    p53_description = f"Radio P53 transmission: {item['track']} by {item['artist']}."
+    sharing_meta = ""
+    if p53_permalink:
+        sharing_meta = f'''\n    <link rel="canonical" href="{html.escape(p53_permalink, quote=True)}">
+    <meta property="og:url" content="{html.escape(p53_permalink, quote=True)}">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="GSI / Radio P53">
+    <meta property="og:title" content="{html.escape(f'Radio P53 — {item["track"]}', quote=True)}">
+    <meta property="og:description" content="{html.escape(p53_description, quote=True)}">
+    <meta property="og:image" content="{html.escape(site_url + '/covers/P53_cover.jpg', quote=True)}">
+    <meta name="twitter:card" content="summary_large_image">'''
+    signal_label = "CURRENT SIGNAL" if item["slug"] == (config.get("p53_current_slug") or "").strip() else "PAST TRANSMISSION"
     about_text = (config.get("p53_about") or "").strip()
     transmission_notes = config.get("p53_transmission_notes") or {}
     transmission_note = str(transmission_notes.get(item["slug"], "")).strip()
@@ -1223,6 +1390,9 @@ def build_p53_page(item: dict, output_name: str) -> None:
         if transmission_note else ""
     )
     streaming_links_html = make_streaming_links(item)
+    entry_counterpart_html = ""
+    if (ENTRIES_DIR / f'{item["slug"]}.md').exists():
+        entry_counterpart_html = f'<a class="entry-counterpart" href="../entries/{html.escape(item["slug"], quote=True)}.html">INSIDE GSI / READ ENTRY ↗</a>'
     page_title = html.escape(f'P53 — {item["track"]}')
     html_page = f"""<!DOCTYPE html>
 <html lang="en">
@@ -1230,6 +1400,7 @@ def build_p53_page(item: dict, output_name: str) -> None:
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#25152b">
+    <meta name="description" content="{html.escape(p53_description, quote=True)}">{sharing_meta}
     <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
     <title>{page_title}</title>
     <style>
@@ -1262,10 +1433,10 @@ def build_p53_page(item: dict, output_name: str) -> None:
             padding: 22px 0 80px;
         }}
         .p53-nav {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            gap: 16px;
+            display:grid;
+            grid-template-columns:minmax(0,1fr) auto;
+            align-items:center;
+            gap:12px;
             margin-bottom: 14px;
             padding: 13px 16px;
             border: 1px solid rgba(255,255,255,.18);
@@ -1282,7 +1453,22 @@ def build_p53_page(item: dict, output_name: str) -> None:
         }}
         .p53-nav a:hover,
         .p53-nav a:focus-visible {{ color: #fff; transform: translateX(-4px); }}
-        .p53-nav span {{ color: rgba(255,255,255,.5); font-size: 10px; font-weight: 900; letter-spacing: .18em; }}
+        .share-transmission {{
+            padding:7px 9px;
+            color:#ff8bc2;
+            border:1px solid rgba(255,255,255,.2);
+            border-radius:12px 4px 12px 4px;
+            background:transparent;
+            font:950 10px/1 Arial,sans-serif;
+            letter-spacing:.13em;
+            cursor:pointer;
+            transition:transform 220ms ease,border-radius 280ms ease,color 180ms ease;
+        }}
+        .share-transmission:hover,.share-transmission:focus-visible {{ color:#fff; transform:translateY(-2px); border-radius:4px 12px 4px 12px; }}
+        .p53-trace {{ display:flex; align-items:center; gap:10px; min-width:0; overflow:auto; color:rgba(255,255,255,.64); font-size:12px; font-weight:900; letter-spacing:.14em; white-space:nowrap; }}
+        .p53-trace a {{ color:#ff8bc2; font-size:12px; }}
+        .p53-trace .hidden {{ display:none; }}
+        .p53-trace .trace-separator {{ color:rgba(255,255,255,.28); }}
         .transmission {{
             display: grid;
             grid-template-columns: minmax(300px, .9fr) minmax(0, 1.1fr);
@@ -1299,6 +1485,19 @@ def build_p53_page(item: dict, output_name: str) -> None:
             overflow: hidden;
         }}
         .protein-panel > img {{ width: 100%; height: 100%; object-fit: cover; display: block; }}
+        /* Local experiment: let the current album accent tint, but not replace, the P53 print. */
+        .protein-panel::before {{
+            content: "";
+            position: absolute;
+            inset: 0;
+            z-index: 1;
+            pointer-events: none;
+            opacity: .18;
+            background:
+                radial-gradient(circle at 72% 28%, color-mix(in srgb, var(--accent), white 10%), transparent 48%),
+                var(--accent);
+            mix-blend-mode: color;
+        }}
         .protein-panel::after {{
             content: "P53";
             position: absolute;
@@ -1310,6 +1509,7 @@ def build_p53_page(item: dict, output_name: str) -> None:
             line-height: .8;
             text-shadow: 7px 0 var(--p53), -6px 0 var(--cyan);
             animation: protein-pulse 5s ease-in-out infinite;
+            z-index: 2;
         }}
         .signal-panel {{
             position: relative;
@@ -1357,6 +1557,20 @@ def build_p53_page(item: dict, output_name: str) -> None:
         }}
         .stream-link:hover,
         .stream-link:focus-visible {{ transform: translateY(-3px); border-radius: 5px 18px 5px 18px; }}
+        .entry-counterpart {{
+            display:inline-flex;
+            width:max-content;
+            margin-top:16px;
+            padding:8px 10px;
+            color:var(--cyan);
+            border-bottom:1px solid color-mix(in srgb,var(--cyan),transparent 45%);
+            font-size:10px;
+            font-weight:950;
+            letter-spacing:.14em;
+            text-decoration:none;
+            transition:transform 240ms ease,color 180ms ease;
+        }}
+        .entry-counterpart:hover,.entry-counterpart:focus-visible {{ color:#fff; transform:translateX(4px); }}
         .p53-details {{ display: grid; grid-template-columns: .7fr 1.3fr; gap: 16px; margin-top: 18px; }}
         .p53-details > :only-child {{ grid-column: 1 / -1; }}
         .p53-about,
@@ -1376,6 +1590,9 @@ def build_p53_page(item: dict, output_name: str) -> None:
             92% {{ transform: scale(.99); }}
         }}
         @media (max-width: 760px) {{
+            .p53-nav {{ grid-template-columns:minmax(0,1fr) auto; gap:8px 10px; }}
+            .p53-index {{ display:none; }}
+            .p53-trace {{ grid-column:1/-1; grid-row:2; width:100%; min-width:0; padding-top:8px; border-top:1px solid rgba(255,255,255,.09); overscroll-behavior-inline:contain; scrollbar-width:none; }}
             .transmission {{ grid-template-columns: 1fr; min-height: 0; border-radius: 14px 38px 14px 38px; }}
             .protein-panel {{ min-height: 360px; }}
             .signal-panel {{ padding: 30px 22px 34px; }}
@@ -1390,9 +1607,13 @@ def build_p53_page(item: dict, output_name: str) -> None:
 <body>
     <main class="p53-page">
         <header class="p53-nav">
-            <a href="../index.html">← GSI</a>
-            <span>P53 / TRANSMISSION</span>
-            <a href="index.html">ARCHIVE →</a>
+            <nav class="p53-trace" aria-label="P53 path">
+                <a id="p53-trace-archive" href="../index.html">GSI</a><span class="trace-separator">→</span>
+                <a id="p53-trace-filter" class="hidden" href="../index.html"></a><span id="p53-trace-filter-separator" class="trace-separator hidden">→</span>
+                <a id="p53-trace-artist" class="hidden" href="../index.html"></a><span id="p53-trace-artist-separator" class="trace-separator hidden">→</span>
+                <a id="p53-radio-index" href="index.html">RADIO P53</a>
+            </nav>
+            <button class="share-transmission" id="share-transmission" type="button">SHARE</button>
         </header>
         <section class="transmission">
             <div class="protein-panel"><img src="../covers/P53_cover.jpg" alt="Expressive P53 protein artwork"></div>
@@ -1403,6 +1624,7 @@ def build_p53_page(item: dict, output_name: str) -> None:
                 <p class="artist">{html.escape(item["artist"])}</p>
                 <p class="album">{html.escape(item["album"])}</p>
                 {streaming_links_html}
+                {entry_counterpart_html}
             </div>
         </section>
         <div class="p53-details">
@@ -1413,6 +1635,62 @@ def build_p53_page(item: dict, output_name: str) -> None:
             {note_html}
         </div>
     </main>
+    <script>
+        // A shared P53 link can still return a visitor to the exact archive room it came from.
+        const archiveState = new URLSearchParams(window.location.search);
+        const filterLabels = {filter_labels_json};
+        const validView = ["poster", "wall", "gallery"].includes(archiveState.get("view"));
+        const filter = archiveState.get("filter");
+        const artistRoute = archiveState.get("artist");
+        const expectedArtistRoute = {json.dumps(slugify(item["artist"]))};
+        const artistName = {json.dumps(item["artist"])};
+        const archiveParams = new URLSearchParams();
+        if (filter && Object.hasOwn(filterLabels, filter)) archiveParams.set("filter", filter);
+        if (validView) archiveParams.set("view", archiveState.get("view"));
+        const archiveHref = `../index.html${{archiveParams.size ? `?${{archiveParams}}` : ""}}`;
+        document.querySelectorAll("#p53-trace-archive").forEach(link => link.href = archiveHref);
+        const p53IndexLink = document.querySelector("#p53-radio-index");
+        if (p53IndexLink) {{
+            const p53IndexParams = new URLSearchParams(archiveParams);
+            if (artistRoute === expectedArtistRoute) p53IndexParams.set("artist", artistRoute);
+            p53IndexLink.href = `index.html${{p53IndexParams.size ? `?${{p53IndexParams}}` : ""}}`;
+        }}
+        if (filter && Object.hasOwn(filterLabels, filter)) {{
+            const traceFilter = document.querySelector("#p53-trace-filter");
+            traceFilter.textContent = filterLabels[filter];
+            traceFilter.href = archiveHref;
+            traceFilter.classList.remove("hidden");
+            document.querySelector("#p53-trace-filter-separator").classList.remove("hidden");
+        }}
+        if (artistRoute === expectedArtistRoute) {{
+            const artistHref = `../artists/${{artistRoute}}.html`;
+            const traceArtist = document.querySelector("#p53-trace-artist");
+            traceArtist.textContent = artistName.toUpperCase();
+            traceArtist.href = artistHref;
+            traceArtist.classList.remove("hidden");
+            document.querySelector("#p53-trace-artist-separator").classList.remove("hidden");
+        }}
+        const entryCounterpart = document.querySelector(".entry-counterpart");
+        if (entryCounterpart) {{
+            const entryParams = new URLSearchParams(archiveParams);
+            if (artistRoute === expectedArtistRoute) entryParams.set("artist", artistRoute);
+            entryCounterpart.href = `${{entryCounterpart.href}}${{entryParams.size ? `?${{entryParams}}` : ""}}`;
+        }}
+        const shareButton = document.querySelector("#share-transmission");
+        shareButton.addEventListener("click", async () => {{
+            const shareData = {{ title: {json.dumps(f'Radio P53 — {item["track"]}')}, text: {json.dumps(item["artist"])}, url: window.location.href }};
+            try {{
+                if (navigator.share) {{
+                    await navigator.share(shareData);
+                    return;
+                }}
+                await navigator.clipboard.writeText(window.location.href);
+                shareButton.textContent = "LINK COPIED";
+            }} catch (error) {{
+                // Cancellation is normal; leave the control ready for another attempt.
+            }}
+        }});
+    </script>
 </body>
 </html>
 """
@@ -1422,32 +1700,207 @@ def build_p53_page(item: dict, output_name: str) -> None:
 
 
 def build_p53_archive(history: list[dict], current_slug: str) -> None:
-    """Build the stable Radio P53 history doorway, newest signal first."""
-    cards = []
-    for index, item in enumerate(history):
-        current_label = '<span class="current">CURRENT SIGNAL</span>' if item["slug"] == current_slug else f'<span class="sequence">SIGNAL {index + 1:02d}</span>'
-        cover_html = (
-            f'<img src="../covers/{html.escape(item["cover_file"], quote = True)}" alt="{html.escape(item["album"], quote = True)} cover">'
-            if item.get("cover_file") else '<div class="cover-missing" aria-hidden="true">P53</div>'
-        )
-        cards.append(f'''
-        <a class="archive-card" href="{html.escape(item["slug"], quote = True)}.html" style="--accent:{item["accent"]}">
-            {cover_html}
-            <div>{current_label}<h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small></div>
-        </a>''')
+    """Build P53 as a retained broadcast chain, without inventing a release schedule."""
+    current = next((item for item in history if item["slug"] == current_slug), None)
+    remaining = [item for item in history if item["slug"] != current_slug]
+    if current is None and remaining:
+        current, remaining = remaining[0], remaining[1:]
+
+    def cover(item: dict) -> str:
+        if item.get("cover_file"):
+            return f'<img src="../covers/{html.escape(item["cover_file"], quote = True)}" alt="{html.escape(item["album"], quote = True)} cover">'
+        return '<div class="cover-missing" aria-hidden="true">P53</div>'
+
+    transmissions = [current, *remaining] if current else remaining
+
+    def broadcast_slide(item: dict, index: int) -> str:
+        current_label = '<span>CURRENT TRANSMISSION</span>' if index == 0 else ''
+        return f'''<a class="broadcast-record{' is-active' if index == 0 else ''}" data-index="{index}" data-base-href="{html.escape(item["slug"], quote = True)}.html" href="{html.escape(item["slug"], quote = True)}.html" style="--accent:{item["accent"]}">
+            <div class="broadcast-art">{cover(item)}</div>
+            <div class="broadcast-copy">{current_label}<h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small><b>ENTER TRANSMISSION ↗</b></div>
+        </a>'''
+
+    slides_html = "".join(broadcast_slide(item, index) for index, item in enumerate(transmissions))
+    steps_html = "".join(f'<div class="transmission-step" data-index="{index}" aria-hidden="true"></div>' for index in range(len(transmissions)))
     page = f'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#25152b"><link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
-<title>Radio P53 Archive — GSI</title><style>
-*{{box-sizing:border-box}} body{{margin:0;min-height:100vh;color:#faf6ee;font-family:Arial,sans-serif;background:linear-gradient(118deg,rgba(8,10,9,.9),rgba(31,15,36,.94)),url("../covers/P53_cover.jpg") center/cover fixed}}
-main{{width:min(1240px,calc(100% - 36px));margin:auto;padding:22px 0 80px}} nav{{display:flex;justify-content:space-between;align-items:center;padding:13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:20px 6px;background:rgba(13,10,17,.86)}} nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}}
-header{{padding:clamp(42px,8vw,96px) 0 38px}} header span,.current,.sequence{{color:#ff7fbb;font-size:10px;font-weight:950;letter-spacing:.2em}} h1{{margin:10px 0 0;font-size:clamp(64px,12vw,160px);line-height:.8;letter-spacing:-.06em}} header p{{max-width:660px;color:rgba(255,255,255,.66);line-height:1.6}}
-.archive-grid{{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}} .archive-card{{display:grid;grid-template-columns:150px 1fr;min-height:150px;overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 22%);border-radius:28px 8px 28px 8px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 82%),rgba(12,11,15,.94));transition:transform .3s ease,border-radius .3s ease}} .archive-card:hover{{transform:translateY(-4px);border-radius:8px 28px 8px 28px}} .archive-card img,.cover-missing{{width:150px;height:150px;object-fit:cover}} .cover-missing{{display:grid;place-items:center;background:#17131b;color:#ff69ad;font-size:42px;font-weight:950}} .archive-card>div{{display:flex;flex-direction:column;justify-content:center;padding:18px}} .archive-card h2{{margin:8px 0 3px;font-size:clamp(24px,3vw,38px);line-height:.9}} .archive-card p{{margin:0 0 5px}} .archive-card small{{color:rgba(255,255,255,.58)}}
-@media(max-width:760px){{.archive-grid{{grid-template-columns:1fr}}.archive-card{{grid-template-columns:112px 1fr;min-height:112px}}.archive-card img,.cover-missing{{width:112px;height:112px}}}}
-</style></head><body><main><nav><a href="../index.html">← GSI</a><span>RADIO P53 / ARCHIVE</span><a href="latest.html">LATEST →</a></nav><header><span>EXTRACELLULAR SIGNALS / RETAINED</span><h1>RADIO P53</h1><p>Tracks I have or had on loop. The current transmission stays at the top; older signals remain here instead of dissolving from the archive.</p></header><section class="archive-grid">{''.join(cards)}</section></main></body></html>'''
+<title>Radio P53 — GSI</title><style>
+*{{box-sizing:border-box}} html,body{{margin:0;min-height:100%;background:#130e18}} html.p53-sequence-engaged{{scroll-snap-type:y proximity}} body{{min-height:100vh;color:#faf6ee;font-family:Arial,sans-serif;background:linear-gradient(118deg,rgba(8,10,9,.9),rgba(31,15,36,.94)),url("../covers/P53_cover.jpg") center/cover fixed}} body::before{{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(255,255,255,.025) 7px 8px)}}
+main{{position:relative;width:min(1240px,calc(100% - 36px));margin:auto;padding:22px 0 80px}} nav{{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:20px 6px;background:rgba(13,10,17,.86)}} nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}} nav span{{color:rgba(255,255,255,.55);font-size:10px;font-weight:900;letter-spacing:.16em}}
+header{{padding:clamp(42px,8vw,96px) 0 28px}} header>span,.current-copy>span,.broadcast-row span,.section-label span{{color:#ff7fbb;font-size:10px;font-weight:950;letter-spacing:.2em}} h1{{margin:10px 0 0;font-size:clamp(64px,12vw,160px);line-height:.8;letter-spacing:-.06em}} header p{{max-width:660px;color:rgba(255,255,255,.66);line-height:1.6}}
+.transmission-sequence{{position:relative;min-height:calc(var(--transmission-count) * 48vh);margin-top:32px}} .transmission-window{{position:sticky;top:12vh;height:74vh;overflow:hidden;isolation:isolate}} .transmission-stack{{position:relative;width:min(100% - 6px,1040px);height:100%;margin:auto}} .broadcast-record{{position:absolute;left:0;width:100%;height:104px;display:grid;grid-template-columns:92px minmax(0,1fr);overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 22%);border-radius:18px 6px 18px 6px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 84%),rgba(12,11,15,.94));box-shadow:0 16px 32px rgba(0,0,0,.25);opacity:0;transform:translateY(18px);pointer-events:none;transition:top .62s cubic-bezier(.2,.82,.22,1),bottom .62s cubic-bezier(.2,.82,.22,1),height .62s cubic-bezier(.2,.82,.22,1),grid-template-columns .62s cubic-bezier(.2,.82,.22,1),opacity .38s ease,border-width .38s ease,border-radius .38s ease;will-change:top,bottom,height,opacity}} .broadcast-record.is-active{{top:17%;bottom:auto;height:66%;grid-template-columns:minmax(250px,.72fr) minmax(0,1.28fr);border:2px solid var(--accent);border-radius:20px 58px 20px 58px;opacity:1;pointer-events:auto;z-index:3}} .broadcast-record.is-before{{top:1%;bottom:auto;opacity:.82;pointer-events:auto;z-index:1}} .broadcast-record.is-next{{top:auto;bottom:1%;opacity:.88;pointer-events:auto;z-index:2}} .broadcast-art,.broadcast-copy{{position:relative;z-index:1}} .broadcast-art{{min-height:100%;background:rgba(0,0,0,.25)}} .broadcast-art img,.broadcast-art .cover-missing{{display:block;width:100%;height:100%;object-fit:cover}} .cover-missing{{display:grid;place-items:center;background:#17131b;color:#ff69ad;font-size:42px;font-weight:950}} .radio-watermark{{display:none;position:absolute;z-index:0;left:43%;right:4%;top:7%;bottom:5%;overflow:hidden;pointer-events:none;color:color-mix(in srgb,var(--accent),transparent 85%);font-weight:950;font-size:clamp(82px,13vw,180px);line-height:.72;letter-spacing:-.08em}} .radio-watermark span{{display:block}} .broadcast-record.is-active .radio-watermark{{display:block}} .broadcast-copy{{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:14px 18px}} .broadcast-copy h2{{margin:0 0 4px;font-size:clamp(21px,2.6vw,31px);line-height:.94;letter-spacing:-.035em}} .broadcast-copy p{{margin:0;font-size:15px}} .broadcast-copy small{{margin-top:5px;color:rgba(255,255,255,.56);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}} .broadcast-copy b{{display:none;margin-top:30px;color:color-mix(in srgb,var(--accent),white 38%);font-size:11px;letter-spacing:.16em}} .broadcast-record.is-active .broadcast-copy{{display:grid;align-content:end;padding:clamp(28px,5vw,68px)}} .broadcast-record.is-active .broadcast-copy b{{display:inline-block}} .broadcast-record.is-active .broadcast-copy h2{{max-width:720px;margin:0 0 8px;font-size:clamp(46px,7vw,104px);line-height:.82;letter-spacing:-.055em}} .broadcast-record.is-active .broadcast-copy p{{font-size:clamp(19px,2.5vw,30px)}} .broadcast-record.is-active .broadcast-copy small{{margin-top:7px;font-size:inherit}} .transmission-indicator{{position:absolute;left:50%;z-index:4;display:flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(12,11,15,.82);color:rgba(255,255,255,.7);font-size:9px;font-weight:900;letter-spacing:.15em;transform:translateX(-50%);transition:opacity .25s ease}} .transmission-indicator[hidden]{{display:none}} .transmission-indicator.up{{top:1px}} .transmission-indicator.down{{bottom:1px}} .transmission-steps{{position:absolute;inset:0;pointer-events:none}} .transmission-step{{height:48vh;scroll-snap-align:start;scroll-snap-stop:normal}}
+@media(max-width:760px){{main{{width:min(100% - 24px,620px);padding-top:12px}} nav span{{display:none}} .transmission-sequence{{min-height:calc(var(--transmission-count) * 52svh);margin-top:26px}} .transmission-window{{top:10px;height:calc(100svh - 20px)}} .transmission-stack{{width:100%;height:100%}} .broadcast-record{{height:96px;grid-template-columns:82px minmax(0,1fr)}} .broadcast-record.is-active{{top:15%;height:70%;grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;border-radius:15px 40px 15px 40px}} .broadcast-art img,.broadcast-art .cover-missing{{min-height:0}} .broadcast-record.is-active .broadcast-art img,.broadcast-record.is-active .broadcast-art .cover-missing{{aspect-ratio:1;height:auto}} .radio-watermark{{left:8%;right:4%;top:55%;bottom:4%;font-size:clamp(78px,24vw,132px)}} .broadcast-copy{{padding:12px 14px}} .broadcast-copy h2{{font-size:20px}} .broadcast-copy p{{font-size:14px}} .broadcast-record.is-active .broadcast-copy{{padding:26px 22px 30px}} .broadcast-record.is-active .broadcast-copy h2{{font-size:clamp(42px,12vw,68px)}} .transmission-step{{height:52svh}}}}
+@media(prefers-reduced-motion:reduce){{html{{scroll-snap-type:none}}*,*::before,*::after{{animation-duration:.01ms!important;transition-duration:.01ms!important}}}}
+</style></head><body><main><nav><a id="p53-home-return" href="../index.html">GSI</a><span>→ RADIO P53</span></nav><header><h1>RADIO P53</h1><p>The ever-changing list of songs that hold a current value, scroll down to travel back in time.</p></header><section class="transmission-sequence" style="--transmission-count:{len(transmissions)}"><div class="transmission-window"><div class="transmission-stack">{slides_html}<div class="transmission-indicator up" id="previous-transmission" hidden>↑ PREVIOUS SIGNAL</div><div class="transmission-indicator down" id="next-transmission">NEXT SIGNAL ↓</div></div></div><div class="transmission-steps">{steps_html}</div></section></main><script>
+const p53ArchiveState = new URLSearchParams(window.location.search);
+const p53ArchiveParams = new URLSearchParams();
+const p53ArchiveFilter = p53ArchiveState.get("filter");
+const p53ArchiveView = p53ArchiveState.get("view");
+if (p53ArchiveFilter) p53ArchiveParams.set("filter", p53ArchiveFilter);
+if (["poster", "wall", "gallery"].includes(p53ArchiveView)) p53ArchiveParams.set("view", p53ArchiveView);
+const p53ArchiveArtist = p53ArchiveState.get("artist");
+if (p53ArchiveArtist) p53ArchiveParams.set("artist", p53ArchiveArtist);
+const p53HomeParams = new URLSearchParams(p53ArchiveParams);
+p53HomeParams.delete("artist");
+document.querySelector("#p53-home-return").href = `../index.html${{p53HomeParams.size ? `?${{p53HomeParams}}` : ""}}`;
+document.querySelectorAll("[data-base-href]").forEach(link => {{
+    link.href = `${{link.dataset.baseHref}}${{p53ArchiveParams.size ? `?${{p53ArchiveParams}}` : ""}}`;
+}});
+const sequence = document.querySelector(".transmission-sequence");
+const broadcastRecords = [...document.querySelectorAll(".broadcast-record")];
+const previousIndicator = document.querySelector("#previous-transmission");
+const nextIndicator = document.querySelector("#next-transmission");
+let activeTransmission = 0;
+let transmissionFrame = 0;
+function applyTransmission(index) {{
+    activeTransmission = Math.max(0, Math.min(broadcastRecords.length - 1, index));
+    broadcastRecords.forEach((record, recordIndex) => {{
+        record.classList.toggle("is-active", recordIndex === activeTransmission);
+        record.classList.toggle("is-before", recordIndex === activeTransmission - 1);
+        record.classList.toggle("is-next", recordIndex === activeTransmission + 1);
+    }});
+    previousIndicator.hidden = activeTransmission === 0;
+    nextIndicator.hidden = activeTransmission === broadcastRecords.length - 1;
+}}
+function updateTransmissionFromScroll() {{
+    transmissionFrame = 0;
+    const rect = sequence.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const usableDistance = Math.max(1, sequence.offsetHeight - windowHeight * .84);
+    const progress = Math.max(0, Math.min(1, (-rect.top + windowHeight * .08) / usableDistance));
+    applyTransmission(Math.round(progress * (broadcastRecords.length - 1)));
+    const engaged = rect.top <= windowHeight * .2 && rect.bottom >= windowHeight * .82;
+    document.documentElement.classList.toggle("p53-sequence-engaged", engaged);
+}}
+window.addEventListener("scroll", () => {{
+    if (!transmissionFrame) transmissionFrame = requestAnimationFrame(updateTransmissionFromScroll);
+}}, {{ passive:true }});
+window.addEventListener("resize", updateTransmissionFromScroll);
+applyTransmission(0);
+updateTransmissionFromScroll();
+</script></body></html>'''
     output_path = SITE_P53_DIR / "index.html"
     output_path.write_text(page, encoding = "utf-8")
     print(f"Built P53 archive: {output_path}")
+
+
+def build_artist_pages(tracks: list[dict], p53_history: list[dict]) -> None:
+    """Create restrained artist rooms only when GSI contains multiple entries."""
+    grouped: dict[str, list[dict]] = {}
+    for item in tracks:
+        grouped.setdefault(item["artist"], []).append(item)
+    artist_groups = {artist: items for artist, items in grouped.items() if len(items) >= 2}
+    expected_pages = {f"{slugify(artist)}.html" for artist in artist_groups}
+    for old_page in SITE_ARTISTS_DIR.glob("*.html"):
+        if old_page.name not in expected_pages:
+            old_page.unlink()
+            print(f" Removed stale generated artist room: {old_page}")
+
+    artist_config = load_config()
+    artist_notes = artist_config.get("artist_notes", {})
+    album_notes = artist_config.get("album_notes", {})
+    artist_filter_keys_json = json.dumps(list(artist_config.get("filters", {}).keys()))
+    artist_filter_labels_json = json.dumps({key: value.get("label", key) for key, value in artist_config.get("filters", {}).items()})
+    for artist, artist_tracks in artist_groups.items():
+        artist_slug = slugify(artist)
+        note = str(artist_notes.get(artist, "")).strip()
+        note_html = f'<div class="artist-note">{simple_markdown_to_html(note)}</div>' if note else ""
+        albums: dict[str, list[dict]] = {}
+        for item in artist_tracks:
+            albums.setdefault(item["album"], []).append(item)
+        grouped_albums = [(album, items) for album, items in albums.items() if len(items) >= 2]
+        grouped_slugs = {item["slug"] for _, items in grouped_albums for item in items}
+
+        def entry_href(item: dict) -> str:
+            return f'../entries/{html.escape(item["html_file"], quote=True)}?artist={artist_slug}'
+
+        def entry_base_href(item: dict) -> str:
+            return f'../entries/{html.escape(item["html_file"], quote=True)}'
+
+        def entry_tile(item: dict, compact: bool = False) -> str:
+            if compact:
+                # The album stack owns its cover; nested track rows stay text-first.
+                return f'''<a class="album-entry" data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
+                    <span class="album-entry-mark" aria-hidden="true"></span><h3>{html.escape(item["track"])}</h3><b>OPEN ↗</b>
+                </a>'''
+            return f'''<a class="artist-signal" data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
+                <img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover">
+                <div><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["album"])}</p></div><b>OPEN ↗</b>
+            </a>'''
+
+        album_sections = []
+        for album, items in grouped_albums:
+            album_note = str(album_notes.get(artist, {}).get(album, "")).strip()
+            album_note_html = f'<div style="margin:9px 0 0;color:rgba(255,255,255,.64);font-size:13px;line-height:1.4">{simple_markdown_to_html(album_note)}</div>' if album_note else ""
+            album_sections.append(f'''<section class="album-stack" style="--accent:{items[0]["accent"]}">
+                <header><img src="../covers/{html.escape(items[0]["cover_file"], quote=True)}" alt="{html.escape(album, quote=True)} cover"><div style="min-width:0"><span style="display:block;margin-bottom:6px;color:color-mix(in srgb,var(--accent),white 24%);font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2>{html.escape(album)}</h2>{album_note_html}</div></header>
+                <div>{''.join(entry_tile(item, compact=True) for item in items)}</div>
+            </section>''')
+        albums_html = "".join(album_sections)
+        remaining_html = "".join(entry_tile(item) for item in artist_tracks if item["slug"] not in grouped_slugs)
+        page = f'''<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0d0d0f"><link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml"><title>{html.escape(artist)} — GSI</title><style>
+*{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:#f2f2f2;font-family:Arial,sans-serif;background:radial-gradient(circle at 82% 12%,rgba(99,199,255,.12),transparent 27%),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 13px),#0d0d0f}}main{{width:min(1120px,calc(100% - 36px));margin:auto;padding:22px 0 80px}}nav{{display:flex;align-items:center;gap:9px;padding:13px 16px;border:1px solid rgba(255,255,255,.16);border-radius:20px 6px;background:rgba(13,13,15,.86)}}nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}}nav span{{color:rgba(255,255,255,.35)}}nav strong{{color:rgba(255,255,255,.72);font-size:11px;letter-spacing:.14em}}.artist-heading{{padding:clamp(48px,9vw,112px) 0 32px}}.artist-heading>span{{color:#ff8bc2;font-size:10px;font-weight:950;letter-spacing:.18em}}.artist-heading h1{{max-width:900px;margin:12px 0 0;font-size:clamp(64px,12vw,154px);line-height:.78;letter-spacing:-.065em;overflow-wrap:anywhere}}.artist-note{{max-width:620px;margin:22px 0 0;color:rgba(255,255,255,.68);line-height:1.55}}.artist-note p{{margin:0}}.album-stack{{margin:0 0 14px;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent),white 22%);border-radius:30px 8px 30px 8px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 84%),rgba(13,13,15,.95))}}.album-stack>header{{display:grid;grid-template-columns:116px 1fr;align-items:center;gap:18px;padding:0 20px 0 0;border-bottom:1px solid color-mix(in srgb,var(--accent),transparent 68%)}}.album-stack>header img{{width:116px;height:116px;object-fit:cover}}.album-stack>header h2{{margin:0;font-size:clamp(30px,5vw,60px);line-height:.88;letter-spacing:-.04em}}.album-stack>div{{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;padding:12px}}.album-entry,.artist-signal{{display:grid;align-items:center;min-height:76px;overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 18%);border-radius:18px 5px 18px 5px;background:rgba(0,0,0,.2);transition:transform .24s ease,border-radius .3s ease}}.album-entry{{grid-template-columns:16px minmax(0,1fr) auto;gap:10px;padding:0 12px}}.album-entry-mark{{width:8px;height:8px;border-radius:2px 7px 2px 7px;background:color-mix(in srgb,var(--accent),white 34%);box-shadow:0 0 12px color-mix(in srgb,var(--accent),transparent 45%)}}.album-entry h3{{min-width:0;margin:0;font-size:17px;line-height:.96;overflow-wrap:anywhere}}.album-entry b{{display:block;padding-left:8px;color:color-mix(in srgb,var(--accent),white 34%);font-size:9px;letter-spacing:.11em;white-space:nowrap}}.album-entry:hover,.artist-signal:hover,.album-entry:focus-visible,.artist-signal:focus-visible{{transform:translateY(-3px);border-radius:5px 18px 5px 18px}}.artist-signal{{grid-template-columns:64px 1fr}}.artist-signal img{{width:64px;height:76px;object-fit:cover}}.artist-signal>div{{min-width:0;padding:10px}}.artist-signal h2{{margin:0;font-size:17px;line-height:.96}}.artist-signal p{{margin:5px 0 0;color:rgba(255,255,255,.55);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}.artist-signal{{grid-template-columns:104px 1fr auto;min-height:112px;margin-top:9px;border-radius:22px 7px 22px 7px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 88%),rgba(13,13,15,.92))}}.artist-signal img{{width:104px;height:112px}}.artist-signal h2{{font-size:clamp(23px,3vw,37px)}}.artist-signal b{{padding:16px;color:color-mix(in srgb,var(--accent),white 34%);font-size:10px;letter-spacing:.12em}}@media(max-width:700px){{main{{width:min(100% - 24px,620px);padding-top:12px}}.artist-heading{{padding:52px 0 26px}}.album-stack>header{{grid-template-columns:88px 1fr;padding-right:14px}}.album-stack>header img{{width:88px;height:88px}}.album-stack>div{{grid-template-columns:1fr}}.album-entry{{min-height:68px}}.album-entry b{{display:none}}.artist-signal{{grid-template-columns:82px 1fr}}.artist-signal img{{width:82px;height:104px}}.artist-signal b{{display:none}}}}@media(prefers-reduced-motion:reduce){{*,*::before,*::after{{animation-duration:.01ms!important;transition-duration:.01ms!important}}}}
+/* Album headings use their own padding and rounded cover, so the label is never mistaken for an overflow artifact. */
+.album-stack>header{{grid-template-columns:120px minmax(0,1fr);align-items:center;gap:16px;padding:16px;border-bottom:1px solid color-mix(in srgb,var(--accent),transparent 68%)}} .album-stack>header img{{width:120px;height:120px;border-radius:14px 4px 14px 4px}} .album-stack>header h2{{font-size:clamp(32px,5vw,60px)}} .album-stack>header p{{margin:0}} @media(max-width:700px){{.album-stack>header{{grid-template-columns:88px minmax(0,1fr);gap:13px;padding:13px}} .album-stack>header img{{width:88px;height:88px;border-radius:11px 3px 11px 3px}} .album-stack>header h2{{font-size:32px}}}}
+</style></head><body><main><nav aria-label="GSI path"><a id="artist-archive-return" href="../index.html">GSI</a><span>→</span><a id="artist-filter-return" hidden href="../index.html"></a><span id="artist-filter-separator" hidden>→</span><strong>{html.escape(artist).upper()}</strong></nav><header class="artist-heading"><span>ARTIST SIGNALS / {len(artist_tracks):02d}</span><h1>{html.escape(artist)}</h1>{note_html}</header>{albums_html}<section class="artist-signals">{remaining_html}</section></main><script>
+// Artist rooms retain the visitor's path without turning a direct artist link into a dead end.
+const artistRoomState = new URLSearchParams(window.location.search);
+const artistRoomParams = new URLSearchParams();
+const validArtistFilters = {artist_filter_keys_json};
+const artistFilterLabels = {artist_filter_labels_json};
+const artistRoomFilter = artistRoomState.get("filter");
+const artistRoomView = artistRoomState.get("view");
+if (artistRoomFilter && validArtistFilters.includes(artistRoomFilter)) artistRoomParams.set("filter", artistRoomFilter);
+if (["poster", "wall", "gallery"].includes(artistRoomView)) artistRoomParams.set("view", artistRoomView);
+const artistReturn = document.querySelector("#artist-archive-return");
+artistReturn.href = `../index.html${{artistRoomParams.size ? `?${{artistRoomParams}}` : ""}}`;
+artistReturn.textContent = "GSI";
+if (artistRoomFilter && Object.hasOwn(artistFilterLabels, artistRoomFilter)) {{
+    const filterLink = document.querySelector("#artist-filter-return");
+    filterLink.textContent = artistFilterLabels[artistRoomFilter].toUpperCase();
+    filterLink.href = `../index.html?filter=${{encodeURIComponent(artistRoomFilter)}}${{artistRoomView ? `&view=${{encodeURIComponent(artistRoomView)}}` : ""}}`;
+    filterLink.hidden = false;
+    document.querySelector("#artist-filter-separator").hidden = false;
+}}
+document.querySelectorAll("[data-entry-base-href]").forEach(link => {{
+    const entryParams = new URLSearchParams(artistRoomParams);
+    entryParams.set("artist", {json.dumps(artist_slug)});
+    link.href = `${{link.dataset.entryBaseHref}}?${{entryParams}}`;
+}});
+</script></body></html>'''
+        output_path = SITE_ARTISTS_DIR / f"{artist_slug}.html"
+        output_path.write_text(page, encoding="utf-8")
+        print(f"Built artist room: {output_path}")
+
+
+def build_album_pages(tracks: list[dict]) -> None:
+    """Build a focused room for albums represented by at least two signals."""
+    config = load_config()
+    notes = config.get("album_notes", {})
+    grouped: dict[tuple[str, str], list[dict]] = {}
+    for item in tracks:
+        grouped.setdefault((item["artist"], item["album"]), []).append(item)
+    for (artist, album), items in grouped.items():
+        if len(items) < 2:
+            continue
+        slug = slugify(f"{artist}-{album}")
+        accent = items[0]["accent"]
+        cover = items[0].get("cover_file", "")
+        cover_html = f'<img class="album-cover" src="../covers/{html.escape(cover, quote=True)}" alt="{html.escape(album, quote=True)} cover">' if cover else ""
+        song_links = []
+        for item in items:
+            target = item.get("page_url") or f'entries/{item["html_file"]}'
+            song_links.append(f'<a class="album-song" href="../{html.escape(target, quote=True)}"><span>{html.escape(item["track"])}</span><b>OPEN ↗</b></a>')
+        note = str(notes.get(artist, {}).get(album, "")).strip()
+        note_html = f'<section class="album-note"><span>MY TAKE</span>{simple_markdown_to_html(note)}</section>' if note else ""
+        page = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(album)} — GSI</title><style>
+*{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:#f2f2f2;font-family:Arial,sans-serif;background:radial-gradient(circle at 80% 10%,color-mix(in srgb,{accent},transparent 72%),transparent 34%),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 14px),#0d0d0f}}main{{width:min(980px,calc(100% - 32px));margin:auto;padding:24px 0 80px}}nav{{display:flex;gap:10px;align-items:center;padding:13px 16px;border:1px solid color-mix(in srgb,{accent},white 20%);border-radius:20px 6px;background:rgba(13,13,15,.85);font-size:11px;font-weight:900;letter-spacing:.14em}}nav a{{color:color-mix(in srgb,{accent},white 35%);text-decoration:none}}nav span{{color:rgba(255,255,255,.35)}}header{{display:grid;grid-template-columns:minmax(260px,42%) 1fr;gap:38px;align-items:center;padding:clamp(52px,10vw,120px) 0 42px}}.album-cover{{display:block;width:100%;aspect-ratio:1;object-fit:cover;border:2px solid {accent};border-radius:30px 8px 30px 8px;box-shadow:0 0 34px color-mix(in srgb,{accent},transparent 65%)}}.kicker{{color:color-mix(in srgb,{accent},white 28%);font-size:10px;font-weight:950;letter-spacing:.18em}}h1{{margin:12px 0 8px;font-size:clamp(46px,8vw,104px);line-height:.86;letter-spacing:-.06em;overflow-wrap:anywhere}}.artist{{margin:0;color:rgba(255,255,255,.66);font-size:20px}}.songs{{display:grid;gap:12px}}.album-song{{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:21px 24px;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,{accent},white 18%);border-radius:22px 7px 22px 7px;background:linear-gradient(110deg,color-mix(in srgb,{accent},transparent 86%),rgba(13,13,15,.82));font-size:clamp(20px,3vw,30px);font-weight:850;transition:transform .2s ease,border-radius .25s ease,background .25s ease}}.album-song:hover,.album-song:focus-visible{{transform:translateX(6px);border-radius:7px 22px 7px 22px;background:linear-gradient(110deg,color-mix(in srgb,{accent},transparent 76%),rgba(13,13,15,.82))}}.album-song b{{color:color-mix(in srgb,{accent},white 32%);font-size:9px;letter-spacing:.12em;white-space:nowrap}}.album-note{{max-width:700px;margin:34px 0 0;padding:22px 26px 24px;border-left:3px solid {accent};border-radius:4px 20px 20px 4px;background:linear-gradient(100deg,color-mix(in srgb,{accent},transparent 88%),rgba(13,13,15,.46));color:rgba(255,255,255,.8);font-size:clamp(16px,2vw,20px);line-height:1.5}}.album-note>span{{display:block;margin-bottom:10px;color:color-mix(in srgb,{accent},white 30%);font-size:9px;font-weight:950;letter-spacing:.16em}}.album-note p{{margin:0}}@media(max-width:680px){{main{{width:min(100% - 24px,560px);padding-top:12px}}header{{grid-template-columns:1fr;gap:22px;padding-top:54px}}.album-cover{{max-width:380px}}.album-note{{font-size:16px;padding:18px 19px 20px}}.album-song{{padding:17px 16px}}}}
+</style></head><body><main><nav aria-label="GSI path"><a href="../index.html">GSI</a><span>→</span><strong>{html.escape(artist.upper())}</strong><span>→</span><strong>{html.escape(album.upper())}</strong></nav><header>{cover_html}<div><span class="kicker">ALBUM / {len(items):02d} SIGNALS</span><h1>{html.escape(album)}</h1><p class="artist">{html.escape(artist)}</p>{note_html}</div></header><section class="songs" aria-label="Songs in this album">{"".join(song_links)}</section></main></body></html>'''
+        path = SITE_ALBUMS_DIR / f"{slug}.html"
+        path.write_text(page, encoding="utf-8")
+        print(f"Built album room: {path}")
 
 
 def build_index_html(tracks: list[dict]) -> None:  #sample homepage
@@ -1493,8 +1946,12 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         card = f"""
         <a class="card"
             data-tags="{tags_for_attr}"
+            data-artist="{html.escape(item["artist"], quote = True)}"
+            data-album="{html.escape(item["album"], quote = True)}"
+            data-album-href="albums/{slugify(item["artist"] + '-' + item["album"])}.html"
             data-p53-order="{p53_order}"
             aria-label="{safe_card_label}"
+            data-base-href="{html.escape(item["page_url"], quote = True)}"
             href="{html.escape(item["page_url"], quote = True)}" style="--accent: {item["accent"]}; --p53-order: {p53_order};">
             {cover_html}
             <div class="info">
@@ -1532,16 +1989,6 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             item for item in tracks
             if filter_key in [tag.strip().lower() for tag in item.get("tags", "").split(",")]
         ]
-        if filter_key == "p53":
-            current_p53_slug = (config.get("p53_current_slug") or "").strip()
-            start_track = next((item for item in filter_tracks if item.get("slug") == current_p53_slug), None)
-        else:
-            start_track = filter_tracks[0] if filter_tracks else None
-        preview_covers = [
-            f'covers/{item["cover_file"]}'
-            for item in filter_tracks
-            if item.get("cover_file")
-        ][:4]
         filter_buttons.append(
             f'<button class="filter-btn filter-{safe_filter_key}" data-filter="{safe_filter_key}" aria-pressed="false"><span>{safe_label}</span></button>'
         )
@@ -1555,11 +2002,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             "playlist_color": playlist_color,
             "playlist_cta": playlist_cta,
             "count": len(filter_tracks),
-            "start_title": start_track["track"] if start_track else "",
-            "start_artist": start_track["artist"] if start_track else "",
-            "start_url": "p53/latest.html" if filter_key == "p53" and start_track else (start_track.get("page_url", "") if start_track else ""),
-            "preview_covers": preview_covers
-            ,"room_label_lines": filter_settings.get("room_label_lines") or [label]
+            "room_label_lines": filter_settings.get("room_label_lines") or [label]
         }
 
     filters_html = f"""
@@ -1574,12 +2017,6 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 <div class="filter-count" id="filter-count"></div>
                 <h2 id="filter-title"></h2>
                 <p id="filter-description"></p>
-                <a class="filter-start hidden" id="filter-start" href="#">
-                    <span>START HERE</span>
-                    <strong id="filter-start-title"></strong>
-                    <small id="filter-start-artist"></small>
-                </a>
-                <div class="filter-fragments" id="filter-fragments" aria-hidden="true"></div>
             </div>
             <a class="playlist-card hidden" id="playlist-card" href="#" target="_blank" rel="noopener noreferrer">
                 <img id="playlist-cover" alt="Playlist cover">
@@ -1594,7 +2031,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     p53_html = ""
     if p53_item:
         p53_html = f"""
-        <a class="p53-broadcast" href="p53/latest.html" aria-label="Open the current P53 signal: {html.escape(p53_item['track'], quote = True)} by {html.escape(p53_item['artist'], quote = True)}">
+        <a class="p53-broadcast" data-base-href="p53/index.html" href="p53/index.html" aria-label="Open Radio P53: current and previous transmissions" style="--signal-accent:{p53_item['accent']}">
             <div class="p53-art">
                 <img src="covers/P53_cover.jpg" alt="P53 protein artwork">
             </div>
@@ -2047,6 +2484,20 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             opacity: .18;
             transform: translateY(5px);
         }}
+        .filter-album-group {{ display:none; position:relative; grid-column:span 1; min-width:0; }}
+        .filter-album-summary {{ display:flex; flex-direction:column; width:100%; min-width:0; overflow:hidden; color:#eee; background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 34%),color-mix(in srgb,var(--accent),#1b1b1b 86%); border:2px solid color-mix(in srgb,var(--accent),white 12%); border-radius:20px; box-shadow:0 0 24px color-mix(in srgb,var(--accent),transparent 76%),0 18px 42px rgba(0,0,0,.25); transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease; }}
+        .filter-album-summary img {{ width:100%; aspect-ratio:1; object-fit:cover; display:block; border-radius:22px 6px 0 0; }}
+        .filter-album-summary {{ text-decoration:none; }}
+        .filter-album-summary {{ border-radius:24px 8px 24px 8px; }}
+        .filter-album-summary-copy {{ display:flex; flex-direction:column; gap:6px; padding:14px; }}
+        .filter-album-summary-copy strong {{ font-size:20px; line-height:1; }}
+        .filter-album-summary-copy > em {{ color:rgba(255,255,255,.68); font-size:13px; font-style:normal; font-weight:700; }}
+        .filter-album-summary-copy > span {{ color:color-mix(in srgb,var(--accent),white 34%); font-size:10px; font-weight:950; letter-spacing:.12em; }}
+        .filter-album-summary:hover,.filter-album-summary:focus-visible {{ border-color:color-mix(in srgb,var(--accent),white 35%); box-shadow:0 0 28px color-mix(in srgb,var(--accent),transparent 42%),0 24px 52px rgba(0,0,0,.35); transform:translateY(-5px) scale(1.012); border-radius:8px 24px 8px 24px; }}
+        body[data-view="gallery"] .filter-album-group {{ display:contents !important; }}
+        body[data-format="albums"][data-view="gallery"] .filter-album-group {{ display:block !important; }}
+        body[data-format="albums"][data-view="gallery"] .filter-album-summary-copy {{ display:none; }}
+        @media (max-width:760px) {{ .filter-album-summary-copy strong {{ font-size:18px; }} }}
 
         body[data-view="poster"] .grid {{
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
@@ -2067,9 +2518,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             border-radius: 10px;
         }}
 
-        body[data-view="gallery"] .card .info {{
-            display: none;
-        }}
+        body[data-view="gallery"] .card .info {{ display: none; }}
         .card {{
             display: flex;
             flex-direction: column;
@@ -2394,6 +2843,17 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             display: block;
             transition: transform 900ms cubic-bezier(.2,.8,.2,1), filter 300ms ease;
         }}
+        .p53-art::after {{
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: .22;
+            background:
+                radial-gradient(circle at 24% 72%, color-mix(in srgb, var(--signal-accent), white 12%), transparent 46%),
+                var(--signal-accent);
+            mix-blend-mode: color;
+        }}
         .p53-broadcast:hover .p53-art img {{
             transform: scale(1.045) rotate(-1deg);
             filter: saturate(1.12) contrast(1.04);
@@ -2521,13 +2981,13 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         .filter-description {{
             position: relative;
             display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(250px, 340px);
+            grid-template-columns: minmax(0, 1fr) minmax(190px, 300px);
             align-items: stretch;
-            gap: clamp(18px, 4vw, 52px);
+            gap: clamp(18px, 3vw, 38px);
             isolation: isolate;
         }}
         body.filter-active .filter-description {{
-            min-height: 350px;
+            min-height: clamp(320px, 34vw, 410px);
             margin-top: 16px;
             padding: clamp(24px, 4vw, 46px);
             overflow: hidden;
@@ -2535,12 +2995,12 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         }}
         .filter-room-label {{
             position: absolute;
-            left: -12px;
-            bottom: -34px;
-            z-index: -1;
-            color: color-mix(in srgb, var(--page-tint), transparent 85%);
+            left: -4%;
+            bottom: 9%;
+            z-index: 0;
+            color: color-mix(in srgb, var(--page-tint), transparent 68%);
             font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-            font-size: clamp(100px, 19vw, 270px);
+            font-size: clamp(112px, 16vw, 236px);
             line-height: .8;
             text-transform: uppercase;
             transform: skew(-8deg);
@@ -2554,7 +3014,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         .filter-decor {{
             position: absolute;
             inset: 0;
-            z-index: -1;
+            z-index: 0;
             overflow: hidden;
             pointer-events: none;
         }}
@@ -2564,31 +3024,27 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             position: absolute;
         }}
         .filter-description[data-filter="bassline"] .filter-room-label {{
+            /* The word itself is the pressure field; extra framing made this room read as a diagram. */
             filter: drop-shadow(8px 0 0 color-mix(in srgb, var(--page-tint), transparent 90%));
             letter-spacing: -.05em;
-            transform-origin: center bottom;
+            transform-origin: left bottom;
             animation: bass-pressure 1.9s linear infinite;
+            bottom: -2%;
+            font-size: clamp(118px, 17vw, 250px);
+            color: color-mix(in srgb, var(--page-tint), transparent 72%);
         }}
-        .filter-description[data-filter="bassline"] .filter-decor::before,
-        .filter-description[data-filter="bassline"] .filter-decor::after {{
-            inset: 18%;
-            border: 2px solid color-mix(in srgb,var(--page-tint),transparent 72%);
-            border-radius: 42px 10px 42px 10px;
-            animation: bass-wave 1.9s linear infinite;
-        }}
-        .filter-description[data-filter="bassline"] .filter-decor::after {{ animation-delay:.18s; }}
-        @keyframes bass-pressure {{ 0%,50%,100% {{ transform:skew(-8deg) scale(1,.98); }} 18%,68% {{ transform:skew(-8deg) scale(1.055,.91); }} 32%,82% {{ transform:skew(-8deg) scale(.985,1.025); }} }}
-        @keyframes bass-wave {{ 0% {{ opacity:0; transform:scale(.9); }} 18% {{ opacity:.48; }} 50% {{ opacity:0; transform:scale(1.08); }} 51% {{ transform:scale(.9); }} 68% {{ opacity:.42; }} 100% {{ opacity:0; transform:scale(1.08); }} }}
+        @keyframes bass-pressure {{ 0%,100% {{ transform:skew(-8deg) scale(1); }} 40% {{ transform:skew(-8deg) scale(1.035,.965); }} 63% {{ transform:skew(-8deg) scale(.99,1.018); }} }}
         .filter-description[data-filter="dreamy"] .filter-room-label {{
-            left: auto; right: -12%; bottom: -12%;
+            left: auto; right: -8%; bottom: -5%;
             color: transparent;
             -webkit-text-stroke: 3px color-mix(in srgb, var(--page-tint), transparent 72%);
-            animation: dreamy-drift 8.5s linear infinite;
+            animation: dreamy-drift 12s ease-in-out infinite;
         }}
-        @keyframes dreamy-drift {{ 0% {{ transform:translate(0,0) rotate(-14deg) scale(1.14); }} 25% {{ transform:translate(-35vw,-170px) rotate(-7deg) scale(1.2); }} 50% {{ transform:translate(-88vw,-430px) rotate(10deg) scale(1.02); }} 75% {{ transform:translate(-46vw,-145px) rotate(2deg) scale(1.18); }} 100% {{ transform:translate(0,0) rotate(-14deg) scale(1.14); }} }}
+        @keyframes dreamy-drift {{ 0%,100% {{ transform:translate3d(0,0,0) rotate(-10deg) scale(1.04); }} 50% {{ transform:translate3d(-8%,-7%,0) rotate(-5deg) scale(1.08); }} }}
         .filter-description[data-filter="bite"] .filter-room-label span:last-child {{
             margin-left:-.08em;
         }}
+        .filter-description[data-filter="bite"] .filter-room-label {{ bottom:4%; }}
         .filter-description[data-filter="pop"] .filter-room-label {{ display:none; }}
         .filter-description[data-filter="pop"] .filter-decor span {{
             position:absolute;
@@ -2621,17 +3077,33 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         }}
         .filter-description[data-filter="ulas"] .filter-decor::before {{ left:18px; top:18px; border-width:4px 0 0 4px; }}
         .filter-description[data-filter="ulas"] .filter-decor::after {{ right:18px; bottom:18px; border-width:0 4px 4px 0; }}
+        .filter-description[data-filter="ulas"] .filter-room-label {{ color:color-mix(in srgb,var(--page-tint),transparent 82%); }}
+        .filter-description[data-filter="ulas"] .filter-decor {{ opacity:.58; }}
         @media (max-width:760px) {{
             .filter-room-label {{ font-size:clamp(82px,28vw,150px); }}
             .filter-description[data-filter="ulas"] .filter-room-label {{ font-size:clamp(66px,22vw,118px); }}
-            .hero-architecture span {{ font-size:clamp(62px,24vw,112px); }}
+            /* A deliberate three-line field survives narrow screens better than cropped edge fragments. */
+            .hero-architecture span {{
+                color:color-mix(in srgb,var(--page-tint,#fff),transparent 93%);
+                font-size:clamp(62px,18vw,92px);
+                letter-spacing:-.055em;
+                -webkit-text-stroke:0;
+            }}
+            .hero-architecture span:nth-child(1) {{ top:4%; left:3%; right:auto; }}
+            .hero-architecture span:nth-child(2) {{ top:39%; left:-3%; color:color-mix(in srgb,var(--page-tint,#fff),transparent 94%); transform:none; }}
+            .hero-architecture span:nth-child(3) {{ right:-5%; bottom:4%; transform:skew(-7deg); }}
         }}
         .filter-copy {{
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            justify-content: center;
+            /* Copy has a fixed reading anchor; decoration never decides its vertical position. */
+            justify-content: flex-start;
+            padding-top: clamp(8px, 1.8vw, 28px);
             min-height: 0;
+            min-width: 0;
+            position: relative;
+            z-index: 1;
         }}
         .filter-count {{
             margin-bottom: 12px;
@@ -2646,60 +3118,19 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             line-height: .82;
             letter-spacing: -.055em;
             text-wrap: balance;
+            overflow-wrap: anywhere;
         }}
         .filter-description p {{
             max-width: 680px;
             font-size: 16px;
         }}
-        .filter-start {{
-            display: grid;
-            grid-template-columns: auto 1fr;
-            column-gap: 12px;
-            align-items: center;
-            margin-top: 24px;
-            padding: 12px 16px;
-            color: #fff;
-            text-decoration: none;
-            border: 1px solid color-mix(in srgb, var(--page-tint), white 28%);
-            border-radius: 20px 6px 20px 6px;
-            background: color-mix(in srgb, var(--page-tint), #111 82%);
-            transition: transform 360ms cubic-bezier(.2,.8,.2,1), border-radius 360ms cubic-bezier(.2,.8,.2,1);
-        }}
-        .filter-start:hover,
-        .filter-start:focus-visible {{
-            transform: translateX(5px);
-            border-radius: 6px 20px 6px 20px;
-        }}
-        .filter-start > span {{
-            grid-row: span 2;
-            color: color-mix(in srgb, var(--page-tint), white 60%);
-            font-size: 9px;
-            font-weight: 950;
-            letter-spacing: .15em;
-        }}
-        .filter-start strong {{ font-size: 15px; }}
-        .filter-start small {{ color: rgba(255,255,255,.58); }}
-        .filter-start.hidden {{ display: none; }}
-        .filter-fragments {{
-            display: flex;
-            min-height: 54px;
-            margin-top: 20px;
-            padding-left: 8px;
-        }}
-        .filter-fragments img {{
-            width: 58px;
-            height: 58px;
-            object-fit: cover;
-            margin-left: -8px;
-            border: 2px solid color-mix(in srgb, var(--page-tint), white 36%);
-            border-radius: 16px 4px 16px 4px;
-            transform: rotate(calc((var(--fragment-index) - 1.5) * 3deg));
-            box-shadow: 0 8px 16px rgba(0,0,0,.3);
-        }}
         .playlist-card {{
-            width: 100%;
+            width: min(100%, 300px);
             min-width: 0;
             align-self: center;
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
             border-radius: 14px 38px 14px 38px;
             transform: rotate(1.2deg);
             transition: transform 520ms cubic-bezier(.2,.8,.2,1), border-radius 520ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms ease;
@@ -2720,6 +3151,18 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             border-radius: 20px 7px 20px 7px;
             background: rgba(10,10,12,.74);
         }}
+        .layout-format-controls {{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:10px; margin:0 0 20px; }}
+        .layout-format-controls > .view-control,
+        .layout-format-controls > .format-control {{ height:50px; min-height:50px; margin:0; align-self:flex-start; box-sizing:border-box; }}
+        .format-control {{ display:flex; align-items:center; gap:8px; min-height:50px; width:fit-content; padding:5px 10px; border:1px solid rgba(255,255,255,.1); border-radius:20px 7px 20px 7px; background:rgba(10,10,12,.74); }}
+        .format-option {{ min-width:42px; color:rgba(255,255,255,.42); font:900 10px/1 Arial,sans-serif; letter-spacing:.1em; text-align:center; transition:color .45s ease,opacity .45s ease; }}
+        .format-control[data-format="songs"] .format-option[data-format-option="songs"],
+        .format-control[data-format="albums"] .format-option[data-format-option="albums"] {{ color:#fff; }}
+        .format-toggle {{ display:inline-flex; align-items:center; min-height:38px; padding:0; border:0; border-radius:999px; color:#fff; background:transparent; cursor:pointer; transition:transform .24s ease,box-shadow .45s ease; }}
+        .format-toggle:hover,.format-toggle:focus-visible {{ transform:translateY(-2px); box-shadow:0 0 18px color-mix(in srgb,var(--page-tint,#ffffff),transparent 68%); outline-offset:3px; }}
+        .format-toggle-track {{ position:relative; display:block; width:42px; height:24px; flex:0 0 42px; border-radius:999px; background:color-mix(in srgb,var(--page-tint,#ffffff),#151515 78%); box-shadow:inset 0 0 0 1px rgba(255,255,255,.28); }}
+        .format-toggle-thumb {{ position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.35); transition:transform .45s cubic-bezier(.2,.8,.2,1),background .45s ease; }}
+        .format-toggle[aria-pressed="true"] .format-toggle-thumb {{ transform:translateX(18px); background:var(--page-tint,#fff); }}
         .view-btn {{
             min-height: 38px;
             padding-inline: 14px;
@@ -2772,7 +3215,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             .filter-description {{ grid-template-columns: 1fr; }}
             body.filter-active .filter-description {{ min-height: 0; }}
             .playlist-card {{
-                width: min(100%, 330px);
+                width: min(100%, 300px);
                 justify-self: start;
             }}
         }}
@@ -2795,12 +3238,220 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 max-height:none;
                 padding:24px 18px;
             }}
-            .filter-description h2 {{ font-size: clamp(42px, 17vw, 74px); }}
+            .filter-description h2 {{ font-size: clamp(38px, 15vw, 68px); }}
             .playlist-card {{ width:min(100%,260px); }}
             .view-control {{ width: auto; }}
             .view-btn {{ flex: 1; }}
         }}
 
+        /* Mobile is its own signal-room composition, not a compressed desktop flex row. */
+        @media (max-width: 760px) {{
+            /* Android may substitute unavailable desktop display faces; make the mobile weight intentional. */
+            .filter-panel,
+            .filter-description,
+            .view-control {{
+                font-family:Roboto,Arial,sans-serif;
+                font-synthesis:weight;
+                text-size-adjust:100%;
+                -webkit-text-size-adjust:100%;
+            }}
+            .filter-row {{
+                display:grid;
+                grid-template-columns:repeat(2,minmax(0,1fr));
+                gap:7px;
+            }}
+            .filter-btn {{
+                min-width:0;
+                min-height:54px;
+                padding:11px 8px;
+                flex:initial;
+            }}
+            .filter-btn span {{
+                max-width:100%;
+                overflow:hidden;
+                font-size:clamp(11px,3.35vw,14px);
+                font-weight:900;
+                -webkit-text-stroke:.22px currentColor;
+                text-overflow:ellipsis;
+                white-space:nowrap;
+            }}
+            .filter-btn.filter-ulas,
+            .filter-btn.filter-p53 {{
+                grid-column:1/-1;
+                flex-basis:auto;
+            }}
+            .filter-btn.active {{
+                grid-column:auto;
+                flex-grow:initial;
+                transform:none;
+            }}
+            .filter-btn.filter-ulas.active,
+            .filter-btn.filter-p53.active {{ grid-column:1/-1; }}
+            .filter-description {{
+                grid-template-columns:minmax(0,1fr);
+                gap:24px;
+            }}
+            body.filter-active .filter-description {{
+                min-height:0;
+                max-height:none;
+                padding:26px 20px 22px;
+            }}
+            .filter-copy {{
+                min-height:220px;
+                padding-top:16px;
+                justify-content:flex-start;
+            }}
+            .filter-description h2 {{
+                font-size:clamp(42px,14vw,68px);
+                font-weight:900;
+                -webkit-text-stroke:.35px currentColor;
+                text-wrap:pretty;
+            }}
+            .filter-count,
+            .playlist-card-text,
+            .view-btn {{ font-weight:900; -webkit-text-stroke:.18px currentColor; }}
+            .filter-room-label {{
+                left:-4%;
+                bottom:14%;
+                color:color-mix(in srgb,var(--page-tint),transparent 63%);
+                font-family:"Arial Black",Roboto,Arial,sans-serif;
+                font-weight:900;
+                -webkit-text-stroke:.55px currentColor;
+                font-size:clamp(84px,24vw,132px);
+            }}
+            .filter-description[data-filter="bassline"] .filter-room-label {{
+                left:-5%;
+                bottom:3%;
+                font-size:clamp(82px,23vw,132px);
+            }}
+            .filter-description[data-filter="bite"] .filter-room-label {{ bottom:8%; }}
+            .filter-description[data-filter="ulas"] .filter-room-label {{ color:color-mix(in srgb,var(--page-tint),transparent 86%); }}
+            .filter-description[data-filter="dreamy"] .filter-room-label {{
+                right:-16%;
+                bottom:-6%;
+            }}
+            .playlist-card {{
+                width:min(100%,290px);
+                justify-self:center;
+                align-self:auto;
+                margin-inline:auto;
+                transform:rotate(.7deg);
+            }}
+            .filter-description[data-filter="distortion"] .playlist-card img {{ animation:none; }}
+            .filter-description[data-filter="pop"] .filter-decor span {{
+                color:color-mix(in srgb,var(--page-tint),transparent 66%);
+                -webkit-text-stroke:.3px currentColor;
+            }}
+
+            /* Mobile rooms are independent, content-sized signal cards — not a narrowed desktop stage. */
+            .hero-copy {{
+                min-height:0;
+                padding:22px 20px 26px;
+                justify-content:flex-start;
+            }}
+            .wordmark {{
+                padding:9px 18px 12px 14px;
+                font-size:clamp(56px,18vw,78px);
+            }}
+            .hero-copy .intro {{ margin-top:20px; }}
+            .hero-architecture span:nth-child(2) {{ -webkit-text-stroke:0; }}
+
+            body.filter-active .filter-description {{
+                grid-template-columns:minmax(0,1fr);
+                grid-template-rows:auto auto;
+                gap:20px;
+                min-height:0;
+                padding:22px 20px;
+            }}
+            .filter-copy {{
+                min-height:0;
+                padding-top:0;
+            }}
+            .filter-description h2 {{
+                margin-bottom:12px;
+                font-size:clamp(42px,13vw,62px);
+                line-height:.88;
+                letter-spacing:-.05em;
+                font-synthesis:none;
+            }}
+            .filter-description p {{
+                position:relative;
+                z-index:1;
+                font-size:16px;
+                line-height:1.52;
+            }}
+            /* Decorative type is powerful on desktop but makes the small room feel like it is malfunctioning. */
+            .filter-room-label {{ display:none; }}
+            .filter-decor {{ opacity:1; }}
+            .playlist-card {{
+                grid-row:2;
+                width:min(100%,250px);
+                justify-self:center;
+                margin:0 auto;
+                transform:none;
+            }}
+            .filter-description[data-has-playlist-cover="false"] .playlist-card {{
+                width:100%;
+                max-width:none;
+                min-height:64px;
+                justify-content:center;
+                border-radius:18px 8px 18px 8px;
+            }}
+            .filter-description[data-has-playlist-cover="false"] .playlist-card-text {{
+                padding:18px;
+                text-align:center;
+            }}
+
+            /* Each small room gets one reliable, legible environmental cue instead of a fragile animation stack. */
+            .filter-description[data-filter="personal"] .filter-decor,
+            .filter-description[data-filter="p53"] .filter-decor,
+            .filter-description[data-filter="ulas"] .filter-decor {{ background:none; }}
+            .filter-description[data-filter="ulas"] .filter-decor::before,
+            .filter-description[data-filter="ulas"] .filter-decor::after {{ display:none; }}
+            .filter-description[data-filter="dreamy"] .filter-decor {{
+                background:radial-gradient(ellipse 54% 46% at 76% 74%,color-mix(in srgb,var(--page-tint),transparent 83%),transparent 100%);
+                animation:dreamy-room-breathe 12s ease-in-out infinite;
+            }}
+            @keyframes dreamy-room-breathe {{
+                0%,100% {{ opacity:.44; transform:scale(.96); }}
+                50% {{ opacity:.82; transform:scale(1.04); }}
+            }}
+            .filter-description[data-filter="bassline"] .filter-decor {{
+                background:linear-gradient(90deg,transparent 0 10%,color-mix(in srgb,var(--page-tint),transparent 91%) 10% 11%,transparent 11% 100%),radial-gradient(ellipse 68% 32% at 16% 94%,color-mix(in srgb,var(--page-tint),transparent 85%),transparent 100%);
+                animation:none;
+            }}
+            .filter-description[data-filter="bite"] .filter-decor::before {{
+                content:"BITE";
+                left:18px;
+                bottom:12px;
+                color:color-mix(in srgb,var(--page-tint),transparent 86%);
+                font:900 clamp(62px,20vw,96px)/.75 Roboto,Arial,sans-serif;
+                letter-spacing:-.08em;
+            }}
+            .filter-description[data-filter="pop"] .filter-decor span {{
+                /* POP is the one room that earns a persistent mobile loop. */
+                animation:pop-signal-mobile var(--pop-speed) cubic-bezier(.18,.85,.25,1.12) var(--pop-delay) infinite;
+                color:color-mix(in srgb,var(--page-tint),transparent 68%);
+                -webkit-text-stroke:0;
+                will-change:transform,opacity;
+            }}
+            @keyframes pop-signal-mobile {{
+                0%,20% {{ opacity:0; transform:scale(.25) rotate(-7deg); }}
+                34% {{ opacity:.86; transform:scale(1.1) rotate(3deg); }}
+                56% {{ opacity:.64; transform:scale(1); }}
+                78%,100% {{ opacity:0; transform:scale(.84) translateY(-9px); }}
+            }}
+            .filter-description[data-filter="distortion"] .filter-decor {{
+                opacity:.64;
+                animation:none;
+                background:repeating-linear-gradient(0deg,transparent 0 15px,color-mix(in srgb,var(--page-tint),transparent 86%) 16px 18px,transparent 19px 36px);
+            }}
+            .filter-description[data-filter="distortion"] .filter-decor::before {{
+                animation:none;
+                opacity:.34;
+                -webkit-text-stroke:2px color-mix(in srgb,var(--page-tint),transparent 74%);
+            }}
+        }}
         @media (prefers-reduced-motion: reduce) {{
             *, *::before, *::after {{
                 animation-duration: .01ms !important;
@@ -2824,8 +3475,9 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         {p53_html}
     </header>
     {filters_html}
-    <div class="view-control" role="group" aria-label="Archive view">
-        <span class="view-control-label">VIEW</span>
+    <div class="layout-format-controls">
+    <div class="view-control" role="group" aria-label="Layout">
+        <span class="view-control-label">LAYOUT</span>
 
         <button class="view-btn" data-view="poster" aria-pressed="false">
             Poster
@@ -2839,12 +3491,20 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             Gallery
         </button>
     </div>
+    <div class="format-control" role="group" aria-label="Format">
+        <span class="format-option" data-format-option="songs">SONGS</span>
+        <button class="format-toggle" id="format-toggle" type="button" aria-pressed="false" aria-label="Switch between songs and albums"><span class="format-toggle-track" aria-hidden="true"><span class="format-toggle-thumb"></span></span></button>
+        <span class="format-option" data-format-option="albums">ALBUMS</span>
+    </div>
+    </div>
     <div class="grid">
         {''.join(cards)}
     </div>
 <script>
     document.addEventListener("DOMContentLoaded", () => {{ // wait until the page exists before selecting buttons/cards
         const viewButtons = document.querySelectorAll(".view-btn");
+        const formatToggle = document.querySelector("#format-toggle");
+        const formatControl = document.querySelector(".format-control");
         const allowedViews = new Set(["poster", "wall", "gallery"]);
         const filterInfo = {filter_data_json}; // filter data generated from config.json
         const buttons = document.querySelectorAll(".filter-btn"); // all clickable filter buttons
@@ -2857,14 +3517,47 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         const playlistCover = document.querySelector("#playlist-cover");
         const playlistCta = document.querySelector("#playlist-cta");
         const filterCount = document.querySelector("#filter-count");
-        const filterStart = document.querySelector("#filter-start");
-        const filterStartTitle = document.querySelector("#filter-start-title");
-        const filterStartArtist = document.querySelector("#filter-start-artist");
-        const filterFragments = document.querySelector("#filter-fragments");
         const filterRoomLabel = document.querySelector("#filter-room-label");
         const filterDecor = document.querySelector("#filter-decor");
 
         let activeFilter = null; // no filter is active when page first loads
+        let activeFormat = "songs";
+        let basslineResizeFrame = null;
+        function renderRoomLabel(info, filterName) {{
+            // Bassline grows with its room but remains one intentionally unbroken word.
+            const lines = filterName === "bassline"
+                ? [`BA${{"S".repeat(Math.max(5, Math.min(15, Math.round(box.clientWidth / 92))))}}LINE`]
+                : info.room_label_lines;
+            filterRoomLabel.replaceChildren(...lines.map(line => {{
+                const span = document.createElement("span");
+                span.textContent = line;
+                return span;
+            }}));
+        }}
+        window.addEventListener("resize", () => {{
+            if (activeFilter !== "bassline") return;
+            window.cancelAnimationFrame(basslineResizeFrame);
+            basslineResizeFrame = window.requestAnimationFrame(() => renderRoomLabel(filterInfo.bassline, "bassline"));
+        }});
+        function archiveContextHref(baseHref) {{
+            const params = new URLSearchParams();
+            if (activeFilter) params.set("filter", activeFilter);
+            const activeView = document.body.dataset.view;
+            if (allowedViews.has(activeView)) params.set("view", activeView);
+            if (activeFormat === "albums") params.set("format", activeFormat);
+            return `${{baseHref}}${{params.size ? `?${{params}}` : ""}}`;
+        }}
+        function syncArchiveContext() {{
+            document.querySelectorAll("[data-base-href], [data-group-base-href]").forEach(link => {{
+                link.href = archiveContextHref(link.dataset.baseHref || link.dataset.groupBaseHref);
+            }});
+            const params = new URLSearchParams();
+            if (activeFilter) params.set("filter", activeFilter);
+            const activeView = document.body.dataset.view;
+            if (allowedViews.has(activeView)) params.set("view", activeView);
+            const query = params.size ? `?${{params}}` : "";
+            window.history.replaceState(null, "", `${{window.location.pathname}}${{query}}${{window.location.hash}}`);
+        }}
         function storeView(viewName) {{
             try {{
                 localStorage.setItem("gsi-view", viewName);
@@ -2873,7 +3566,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             }}
         }}
         let viewSwitchTimer = null;
-        function applyView(viewName, animate = true) {{
+        function applyView(viewName, animate = true, sync = true) {{
             if (!allowedViews.has(viewName)) {{
                 viewName = "wall"; // default view
             }}
@@ -2885,6 +3578,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                     button.setAttribute("aria-pressed", String(isActive));
                 }});
                 storeView(viewName);
+                if (sync) syncArchiveContext();
             }};
             const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
             if (!animate || reducedMotion) {{
@@ -2913,14 +3607,77 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             playlistCover.style.display = "none";
             playlistCta.textContent = "";
         }}
+        let signalTransformTimer = null;
+        let filterEntranceTimer = null;
         function triggerSignalTransform() {{
             if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+            window.clearTimeout(signalTransformTimer);
             document.body.classList.remove("signal-transforming");
             void document.body.offsetWidth; // restart the short transformation on repeated filter changes
             document.body.classList.add("signal-transforming");
-            window.setTimeout(() => document.body.classList.remove("signal-transforming"), 720);
+            signalTransformTimer = window.setTimeout(() => document.body.classList.remove("signal-transforming"), 720);
         }}
-        function clearFilter() {{ // return to default homepage state
+        function applyFormat(formatName, sync = true) {{
+            activeFormat = formatName === "albums" ? "albums" : "songs";
+            document.body.dataset.format = activeFormat;
+            formatControl.dataset.format = activeFormat;
+            formatToggle.setAttribute("aria-pressed", String(activeFormat === "albums"));
+            renderFilterAlbumGroups(activeFilter);
+            if (sync) syncArchiveContext();
+        }}
+        formatToggle.addEventListener("click", () => applyFormat(activeFormat === "songs" ? "albums" : "songs"));
+        function clearFilterAlbumGroups() {{
+            const hiddenCards = [...document.querySelectorAll('.card[data-album-pocket-hidden="true"]')];
+            document.querySelectorAll(".filter-album-group").forEach(group => {{
+                group.remove();
+            }});
+            hiddenCards.forEach(card => {{
+                card.style.display = "flex";
+                card.removeAttribute("data-album-pocket-hidden");
+                grid.appendChild(card);
+            }});
+        }}
+        function renderFilterAlbumGroups(filterName) {{
+            // A repeated record becomes one album pocket in the archive or active filter.
+            clearFilterAlbumGroups();
+            if (activeFormat !== "albums") return;
+            const visibleCards = [...cards].filter(card => card.style.display !== "none");
+            const byAlbum = new Map();
+            visibleCards.forEach(card => {{
+                const key = `${{card.dataset.artist}}::${{card.dataset.album}}`;
+                byAlbum.set(key, [...(byAlbum.get(key) || []), card]);
+            }});
+            const groupedCards = new Set();
+            byAlbum.forEach(groupCards => {{
+                if (groupCards.length < 2) return;
+                groupCards.forEach(card => groupedCards.add(card));
+                const first = groupCards[0];
+                const group = document.createElement("section");
+                group.className = "filter-album-group";
+                group.setAttribute("data-album-pocket", "true");
+                group.setAttribute("aria-label", `${{first.dataset.album}} by ${{first.dataset.artist}}`);
+                group.dataset.album = first.dataset.album;
+                group.dataset.signalCount = String(groupCards.length).padStart(2, "0");
+                group.style.setProperty("--album-count", String(groupCards.length));
+                group.style.setProperty("--album-columns", String(Math.min(3, groupCards.length)));
+                group.style.display = "grid";
+                group.style.setProperty("--accent", first.style.getPropertyValue("--accent"));
+                grid.insertBefore(group, first);
+                const firstImage = first.querySelector("img");
+                const imageSrc = firstImage ? firstImage.getAttribute("src") : "";
+                const albumHref = archiveContextHref(first.dataset.albumHref);
+                group.innerHTML = `<a class="filter-album-summary" href="${{albumHref}}"><img src="${{imageSrc}}" alt="${{first.dataset.album}} cover"><div class="filter-album-summary-copy"><strong>${{first.dataset.album}}</strong><em>${{first.dataset.artist}}</em><span>${{String(groupCards.length).padStart(2, "0")}} signals</span></div></a>`;
+                groupCards.forEach(card => {{ card.style.display = "none"; card.dataset.albumPocketHidden = "true"; }});
+            }});
+            // Albums format is deliberately sparse: single-song albums do not appear yet.
+            visibleCards.forEach(card => {{
+                if (!groupedCards.has(card)) {{
+                    card.style.display = "none";
+                    card.dataset.albumPocketHidden = "true";
+                }}
+            }});
+        }}
+        function clearFilter(sync = true) {{ // return to default homepage state
             activeFilter = null; // forget active filter
             document.body.classList.remove("filter-active");
             document.body.removeAttribute("data-active-filter");
@@ -2931,33 +3688,35 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 button.setAttribute("aria-pressed", "false");
             }});
 
+            clearFilterAlbumGroups();
             cards.forEach(card => {{ // show every song card
                 card.style.display = "flex";
             }});
+            renderFilterAlbumGroups(null);
 
             box.classList.add("hidden"); // hide description panel
             title.textContent = ""; // clear title
             description.textContent = ""; // clear text
             box.removeAttribute("data-filter-label");
             box.removeAttribute("data-filter");
+            window.clearTimeout(filterEntranceTimer);
             box.classList.remove("filter-entering");
             filterRoomLabel.replaceChildren();
             filterDecor.replaceChildren();
             filterCount.textContent = "";
-            filterStart.classList.add("hidden");
-            filterStart.removeAttribute("href");
-            filterFragments.replaceChildren();
+            delete box.dataset.hasPlaylistCover;
             hidePlaylist();
+            if (sync) syncArchiveContext();
         }}
 
-        function setFilter(filterName) {{ // activate a filter
+        function setFilter(filterName, animate = true, sync = true) {{ // activate a filter
             if (activeFilter === filterName) {{ // clicking same filter again clears it
-                clearFilter();
+                clearFilter(sync);
                 return;
             }}
 
             activeFilter = filterName; // remember active filter
-            triggerSignalTransform();
+            if (animate) triggerSignalTransform();
             document.body.classList.add("filter-active"); // we attach and remove a CSS class whose appearance is controlled by javascript
             document.body.dataset.activeFilter = filterName;
             const info = filterInfo[filterName]; // get label/description/color from config.json
@@ -2968,16 +3727,16 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             description.hidden = !info.description;
             box.dataset.filterLabel = info.label;
             box.dataset.filter = filterName;
+            box.dataset.hasPlaylistCover = String(Boolean(info.playlist_cover));
             box.classList.remove("hidden"); // reveal before restarting entrance animations
             box.classList.remove("filter-entering");
-            void box.offsetWidth; // restart filter-specific entrance effects
-            box.classList.add("filter-entering");
-            window.setTimeout(() => box.classList.remove("filter-entering"), 1000);
-            filterRoomLabel.replaceChildren(...info.room_label_lines.map(line => {{
-                const span = document.createElement("span");
-                span.textContent = line;
-                return span;
-            }}));
+            if (animate) {{
+                window.clearTimeout(filterEntranceTimer);
+                void box.offsetWidth; // restart filter-specific entrance effects
+                box.classList.add("filter-entering");
+                filterEntranceTimer = window.setTimeout(() => box.classList.remove("filter-entering"), 1000);
+            }}
+            renderRoomLabel(info, filterName);
             filterDecor.replaceChildren();
             if (filterName === "pop") {{
                 const popSignals = [
@@ -2996,25 +3755,9 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 }});
             }}
             filterCount.textContent = `${{String(info.count).padStart(2, "0")}} SIGNAL${{info.count === 1 ? "" : "S"}}`;
-            if (info.start_url) {{
-                filterStart.href = info.start_url;
-                filterStartTitle.textContent = info.start_title;
-                filterStartArtist.textContent = info.start_artist;
-                filterStart.classList.remove("hidden");
-            }} else {{
-                filterStart.classList.add("hidden");
-                filterStart.removeAttribute("href");
-            }}
-            filterFragments.replaceChildren(...info.preview_covers.map((src, index) => {{
-                const image = document.createElement("img");
-                image.src = src;
-                image.alt = "";
-                image.style.setProperty("--fragment-index", index);
-                return image;
-            }}));
             box.classList.remove("hidden"); // show description panel
             if (info.playlist_url || info.playlist_cover) {{
-                playlistCard.href = info.playlist_url || info.start_url;
+                playlistCard.href = info.playlist_url || "#";
                 if (info.playlist_url) {{
                     playlistCard.target = "_blank";
                 }} else {{
@@ -3023,7 +3766,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 playlistCard.style.setProperty("--playlist-accent", info.playlist_color || info.color);
                 playlistCta.textContent = info.playlist_url
                     ? `${{info.playlist_cta || "Want more of the same?"}} ↗`
-                    : "CURRENT SIGNAL ↗";
+                    : "PLAYLIST UNAVAILABLE";
                 if (info.playlist_cover) {{
                     playlistCover.src = info.playlist_cover;
                     playlistCover.style.display = "block";
@@ -3041,11 +3784,14 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 button.setAttribute("aria-pressed", String(isActive)); // converts boolean true/false into text
             }});
 
+            clearFilterAlbumGroups();
             cards.forEach(card => {{ // show/hide cards based on tags
                 const tags = (card.dataset.tags || "").split(" "); // tags from tracks.csv
                 const shouldShow = tags.includes(filterName); // overlap works here
                 card.style.display = shouldShow ? "flex" : "none";
             }});
+            renderFilterAlbumGroups(filterName);
+            if (sync) syncArchiveContext();
         }}
 
         buttons.forEach(button => {{ // attach click behavior to every filter button
@@ -3059,8 +3805,18 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         }} catch (error) {{
             savedView = "wall"; // fallback if localStorage is unavailable
         }}
-        applyView(savedView, false); // set view to saved preference without animation
-        clearFilter(); // initialize with all cards visible and description hidden
+        const requestedState = new URLSearchParams(window.location.search);
+        const requestedView = requestedState.get("view");
+        const requestedFilter = requestedState.get("filter");
+        const requestedFormat = requestedState.get("format");
+        applyView(allowedViews.has(requestedView) ? requestedView : savedView, false, false);
+        applyFormat(requestedFormat === "albums" ? "albums" : "songs", false);
+        if (requestedFilter && Object.hasOwn(filterInfo, requestedFilter)) {{
+            setFilter(requestedFilter, false, false);
+        }} else {{
+            clearFilter(false);
+        }}
+        syncArchiveContext(); // normalize a shared link after all state is in place
     }});
 </script>
 </body>
@@ -3154,7 +3910,7 @@ def build_404_page(tracks: list[dict]) -> None:
                 <div class="signal-actions">
                     <a id="signal-spotify" href="#" target="_blank" rel="noopener noreferrer">SPOTIFY ↗</a>
                     <a id="signal-apple" href="#" target="_blank" rel="noopener noreferrer">APPLE MUSIC ↗</a>
-                    <a class="read" id="signal-read" href="#">READ IN GSI</a>
+                    <a class="read" id="signal-read" href="#">OPEN SIGNAL IN GSI</a>
                 </div>
             </div>
         </article>
@@ -3196,10 +3952,13 @@ def main() -> None:
     config = load_config()
     p53_history = prepare_p53_history(config, tracks, download_missing = True)
     archive_tracks = merge_p53_into_archive(tracks, p53_history)
+    artist_counts = {}
+    for item in tracks:
+        artist_counts[item["artist"]] = artist_counts.get(item["artist"], 0) + 1
     copy_site_covers()
     remove_stale_entry_pages(tracks)
     for item in tracks:
-        build_entry_page(item)
+        build_entry_page(item, artist_counts)
     p53_slug = (config.get("p53_current_slug") or "").strip()
     for item in p53_history:
         build_p53_page(item, f'{item["slug"]}.html')
@@ -3208,6 +3967,8 @@ def main() -> None:
         build_p53_page(p53_item, "latest.html")
     if p53_history:
         build_p53_archive(p53_history, p53_slug)
+    build_artist_pages(tracks, p53_history)
+    build_album_pages(archive_tracks)
     build_index_html(archive_tracks)
     build_404_page(archive_tracks)
     print("\nDone.")
