@@ -1700,89 +1700,74 @@ def build_p53_page(item: dict, output_name: str) -> None:
 
 
 def build_p53_archive(history: list[dict], current_slug: str) -> None:
-    """Build P53 as a retained broadcast chain, without inventing a release schedule."""
+    """Build the Radio P53 landing page as a readable, continuous transmission field."""
     current = next((item for item in history if item["slug"] == current_slug), None)
     remaining = [item for item in history if item["slug"] != current_slug]
     if current is None and remaining:
         current, remaining = remaining[0], remaining[1:]
+
+    transmissions = [current, *remaining] if current else remaining
+    total = len(transmissions)
 
     def cover(item: dict) -> str:
         if item.get("cover_file"):
             return f'<img src="../covers/{html.escape(item["cover_file"], quote = True)}" alt="{html.escape(item["album"], quote = True)} cover">'
         return '<div class="cover-missing" aria-hidden="true">P53</div>'
 
-    transmissions = [current, *remaining] if current else remaining
+    def transmission_card(item: dict, index: int) -> str:
+        number = str(index + 1).zfill(2)
+        state = "CURRENT TRANSMISSION" if index == 0 else f"SIGNAL {number} / {str(total).zfill(2)}"
+        current_class = " is-current" if index == 0 else ""
+        watermark = '<div class="card-watermark" aria-hidden="true"><span>RADIO</span><span>P53</span></div>' if index == 0 else ""
+        return f'''<li class="transmission-card{current_class}" id="signal-{number}" data-index="{index}" style="--accent:{item["accent"]}">
+    <a class="transmission-card-link" data-base-href="{html.escape(item["slug"], quote = True)}.html" href="{html.escape(item["slug"], quote = True)}.html">
+        <div class="transmission-art">{cover(item)}</div>
+        <div class="transmission-copy">{watermark}<div class="copy-content"><span class="signal-state">{state}</span><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small><b>ENTER TRANSMISSION ↗</b></div></div>
+    </a>
+</li>'''
 
-    def broadcast_slide(item: dict, index: int) -> str:
-        current_label = '<span>CURRENT TRANSMISSION</span>' if index == 0 else ''
-        return f'''<a class="broadcast-record{' is-active' if index == 0 else ''}" data-index="{index}" data-base-href="{html.escape(item["slug"], quote = True)}.html" href="{html.escape(item["slug"], quote = True)}.html" style="--accent:{item["accent"]}">
-            <div class="broadcast-art">{cover(item)}</div>
-            <div class="broadcast-copy">{current_label}<h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small><b>ENTER TRANSMISSION ↗</b></div>
-        </a>'''
-
-    slides_html = "".join(broadcast_slide(item, index) for index, item in enumerate(transmissions))
-    steps_html = "".join(f'<div class="transmission-step" data-index="{index}" aria-hidden="true"></div>' for index in range(len(transmissions)))
+    cards_html = "".join(transmission_card(item, index) for index, item in enumerate(transmissions))
     page = f'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#25152b"><link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
 <title>Radio P53 — GSI</title><style>
-*{{box-sizing:border-box}} html,body{{margin:0;min-height:100%;background:#130e18}} html.p53-sequence-engaged{{scroll-snap-type:y proximity}} body{{min-height:100vh;color:#faf6ee;font-family:Arial,sans-serif;background:linear-gradient(118deg,rgba(8,10,9,.9),rgba(31,15,36,.94)),url("../covers/P53_cover.jpg") center/cover fixed}} body::before{{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(255,255,255,.025) 7px 8px)}}
-main{{position:relative;width:min(1240px,calc(100% - 36px));margin:auto;padding:22px 0 80px}} nav{{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:20px 6px;background:rgba(13,10,17,.86)}} nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}} nav span{{color:rgba(255,255,255,.55);font-size:10px;font-weight:900;letter-spacing:.16em}}
-header{{padding:clamp(42px,8vw,96px) 0 28px}} header>span,.current-copy>span,.broadcast-row span,.section-label span{{color:#ff7fbb;font-size:10px;font-weight:950;letter-spacing:.2em}} h1{{margin:10px 0 0;font-size:clamp(64px,12vw,160px);line-height:.8;letter-spacing:-.06em}} header p{{max-width:660px;color:rgba(255,255,255,.66);line-height:1.6}}
-.transmission-sequence{{position:relative;min-height:calc(var(--transmission-count) * 42vh);margin-top:20px}} .transmission-window{{position:sticky;top:8vh;height:78vh;overflow:hidden;isolation:isolate}} .transmission-stack{{position:relative;width:min(100% - 6px,1040px);height:100%;margin:auto}} .broadcast-record{{position:absolute;left:0;width:100%;height:104px;display:grid;grid-template-columns:92px minmax(0,1fr);overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 22%);border-radius:18px 6px 18px 6px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 84%),rgba(12,11,15,.94));box-shadow:0 16px 32px rgba(0,0,0,.25);opacity:0;transform:translateY(18px);pointer-events:none;transition:top .62s cubic-bezier(.2,.82,.22,1),bottom .62s cubic-bezier(.2,.82,.22,1),height .62s cubic-bezier(.2,.82,.22,1),grid-template-columns .62s cubic-bezier(.2,.82,.22,1),opacity .38s ease,border-width .38s ease,border-radius .38s ease;will-change:top,bottom,height,opacity}} .broadcast-record.is-active{{top:12%;bottom:auto;height:72%;grid-template-columns:minmax(250px,.72fr) minmax(0,1.28fr);border:2px solid var(--accent);border-radius:20px 58px 20px 58px;opacity:1;pointer-events:auto;z-index:3}} .broadcast-record.is-before{{top:0;bottom:auto;opacity:.82;pointer-events:auto;z-index:1}} .broadcast-record.is-next{{top:auto;bottom:0;opacity:.88;pointer-events:auto;z-index:2}} .broadcast-art,.broadcast-copy{{position:relative;z-index:1}} .broadcast-art{{min-height:100%;background:rgba(0,0,0,.25)}} .broadcast-art img,.broadcast-art .cover-missing{{display:block;width:100%;height:100%;object-fit:cover}} .cover-missing{{display:grid;place-items:center;background:#17131b;color:#ff69ad;font-size:42px;font-weight:950}} .radio-watermark{{display:none;position:absolute;z-index:0;left:43%;right:4%;top:7%;bottom:5%;overflow:hidden;pointer-events:none;color:color-mix(in srgb,var(--accent),transparent 85%);font-weight:950;font-size:clamp(82px,13vw,180px);line-height:.72;letter-spacing:-.08em}} .radio-watermark span{{display:block}} .broadcast-record.is-active .radio-watermark{{display:block}} .broadcast-copy{{display:flex;flex-direction:column;justify-content:center;min-width:0;padding:14px 18px}} .broadcast-copy h2{{margin:0 0 4px;max-width:100%;overflow-wrap:anywhere;font-size:clamp(21px,2.6vw,31px);line-height:.94;letter-spacing:-.035em}} .broadcast-copy p{{margin:0;font-size:15px}} .broadcast-copy small{{margin-top:5px;color:rgba(255,255,255,.56);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}} .broadcast-copy b{{display:none;margin-top:30px;color:color-mix(in srgb,var(--accent),white 38%);font-size:11px;letter-spacing:.16em}} .broadcast-record.is-active .broadcast-copy{{display:grid;align-content:end;padding:clamp(28px,5vw,68px)}} .broadcast-record.is-active .broadcast-copy b{{display:inline-block}} .broadcast-record.is-active .broadcast-copy h2{{max-width:100%;margin:0 0 8px;font-size:clamp(46px,7vw,104px);line-height:.82;letter-spacing:-.055em}} .broadcast-record.is-active .broadcast-copy p{{font-size:clamp(19px,2.5vw,30px)}} .broadcast-record.is-active .broadcast-copy small{{margin-top:7px;font-size:inherit}} .transmission-indicator{{position:absolute;left:50%;z-index:4;display:flex;align-items:center;gap:8px;padding:5px 10px;border:1px solid rgba(255,255,255,.16);border-radius:999px;background:rgba(12,11,15,.82);color:rgba(255,255,255,.7);font-size:9px;font-weight:900;letter-spacing:.15em;transform:translateX(-50%);transition:opacity .25s ease}} .transmission-indicator[hidden]{{display:none}} .transmission-indicator.up{{top:1px}} .transmission-indicator.down{{bottom:1px}} .transmission-steps{{position:absolute;inset:0;pointer-events:none}} .transmission-step{{height:42vh;scroll-snap-align:start;scroll-snap-stop:normal}}
-@media(max-width:760px){{main{{width:min(100% - 24px,620px);padding-top:12px}} nav span{{display:none}} .transmission-sequence{{min-height:calc(var(--transmission-count) * 45svh);margin-top:18px}} .transmission-window{{top:6px;height:calc(100svh - 12px)}} .transmission-stack{{width:100%;height:100%}} .broadcast-record{{height:96px;grid-template-columns:82px minmax(0,1fr)}} .broadcast-record.is-active{{top:10%;height:76%;grid-template-columns:1fr;grid-template-rows:minmax(0,1fr) auto;border-radius:15px 40px 15px 40px}} .broadcast-record.is-active .broadcast-art{{min-height:0;height:100%;overflow:hidden}} .broadcast-art img,.broadcast-art .cover-missing{{min-height:0}} .broadcast-record.is-active .broadcast-art img,.broadcast-record.is-active .broadcast-art .cover-missing{{aspect-ratio:auto;height:100%;object-fit:cover}} .radio-watermark{{left:8%;right:4%;top:55%;bottom:4%;font-size:clamp(78px,24vw,132px)}} .broadcast-copy{{padding:12px 14px;min-width:0;background:linear-gradient(180deg,rgba(12,11,15,.35),rgba(12,11,15,.84))}} .broadcast-copy h2{{font-size:20px;max-width:100%;overflow-wrap:anywhere}} .broadcast-copy p{{font-size:14px}} .broadcast-record.is-active .broadcast-copy{{padding:22px 22px 26px;position:relative;z-index:2;background:rgba(12,11,15,.88)}} .broadcast-record.is-active .broadcast-copy h2{{font-size:clamp(38px,11vw,66px);max-width:100%;overflow-wrap:anywhere}} .transmission-step{{height:45svh}}}}
-@media(prefers-reduced-motion:reduce){{html{{scroll-snap-type:none}}*,*::before,*::after{{animation-duration:.01ms!important;transition-duration:.01ms!important}}}}
-</style></head><body><main><nav><a id="p53-home-return" href="../index.html">GSI</a><span>→ RADIO P53</span></nav><header><h1>RADIO P53</h1><p>The ever-changing list of songs that hold a current value, scroll down to travel back in time.</p></header><section class="transmission-sequence" style="--transmission-count:{len(transmissions)}"><div class="transmission-window"><div class="transmission-stack">{slides_html}<div class="transmission-indicator up" id="previous-transmission" hidden>↑ PREVIOUS SIGNAL</div><div class="transmission-indicator down" id="next-transmission">NEXT SIGNAL ↓</div></div></div><div class="transmission-steps">{steps_html}</div></section></main><script>
-const p53ArchiveState = new URLSearchParams(window.location.search);
-const p53ArchiveParams = new URLSearchParams();
-const p53ArchiveFilter = p53ArchiveState.get("filter");
-const p53ArchiveView = p53ArchiveState.get("view");
-if (p53ArchiveFilter) p53ArchiveParams.set("filter", p53ArchiveFilter);
-if (["poster", "wall", "gallery"].includes(p53ArchiveView)) p53ArchiveParams.set("view", p53ArchiveView);
-const p53ArchiveArtist = p53ArchiveState.get("artist");
-if (p53ArchiveArtist) p53ArchiveParams.set("artist", p53ArchiveArtist);
-const p53HomeParams = new URLSearchParams(p53ArchiveParams);
-p53HomeParams.delete("artist");
-document.querySelector("#p53-home-return").href = `../index.html${{p53HomeParams.size ? `?${{p53HomeParams}}` : ""}}`;
-document.querySelectorAll("[data-base-href]").forEach(link => {{
-    link.href = `${{link.dataset.baseHref}}${{p53ArchiveParams.size ? `?${{p53ArchiveParams}}` : ""}}`;
-}});
-const sequence = document.querySelector(".transmission-sequence");
-const broadcastRecords = [...document.querySelectorAll(".broadcast-record")];
-const previousIndicator = document.querySelector("#previous-transmission");
-const nextIndicator = document.querySelector("#next-transmission");
-let activeTransmission = 0;
-let transmissionFrame = 0;
-function applyTransmission(index) {{
-    activeTransmission = Math.max(0, Math.min(broadcastRecords.length - 1, index));
-    broadcastRecords.forEach((record, recordIndex) => {{
-        record.classList.toggle("is-active", recordIndex === activeTransmission);
-        record.classList.toggle("is-before", recordIndex === activeTransmission - 1);
-        record.classList.toggle("is-next", recordIndex === activeTransmission + 1);
-    }});
-    previousIndicator.hidden = activeTransmission === 0;
-    nextIndicator.hidden = activeTransmission === broadcastRecords.length - 1;
+*{{box-sizing:border-box}} html,body{{margin:0;min-height:100%;background:#130e18}} body{{min-height:100vh;color:#faf6ee;font-family:Arial,sans-serif;background:linear-gradient(118deg,rgba(8,10,9,.91),rgba(31,15,36,.95)),url("../covers/P53_cover.jpg") center/cover fixed}} body::before{{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(255,255,255,.025) 7px 8px)}}
+main{{position:relative;width:min(1240px,calc(100% - 36px));margin:auto;padding:22px 0 96px}} nav{{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:20px 6px;background:rgba(13,10,17,.86)}} nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}} nav span{{color:rgba(255,255,255,.55);font-size:10px;font-weight:900;letter-spacing:.16em}}
+header{{padding:clamp(46px,7vw,88px) 0 30px}} header>span{{color:#ff7fbb;font-size:10px;font-weight:950;letter-spacing:.2em}} h1{{margin:10px 0 18px;font-size:clamp(62px,11vw,154px);line-height:.8;letter-spacing:-.07em}} header p{{max-width:700px;margin:0;color:rgba(255,255,255,.7);font-size:clamp(16px,1.5vw,20px);line-height:1.55}}
+.field-heading{{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:26px 0 12px;color:rgba(255,255,255,.52);font-size:10px;font-weight:950;letter-spacing:.18em;text-transform:uppercase}} .field-heading strong{{color:#ff7fbb;font-size:11px}} .transmission-list{{display:grid;gap:18px;margin:0;padding:0;list-style:none}} .transmission-card{{width:min(100%,1120px);margin:0 auto;scroll-margin-top:28px;transition:transform 420ms cubic-bezier(.2,.8,.2,1),filter 320ms ease}} .transmission-card-link{{position:relative;display:grid;grid-template-columns:170px minmax(0,1fr);min-height:170px;overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 20%);border-radius:22px 8px 22px 8px;background:linear-gradient(118deg,color-mix(in srgb,var(--accent),transparent 86%),rgba(10,9,13,.95));box-shadow:0 18px 42px rgba(0,0,0,.28);transition:border-radius 420ms ease,box-shadow 320ms ease,border-color 220ms ease}} .transmission-card.is-current .transmission-card-link{{grid-template-columns:minmax(300px,.72fr) minmax(0,1.28fr);min-height:560px;border-width:2px;border-radius:28px 72px 28px 72px}} .transmission-card.is-focused{{transform:translateY(-3px)}} .transmission-card.is-focused .transmission-card-link{{box-shadow:0 22px 52px color-mix(in srgb,var(--accent),transparent 72%),0 0 0 1px color-mix(in srgb,var(--accent),white 20%)}} .transmission-art{{position:relative;z-index:1;min-width:0;min-height:100%;background:rgba(0,0,0,.26)}} .transmission-art img,.cover-missing{{display:block;width:100%;height:100%;object-fit:cover}} .cover-missing{{display:grid;place-items:center;background:#17131b;color:#ff69ad;font-size:42px;font-weight:950}} .transmission-copy{{position:relative;display:flex;align-items:center;min-width:0;overflow:hidden;padding:24px 30px;background:linear-gradient(112deg,rgba(12,11,15,.72),rgba(12,11,15,.9))}} .copy-content{{position:relative;z-index:1;min-width:0}} .signal-state{{display:block;margin-bottom:13px;color:color-mix(in srgb,var(--accent),white 42%);font-size:10px;font-weight:950;letter-spacing:.2em}} .transmission-copy h2{{margin:0 0 7px;max-width:100%;overflow-wrap:anywhere;font-size:clamp(30px,4vw,58px);line-height:.9;letter-spacing:-.055em}} .transmission-copy p{{margin:0;font-size:clamp(17px,2vw,25px)}} .transmission-copy small{{display:block;margin-top:7px;color:rgba(255,255,255,.58);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}} .transmission-copy b{{display:inline-block;margin-top:28px;color:color-mix(in srgb,var(--accent),white 38%);font-size:11px;letter-spacing:.17em}} .transmission-card.is-current .transmission-copy{{align-items:end;padding:clamp(28px,5vw,70px)}} .transmission-card.is-current .transmission-copy h2{{font-size:clamp(48px,6.5vw,104px);line-height:.8}} .transmission-card.is-current .transmission-copy p{{font-size:clamp(20px,2.3vw,32px)}} .transmission-card.is-current .transmission-copy small{{font-size:16px}} .card-watermark{{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;overflow:hidden;padding:16px 0 10px;color:color-mix(in srgb,var(--accent),transparent 77%);font-size:clamp(100px,12vw,190px);font-weight:950;line-height:.7;letter-spacing:-.1em;pointer-events:none}} .card-watermark span{{display:block;white-space:nowrap}} .signal-note{{max-width:720px;margin:2px 0 0;color:rgba(255,255,255,.58);font-size:13px;line-height:1.5}}
+@media(max-width:760px){{main{{width:min(100% - 24px,620px);padding-top:12px}} nav span{{display:none}} header{{padding:52px 0 24px}} h1{{font-size:clamp(58px,16vw,92px)}} header p{{font-size:16px}} .field-heading{{align-items:start;flex-direction:column;gap:6px;margin-top:18px}} .transmission-list{{gap:14px}} .transmission-card-link,.transmission-card.is-current .transmission-card-link{{grid-template-columns:1fr;min-height:0;border-radius:18px 42px 18px 42px}} .transmission-card.is-current .transmission-card-link{{border-radius:20px 52px 20px 52px}} .transmission-art,.transmission-card.is-current .transmission-art{{height:clamp(250px,72vw,410px);min-height:0}} .transmission-copy,.transmission-card.is-current .transmission-copy{{align-items:flex-start;padding:22px 20px 26px}} .transmission-copy h2,.transmission-card.is-current .transmission-copy h2{{font-size:clamp(32px,10vw,58px);line-height:.86}} .transmission-copy p,.transmission-card.is-current .transmission-copy p{{font-size:20px}} .transmission-copy small,.transmission-card.is-current .transmission-copy small{{font-size:14px}} .transmission-copy b{{margin-top:22px}} .card-watermark{{font-size:clamp(76px,24vw,132px);padding:10px 0 8px}}}}
+@media(prefers-reduced-motion:reduce){{*,*::before,*::after{{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}}}
+</style></head><body><main><nav><a id="p53-home-return" href="../index.html">GSI</a><span>→ RADIO P53</span></nav><header><span>TRANSMISSION FIELD / {str(total).zfill(2)} SIGNALS</span><h1>RADIO P53</h1><p>The ever-changing list of songs that hold a current value, scroll down to travel back in time.</p></header><div class="field-heading"><span>ON AIR / CURRENT FIRST</span><strong id="field-position">SIGNAL 01 / {str(total).zfill(2)}</strong></div><ol class="transmission-list">{cards_html}</ol></main><script>
+const p53State = new URLSearchParams(window.location.search);
+const p53Params = new URLSearchParams();
+const p53Filter = p53State.get("filter");
+const p53View = p53State.get("view");
+if (p53Filter) p53Params.set("filter", p53Filter);
+if (["poster", "wall", "gallery"].includes(p53View)) p53Params.set("view", p53View);
+const p53Artist = p53State.get("artist");
+if (p53Artist) p53Params.set("artist", p53Artist);
+const homeParams = new URLSearchParams(p53Params);
+homeParams.delete("artist");
+document.querySelector("#p53-home-return").href = `../index.html${{homeParams.size ? `?${{homeParams}}` : ""}}`;
+document.querySelectorAll("[data-base-href]").forEach(link => {{ link.href = `${{link.dataset.baseHref}}${{p53Params.size ? `?${{p53Params}}` : ""}}`; }});
+const cards = [...document.querySelectorAll(".transmission-card")];
+const position = document.querySelector("#field-position");
+if ("IntersectionObserver" in window) {{
+    const observer = new IntersectionObserver(entries => {{
+        entries.forEach(entry => {{
+            if (!entry.isIntersecting) return;
+            cards.forEach(card => card.classList.remove("is-focused"));
+            entry.target.classList.add("is-focused");
+            const number = String(Number(entry.target.dataset.index) + 1).padStart(2, "0");
+            position.textContent = `SIGNAL ${{number}} / {str(total).zfill(2)}`;
+        }});
+    }}, {{ rootMargin: "-28% 0px -52% 0px", threshold: 0.15 }});
+    cards.forEach(card => observer.observe(card));
 }}
-function updateTransmissionFromScroll() {{
-    transmissionFrame = 0;
-    const rect = sequence.getBoundingClientRect();
-    const windowHeight = window.innerHeight;
-    const usableDistance = Math.max(1, sequence.offsetHeight - windowHeight * .84);
-    const progress = Math.max(0, Math.min(1, (-rect.top + windowHeight * .08) / usableDistance));
-    applyTransmission(Math.round(progress * (broadcastRecords.length - 1)));
-    const engaged = rect.top <= windowHeight * .2 && rect.bottom >= windowHeight * .82;
-    document.documentElement.classList.toggle("p53-sequence-engaged", engaged);
-}}
-window.addEventListener("scroll", () => {{
-    if (!transmissionFrame) transmissionFrame = requestAnimationFrame(updateTransmissionFromScroll);
-}}, {{ passive:true }});
-window.addEventListener("resize", updateTransmissionFromScroll);
-applyTransmission(0);
-updateTransmissionFromScroll();
 </script></body></html>'''
     output_path = SITE_P53_DIR / "index.html"
     output_path.write_text(page, encoding = "utf-8")
-    print(f"Built P53 archive: {output_path}")
+    print(f"Built Radio P53 landing: {output_path}")
 
 
 def build_artist_pages(tracks: list[dict], p53_history: list[dict]) -> None:
@@ -2018,7 +2003,6 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 <h2 id="filter-title"></h2>
                 <p id="filter-description"></p>
             </div>
-            <div class="playlist-room-slot" id="playlist-room-slot"></div>
         </div>
     </section>
     """
@@ -3147,24 +3131,43 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             border: 1px solid rgba(255,255,255,.1);
             border-radius: 20px 7px 20px 7px;
             background: rgba(10,10,12,.74);
+            flex-wrap: nowrap;
+            overflow: hidden;
+            white-space: nowrap;
         }}
-        .layout-format-controls {{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:10px; margin:0 0 20px; }}
+        .layout-format-controls {{ display:grid; grid-template-columns:auto auto; align-items:stretch; justify-content:start; gap:8px; margin:0 0 20px; min-width:0; }}
         .layout-format-controls > .view-control,
-        .layout-format-controls > .format-control {{ height:50px; min-height:50px; margin:0; align-self:flex-start; box-sizing:border-box; }}
-        .format-control {{ display:flex; align-items:center; gap:8px; min-height:50px; width:fit-content; padding:5px 10px; border:1px solid rgba(255,255,255,.1); border-radius:20px 7px 20px 7px; background:rgba(10,10,12,.74); }}
-        .format-option {{ min-width:42px; color:rgba(255,255,255,.42); font:900 10px/1 Arial,sans-serif; letter-spacing:.1em; text-align:center; transition:color .45s ease,opacity .45s ease; }}
-        .format-control[data-format="songs"] .format-option[data-format-option="songs"],
-        .format-control[data-format="albums"] .format-option[data-format-option="albums"] {{ color:#fff; }}
-        .format-toggle {{ display:inline-flex; align-items:center; min-height:38px; padding:0; border:0; border-radius:999px; color:#fff; background:transparent; cursor:pointer; transition:transform .24s ease,box-shadow .45s ease; }}
-        .format-toggle:hover,.format-toggle:focus-visible {{ transform:translateY(-2px); box-shadow:0 0 18px color-mix(in srgb,var(--page-tint,#ffffff),transparent 68%); outline-offset:3px; }}
-        .format-toggle-track {{ position:relative; display:block; width:42px; height:24px; flex:0 0 42px; border-radius:999px; background:color-mix(in srgb,var(--page-tint,#ffffff),#151515 78%); box-shadow:inset 0 0 0 1px rgba(255,255,255,.28); }}
-        .format-toggle-thumb {{ position:absolute; top:3px; left:3px; width:18px; height:18px; border-radius:50%; background:#fff; box-shadow:0 2px 5px rgba(0,0,0,.35); transition:transform .45s cubic-bezier(.2,.8,.2,1),background .45s ease; }}
-        .format-toggle[aria-pressed="true"] .format-toggle-thumb {{ transform:translateX(18px); background:var(--page-tint,#fff); }}
-        .playlist-room-slot {{ display:flex; flex:0 0 auto; align-items:flex-start; }}
-        .layout-format-controls .mini-playlist-card {{ width:58px; min-width:58px; align-self:flex-start; border-radius:15px 5px 15px 5px; }}
-        .layout-format-controls .mini-playlist-card img {{ aspect-ratio:1; }}
-        .layout-format-controls .mini-playlist-card .playlist-card-text {{ display:block; padding:6px 5px 7px; overflow:hidden; color:#fff; font-size:8px; font-weight:950; letter-spacing:.08em; line-height:1; text-align:center; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }}
+        .layout-format-controls > .format-control {{ width:clamp(376px,30vw,400px); max-width:100%; min-height:0; margin:0; align-self:stretch; box-sizing:border-box; }}
+        .layout-format-controls > .view-control {{ display:grid; grid-template-columns:auto repeat(3,minmax(0,1fr)); gap:4px; }}
+        .layout-format-controls > .view-control .view-btn {{ display:flex; align-items:center; justify-content:center; width:100%; height:38px; min-width:0; padding:0 8px; line-height:1; }}
+        .layout-format-controls > .view-control .view-control-label {{ display:flex; align-items:center; min-width:0; white-space:nowrap; }}
+        .layout-format-controls.has-playlist {{ grid-template-columns:minmax(376px,400px) minmax(376px,400px) minmax(220px,1fr); }}
+        .layout-format-controls.has-playlist > .view-control,
+        .layout-format-controls.has-playlist > .format-control {{ width:100%; }}
+        .format-control {{ position:relative; isolation:isolate; display:flex; align-items:stretch; gap:0; width:fit-content; overflow:hidden; padding:4px; border:1px solid rgba(255,255,255,.16); border-radius:999px; background:rgba(10,10,12,.74); box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }}
+        .format-control::before {{ content:""; position:absolute; z-index:0; top:4px; bottom:4px; left:4px; width:calc((100% - 8px) / 3); border-radius:999px; background:color-mix(in srgb,var(--page-tint,#ffffff),#151515 70%); box-shadow:0 2px 7px rgba(0,0,0,.34),0 0 0 1px color-mix(in srgb,var(--page-tint,#ffffff),white 42%); transform:translateX(0); transition:transform .62s cubic-bezier(.2,.8,.2,1),background .52s ease; }}
+        .format-control[data-format="albums"]::before {{ transform:translateX(100%); }}
+        .format-control[data-format="artists"]::before {{ transform:translateX(200%); }}
+        .format-option {{ position:relative; z-index:1; flex:1 1 0; min-width:0; min-height:38px; padding:0 9px; border:0; border-radius:999px; color:rgba(255,255,255,.48); background:transparent; cursor:pointer; font:900 10px/38px Arial,sans-serif; letter-spacing:.1em; text-align:center; text-transform:uppercase; transition:color .52s ease,opacity .52s ease; }}
+        .format-option[aria-pressed="true"] {{ color:#fff; background:transparent; }}
+        .format-option:disabled {{ color:rgba(255,255,255,.2); opacity:.6; cursor:not-allowed; }}
+        .format-option:not(:disabled):hover,.format-option:not(:disabled):focus-visible {{ color:#fff; background:rgba(255,255,255,.08); outline-offset:2px; }}
+        .layout-format-controls > .mini-playlist-card {{ grid-column:3; grid-row:1; width:100%; max-width:none; min-width:0; min-height:50px; align-self:stretch; justify-content:center; border-radius:15px 5px 15px 5px; transform:none; text-decoration:none; }}
+        .layout-format-controls .mini-playlist-card img {{ display:none !important; }}
+        .layout-format-controls .mini-playlist-card .playlist-card-text {{ display:block; box-sizing:border-box; width:100%; max-width:none; padding:8px 12px; overflow:hidden; color:#fff; font-size:clamp(10px,1vw,12px); font-weight:950; letter-spacing:.065em; line-height:1.18; text-align:center; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }}
         .layout-format-controls .mini-playlist-card:hover,.layout-format-controls .mini-playlist-card:focus-visible {{ border-radius:5px 15px 5px 15px; transform:translateY(-3px) rotate(-.6deg); }}
+
+        @media (max-width: 1100px) and (min-width: 761px) {{
+            .layout-format-controls {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
+            .layout-format-controls.has-playlist {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
+            .layout-format-controls > .view-control,
+            .layout-format-controls > .format-control {{ width:100%; }}
+            .layout-format-controls.has-playlist > .mini-playlist-card {{ grid-column:1/-1; grid-row:auto; }}
+            .layout-format-controls.has-playlist > .view-control,
+            .layout-format-controls.has-playlist > .format-control {{ width:100%; }}
+            .layout-format-controls > .view-control {{ gap:3px; }}
+            .layout-format-controls > .view-control .view-btn {{ padding-inline:10px; font-size:10px; }}
+        }}
         .view-btn {{
             min-height: 38px;
             padding-inline: 14px;
@@ -3180,6 +3183,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             border-radius: 18px 5px 18px 5px;
             transform: scale(1.04);
         }}
+        .layout-format-controls .view-btn.active {{ transform:none; }}
         .card {{
             border-radius: 24px 8px 24px 8px;
             transition:
@@ -3248,10 +3252,13 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 
         /* Mobile is its own signal-room composition, not a compressed desktop flex row. */
         @media (max-width: 760px) {{
-            .layout-format-controls {{ display:grid; grid-template-columns:minmax(0,1fr) 62px; grid-template-areas:"layout playlist" "format playlist"; align-items:start; gap:7px 10px; }}
-            .layout-format-controls > .view-control {{ grid-area:layout; width:100%; }}
-            .layout-format-controls > .format-control {{ grid-area:format; justify-self:start; }}
-            .layout-format-controls > .mini-playlist-card {{ grid-area:playlist; }}
+            .layout-format-controls {{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }}
+            .layout-format-controls.has-playlist {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
+            .layout-format-controls > .view-control {{ grid-template-columns:auto repeat(3,minmax(0,1fr)); width:100%; max-width:100%; gap:2px; white-space:nowrap; }}
+            .layout-format-controls > .view-control .view-control-label {{ margin-right:0; font-size:10px; letter-spacing:.14em; }}
+            .layout-format-controls > .view-control .view-btn {{ padding-inline:8px; font-size:10px; letter-spacing:.06em; }}
+            .layout-format-controls > .mini-playlist-card {{ grid-column:1/-1; grid-row:auto; min-height:50px; }}
+            .layout-format-controls .mini-playlist-card .playlist-card-text {{ font-size:clamp(11px,3.1vw,14px); letter-spacing:.06em; }}
             /* Android may substitute unavailable desktop display faces; make the mobile weight intentional. */
             .filter-panel,
             .filter-description,
@@ -3348,6 +3355,13 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 color:color-mix(in srgb,var(--page-tint),transparent 66%);
                 -webkit-text-stroke:.3px currentColor;
             }}
+            @media (max-width:400px) {{
+                .layout-format-controls {{ grid-template-columns:1fr; column-gap:8px; }}
+                .layout-format-controls.has-playlist {{ grid-template-columns:1fr; }}
+                .layout-format-controls > .view-control .view-control-label {{ font-size:9px; letter-spacing:.08em; }}
+                .layout-format-controls > .view-control .view-btn {{ padding-inline:5px; font-size:9px; letter-spacing:.04em; }}
+                .layout-format-controls .mini-playlist-card {{ width:100%; min-width:0; }}
+            }}
 
             /* Mobile rooms are independent, content-sized signal cards — not a narrowed desktop stage. */
             .hero-copy {{
@@ -3396,8 +3410,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                 margin:0 auto;
                 transform:none;
             }}
-            .layout-format-controls .mini-playlist-card {{ grid-row:auto; width:58px; min-width:58px; justify-self:auto; margin:0; transform:none; }}
-            .playlist-room-slot {{ display:none; }}
+            .layout-format-controls .mini-playlist-card {{ width:100%; max-width:none; min-width:0; justify-self:stretch; margin:0; transform:none; }}
             .filter-description[data-has-playlist-cover="false"] .playlist-card {{
                 width:100%;
                 max-width:none;
@@ -3484,7 +3497,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     </header>
     {filters_html}
     <div class="layout-format-controls">
-    <div class="view-control" role="group" aria-label="Layout">
+      <div class="view-control" role="group" aria-label="Layout">
         <span class="view-control-label">LAYOUT</span>
 
         <button class="view-btn" data-view="poster" aria-pressed="false">
@@ -3498,16 +3511,16 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         <button class="view-btn" data-view="gallery" aria-pressed="false">
             Gallery
         </button>
-    </div>
-    <div class="format-control" role="group" aria-label="Format">
-        <span class="format-option" data-format-option="songs">SONGS</span>
-        <button class="format-toggle" id="format-toggle" type="button" aria-pressed="false" aria-label="Switch between songs and albums"><span class="format-toggle-track" aria-hidden="true"><span class="format-toggle-thumb"></span></span></button>
-        <span class="format-option" data-format-option="albums">ALBUMS</span>
-    </div>
-            <a class="playlist-card mini-playlist-card hidden" id="playlist-card" href="#" target="_blank" rel="noopener noreferrer">
+      </div>
+      <div class="format-control" role="group" aria-label="Format">
+        <button class="format-option" data-format-option="songs" type="button" aria-pressed="true">SONGS</button>
+        <button class="format-option" data-format-option="albums" type="button" aria-pressed="false">ALBUMS</button>
+        <button class="format-option" data-format-option="artists" type="button" aria-pressed="false" disabled aria-disabled="true">ARTISTS</button>
+      </div>
+      <a class="playlist-card mini-playlist-card hidden" id="playlist-card" href="#" target="_blank" rel="noopener noreferrer">
         <img id="playlist-cover" alt="Playlist cover">
         <span class="playlist-card-text" id="playlist-cta"></span>
-    </a>
+      </a>
     </div>
     <div class="grid">
         {''.join(cards)}
@@ -3515,7 +3528,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
 <script>
     document.addEventListener("DOMContentLoaded", () => {{ // wait until the page exists before selecting buttons/cards
         const viewButtons = document.querySelectorAll(".view-btn");
-        const formatToggle = document.querySelector("#format-toggle");
+        const formatButtons = document.querySelectorAll(".format-option");
         const formatControl = document.querySelector(".format-control");
         const allowedViews = new Set(["poster", "wall", "gallery"]);
         const filterInfo = {filter_data_json}; // filter data generated from config.json
@@ -3528,16 +3541,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         const playlistCard = document.querySelector("#playlist-card");
         const playlistCover = document.querySelector("#playlist-cover");
         const playlistCta = document.querySelector("#playlist-cta");
-        const playlistRoomSlot = document.querySelector("#playlist-room-slot");
-        const controlsRail = document.querySelector(".layout-format-controls");
-        const mobilePlaylistQuery = window.matchMedia("(max-width:760px)");
-        function placePlaylistCard() {{
-            if (!playlistCard || !playlistRoomSlot || !controlsRail) return;
-            if (mobilePlaylistQuery.matches) controlsRail.appendChild(playlistCard);
-            else playlistRoomSlot.appendChild(playlistCard);
-        }}
-        placePlaylistCard();
-        mobilePlaylistQuery.addEventListener("change", placePlaylistCard);
+        const layoutFormatControls = document.querySelector(".layout-format-controls");
         const filterCount = document.querySelector("#filter-count");
         const filterRoomLabel = document.querySelector("#filter-room-label");
         const filterDecor = document.querySelector("#filter-decor");
@@ -3624,6 +3628,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         }});
         function hidePlaylist() {{
             playlistCard.classList.add("hidden");
+            layoutFormatControls.classList.remove("has-playlist");
             playlistCard.removeAttribute("href");
             playlistCover.removeAttribute("src");
             playlistCover.style.display = "none";
@@ -3643,11 +3648,18 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             activeFormat = formatName === "albums" ? "albums" : "songs";
             document.body.dataset.format = activeFormat;
             formatControl.dataset.format = activeFormat;
-            formatToggle.setAttribute("aria-pressed", String(activeFormat === "albums"));
+            formatButtons.forEach(button => {{
+                const isActive = button.dataset.formatOption === activeFormat;
+                button.classList.toggle("active", isActive);
+                button.setAttribute("aria-pressed", String(isActive));
+            }});
             renderFilterAlbumGroups(activeFilter);
             if (sync) syncArchiveContext();
         }}
-        formatToggle.addEventListener("click", () => applyFormat(activeFormat === "songs" ? "albums" : "songs"));
+        formatButtons.forEach(button => {{
+            if (button.disabled) return;
+            button.addEventListener("click", () => applyFormat(button.dataset.formatOption));
+        }});
         function clearFilterAlbumGroups() {{
             const hiddenCards = [...document.querySelectorAll('.card[data-album-pocket-hidden="true"]')];
             document.querySelectorAll(".filter-album-group").forEach(group => {{
@@ -3786,7 +3798,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                     playlistCard.removeAttribute("target");
                 }}
                 playlistCard.style.setProperty("--playlist-accent", info.playlist_color || info.color);
-                playlistCta.textContent = info.playlist_url ? "PLAYLIST ↗" : "PLAYLIST UNAVAILABLE";
+                playlistCta.textContent = info.playlist_url ? "FOLLOW THE SIGNAL / ON APPLE MUSIC ↗" : "PLAYLIST UNAVAILABLE";
                 if (info.playlist_cover) {{
                     playlistCover.src = info.playlist_cover;
                     playlistCover.style.display = "block";
@@ -3795,6 +3807,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
                     playlistCover.style.display = "none";
                 }}
                 playlistCard.classList.remove("hidden");
+                layoutFormatControls.classList.add("has-playlist");
             }} else {{
                 hidePlaylist();
             }}
