@@ -30,7 +30,7 @@
     "not_found": {
         "eyebrow": "SIGNAL LOST / 404",
         "title": "THIS FREQUENCY DOES NOT EXIST.",
-        "message": "The page slipped out of the archive. Take a song for the walk back.",
+        "message": "The page slipped out of GSI. Take a song for the walk back.",
         "recommendation_label": "INTERCEPTED SIGNAL"
     },
     "page_title": "GSI: Ulaş's Genomic Stability Inducers",
@@ -132,6 +132,13 @@
     },
     "artist_notes": {
         "Metric": "Their discography has a ring that feels like home, there is an Ulaş to discover in every metric song you may listen to."
+    },
+    "artist_assets": {
+        "Metric": {
+            "image_file": "metric.webp",
+            "alt": "Metric artist image",
+            "source": "manual"
+        }
     },
     "album_notes": {
         "Metric": {

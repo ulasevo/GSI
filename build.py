@@ -1,14 +1,16 @@
 import argparse # command-line options such as the source-safe site build
-import csv #so I can read csv files per rows of organized data
 import json #so I can change the categories at ease via config.json
 import re # so I can clean file names?
 import html # escapes review text before placing it
-import colorsys # we need proper accent colors for material you effect
-import shutil # for copying files and folders
 from pathlib import Path # cross OS handling
 from urllib.parse import quote, quote_plus # allows search text to be URL safe
 import requests # web requests
-from PIL import Image # read covers and extract colors
+from gsi_assets import copy_site_covers, copy_site_scripts, copy_site_styles, dominant_color, local_image_metadata, playlist_visuals
+from gsi_artists import artist_catalogue_records, artist_image_markup, copy_site_artist_assets, resolve_artist_asset, write_artist_manifest
+from gsi_data import artist_room_groups, load_config, ordered_tracks, read_tracks
+from gsi_links import catalogue_record, normalize_provider_url, resolve_provider_links
+from gsi_text import make_streaming_links, simple_markdown_to_html, slugify
+from gsi_validation import validate_generated_links
 
 BASE = Path(__file__).resolve().parent # THIS folder
 ENTRIES_DIR = BASE / "entries" # markdown file generation path
@@ -18,7 +20,13 @@ SITE_ENTRIES_DIR = SITE_DIR / "entries" #review page
 SITE_COVERS_DIR = SITE_DIR / "covers"
 SITE_P53_DIR = SITE_DIR / "p53"
 SITE_ARTISTS_DIR = SITE_DIR / "artists"
+ARTIST_ASSETS_DIR = BASE / "artist-assets"
+SITE_ARTIST_ASSETS_DIR = SITE_DIR / "artist-assets"
 SITE_ALBUMS_DIR = SITE_DIR / "albums"
+SITE_DATA_DIR = SITE_DIR / "data"
+WEB_DIR = BASE / "web"
+SITE_SCRIPTS_DIR = SITE_DIR / "scripts"
+SITE_STYLES_DIR = SITE_DIR / "styles"
 
 TRACKS_FILE = BASE / "tracks.csv" #list of song inputs
 CONFIG_FILE = BASE / "config.json" #settings file
@@ -29,40 +37,9 @@ SITE_DIR.mkdir(exist_ok = True)
 SITE_ENTRIES_DIR.mkdir(exist_ok = True) #creates entries
 SITE_P53_DIR.mkdir(exist_ok = True)
 SITE_ARTISTS_DIR.mkdir(exist_ok = True)
+ARTIST_ASSETS_DIR.mkdir(exist_ok = True)
 SITE_ALBUMS_DIR.mkdir(exist_ok = True)
-
-def slugify(text: str) -> str: #safe file name
-    text = text.lower().strip()
-    text = re.sub(r"[^a-z0-9]+", "-", text) #nonletters replaced with "-"
-    return text.strip("-") #remove extra "-" from the start
-
-def load_config() -> dict: #settings loaded as a dictionary
-    with open(CONFIG_FILE, "r", encoding = "utf-8") as file: #Turkish character wall
-        return json.load(file)
-
-def read_tracks() -> list[dict]:
-    with open(TRACKS_FILE, "r", encoding = "utf-8") as file:
-        return list(csv.DictReader(file))
-
-def ordered_tracks(rows: list[dict], config: dict) -> list[dict]:
-    has_manual_order = False
-    for row in rows:
-        order_text = (row.get("order") or "").strip()
-        if order_text.isdigit():
-            has_manual_order = True
-            break
-    if has_manual_order:
-        def sort_key(row: dict) -> int:
-            order_text = (row.get("order") or "").strip()
-            if order_text.isdigit():
-                return int(order_text)
-            return 999999
-
-        return sorted(rows, key = sort_key)
-    if config.get("newest_first", False):
-        return list(reversed(rows))
-    return rows
-
+SITE_DATA_DIR.mkdir(exist_ok = True)
 
 def search_itunes_cover(artist: str, track: str, album: str) -> str | None: #retrieves cover link
     query = quote_plus(f"{artist} {track} {album}")
@@ -115,55 +92,6 @@ def download_cover(url: str, save_path: Path) -> bool: # downloads cover; return
         print(f" Reason: {error}") # show the actual error
         return False # tell build_entries to fall back safely
 
-def dominant_color(image_path: Path) -> str:
-    try: # catch corrupt images that PILLOW cannot identify
-        image = Image.open(image_path).convert("RGB")
-    except (OSError, ValueError) as error:
-        print(f" Could not read image: {image_path}")
-        print(f" Reason: {error}")
-        return "#888888"
-    image = image.resize((120, 120)) # SHRINK FOR FASTER
-
-    reduced = image.quantize(colors = 14).convert("RGB") #SIX MAIN COLORS!!
-    colors = reduced.getcolors(120 * 120)  #for quantification check
-
-    if colors is None:
-        return "#888888" #some color
-    best_color = None
-    best_score = -1
-    for count, (r, g, b) in colors:
-        h, s, v = colorsys.rgb_to_hsv(r /255, g /255, b /255) #SATURATION, WE NEED BRIGHT
-        if v < 0.18: #reject dark shit
-            continue
-        if v > 0.94 and s < 0.25: # eliminate white and gray
-            continue
-        if s < 0.18: # reject more gray
-            continue
-        score = (s * 2.4 + v * 0.8) * (count ** 0.45) #FAVOR VIVID ONES OMMMMG
-        if score > best_score: #hierarchy
-            best_score = score
-            best_color = (r, g, b)
-    if best_color is None:
-         colors.sort(reverse = True) # Most common comes first
-         best_color = colors[0][1] # extract values
-    r, g, b = best_color
-    return f"#{r:02x}{g:02x}{b:02x}" # hex color code
-def copy_site_covers() -> None:
-    if SITE_COVERS_DIR.exists():
-        shutil.rmtree(SITE_COVERS_DIR) # remove old covers
-    shutil.copytree(COVERS_DIR, SITE_COVERS_DIR) # copy new covers
-    print(f" Copied covers into generated site: {SITE_COVERS_DIR}")
-def playlist_visuals(playlist_cover: str, fallback_color: str) -> tuple[str, str]:
-    playlist_cover = (playlist_cover or "").strip()
-    if not playlist_cover:
-        return "", fallback_color
-    cover_path = BASE / playlist_cover
-    if not cover_path.exists():
-        print(f" Playlist cover not found: {playlist_cover}")
-        return "", fallback_color #prevent crash
-    browser_src = playlist_cover.replace("\\","/")
-    playlist_color = dominant_color(cover_path)
-    return browser_src, playlist_color #extract and return color
 def make_frontmatter(artist: str, track: str, album: str, cover_file: str, accent: str) -> str: #markdown file metadata
     return f"""---
 artist: "{artist}"
@@ -269,13 +197,13 @@ def append_missing_sections(entry_path: Path, sections: list[str]) -> None:  # a
     entry_path.write_text(text.rstrip() + addition + "\n", encoding = "utf-8") # append but don't overwrite
 
 def build_entries(write_sources: bool = True) -> list[dict]: # collect tracks, optionally updating source files
-    config = load_config() #read settings
+    config = load_config(CONFIG_FILE) #read settings
     sections = config["sections"]
     site_url = (config.get("site_url") or "").rstrip("/")
     force_refresh_covers = config.get("force_refresh_covers", False)
     built_tracks = [] #store metadata for HTML gallery
 
-    for row in ordered_tracks(read_tracks(), config): #loop songs in tracks.csv
+    for row in ordered_tracks(read_tracks(TRACKS_FILE), config): #loop songs in tracks.csv
         artist = row["artist"].strip()
         track = row["track"].strip()
         album = row["album"].strip() #cleanup
@@ -285,6 +213,12 @@ def build_entries(write_sources: bool = True) -> list[dict]: # collect tracks, o
         manual_accent = (row.get("accent") or "").strip()
         spotify_url = (row.get("spotify_url") or "").strip() #optional
         apple_url = (row.get("apple_url") or "").strip()
+        normalized_spotify_url = normalize_provider_url(spotify_url, "spotify")
+        normalized_apple_url = normalize_provider_url(apple_url, "apple")
+        if spotify_url and not normalized_spotify_url:
+            print(f" Invalid Spotify URL for {track}; using a search fallback.")
+        if apple_url and not normalized_apple_url:
+            print(f" Invalid Apple Music URL for {track}; using a search fallback.")
 
         slug = slugify(f"{artist}-{track}") # base filename
         entry_path = ENTRIES_DIR / f"{slug}.md"
@@ -369,31 +303,10 @@ def build_entries(write_sources: bool = True) -> list[dict]: # collect tracks, o
             "cover_file": cover_file,
             "accent": accent,
             "site_url": site_url,
-            "spotify_url": spotify_url,
-            "apple_url": apple_url
+            "spotify_url": normalized_spotify_url,
+            "apple_url": normalized_apple_url
         })
     return built_tracks # HTML builder save
-def simple_markdown_to_html(markdown_text: str) -> str:
-    text = html.escape(markdown_text.strip())
-    text = re.sub(r"\*\*(.*?)\*\*", r"<strong>\1</strong>", text) #apparently allows bold writing with **
-    paragraphs = [p.strip() for p in text.split("\n\n") if p.strip()] #blank lines as paragraph breaks
-    return "\n".join([f"<p>{p.replace(chr(10), '<br>')}</p>" for p in paragraphs]) #keep single line breaks
-def make_streaming_links(item: dict) -> str:
-    search_text = f"{item['artist']} {item['track']}"
-    spotify_query = quote(search_text, safe="")
-    apple_query = quote_plus(search_text)
-
-    spotify_url = item.get("spotify_url") or f"https://open.spotify.com/search/{spotify_query}"
-    apple_url = item.get("apple_url") or f"https://music.apple.com/search?term={apple_query}"
-    return f"""
-                <div class="stream-block">
-                    <div class= "stream-label">Have a listen on:</div>
-                    <div class= "stream-links">
-                        <a class="stream-link" href="{html.escape(spotify_url, quote=True)}" target="_blank" rel="noopener noreferrer">Spotify</a>
-                        <a class="stream-link" href="{html.escape(apple_url, quote=True)}" target="_blank" rel="noopener noreferrer">Apple Music</a>
-                    </div>
-                </div>
-"""
 def extract_sections_from_markdown(entry_path: Path) -> list[dict]:
     text = entry_path.read_text(encoding = "utf-8")
     text = re.sub(r"<!--.*?-->", "", text, flags = re.DOTALL)
@@ -417,7 +330,7 @@ def extract_sections_from_markdown(entry_path: Path) -> list[dict]:
         sections.append({"title": title, "content": content})
     return sections
 def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) -> None: #HTML review page
-    config = load_config()
+    config = load_config(CONFIG_FILE)
     section_info = config.get("section_info", {})
     entry_path = ENTRIES_DIR / item["entry_file"]
     sections = extract_sections_from_markdown(entry_path)
@@ -446,10 +359,13 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
         cover_html = f'<img class = "cover" src = "{cover_src}" alt = "{html.escape(item["album"])} cover">'
         bg_style = f'background-image: linear-gradient(120deg, rgba(0,0,0,.78), rgba(0,0,0,.96)), url("{cover_src}");'
     section_cards = []
+    section_index = []
     for section in sections:
         if not section["content"].strip():
             continue
         section_title = section["title"]
+        section_id = f"section-{slugify(section_title)}"
+        section_index.append((section_id, section_title))
         section_help = (section_info.get(section_title) or "").strip()
         help_button = ""
         help_panel = ""
@@ -460,7 +376,7 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
             help_button = f'<button class="section-info-button" type="button" aria-label="{safe_section_label}" aria-controls="{help_id}" aria-expanded="false">i</button>'
             help_panel = f'<div class="section-help" id="{help_id}" aria-hidden="true"><div><p>{safe_section_help}</p></div></div>'
         section_cards.append(f"""
-        <section class="section-card">
+        <section class="section-card" id="{section_id}">
             <div class="section-heading">
                 <h2>{html.escape(section_title)}</h2>
                 {help_button}
@@ -469,6 +385,14 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
             {simple_markdown_to_html(section["content"])}
         </section>
         """)
+    entry_index_html = ""
+    if len(section_index) >= 3:
+        index_links = "".join(
+            f'<a href="#{html.escape(section_id, quote=True)}">{html.escape(title)}</a>'
+            for section_id, title in section_index
+        )
+        entry_index_html = f'''<aside class="entry-index" aria-label="Entry sections"><span>SECTIONS</span><nav>{index_links}</nav></aside>'''
+    entry_layout_class = "entry-reading-layout has-entry-index" if entry_index_html else "entry-reading-layout"
     streaming_links_html = make_streaming_links(item) ##
     p53_current_slug = (config.get("p53_current_slug") or "").strip()
     in_p53 = any(record.get("slug") == item["slug"] for record in config.get("p53_history", []))
@@ -480,7 +404,6 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
         key: settings.get("label", key)
         for key, settings in config.get("filters", {}).items()
     }
-    filter_labels_json = json.dumps(filter_labels).replace("</", "<\\/")
     filter_keys = [
         tag.strip().lower()
         for tag in item.get("tags", "").split(",")
@@ -495,6 +418,12 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
     artist_room_exists = (artist_counts or {}).get(item["artist"], 0) >= 2
     artist_slug = slugify(item["artist"])
     artist_href = f'../artists/{slugify(item["artist"])}.html'
+    entry_context_json = json.dumps({
+        "filterLabels": filter_labels,
+        "artistSlug": artist_slug,
+        "artistName": item["artist"],
+        "hasArtistRoom": artist_room_exists,
+    }).replace("</", "<\\/")
     artist_display = (
         f'<a class="artist-link" data-artist-base-href="{artist_href}" href="{artist_href}">{html.escape(item["artist"])}</a>'
         if artist_room_exists else html.escape(item["artist"])
@@ -521,6 +450,7 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
     <meta property="og:title" content="{safe_page_title}">
     <meta property="og:description" content="{safe_page_description}">{sharing_meta}
     <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../styles/gsi-tokens.css">
     <title>{safe_page_title}</title>
     <style>
         :root {{
@@ -530,7 +460,7 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
         body {{
             margin: 0;
             min-height: 100vh;
-            font-family: Arial, sans-serif;
+            font-family: var(--gsi-reading-font, Arial, sans-serif);
             color: #f2f2f2;
             background: #101010;
             {bg_style}
@@ -1104,6 +1034,7 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
         .sections::before {{ content:none; }}
         .section-card,
         .section-card:nth-child(even) {{
+            box-sizing:border-box;
             width:auto;
             min-width:0;
             height:100%;
@@ -1152,6 +1083,24 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
         .signal-trace .trace-separator {{ color:rgba(255,255,255,.28); }}
         .signal-trace .trace-current {{ min-width:0; overflow:hidden; color:rgba(255,255,255,.78); text-overflow:ellipsis; white-space:nowrap; }}
         .entry-reading-layout {{ margin-top:14px; }}
+        /* The index is an orientation strip, not a competing sidebar. */
+        .entry-reading-layout.has-entry-index {{ display:block; }}
+        .entry-index {{
+            display:flex;
+            align-items:center;
+            gap:10px;
+            min-width:0;
+            margin-bottom:14px;
+            padding:9px 11px;
+            border:1px solid color-mix(in srgb,var(--accent),transparent 68%);
+            border-radius:18px 5px 18px 5px;
+            background:rgba(12,11,15,.58);
+        }}
+        .entry-index > span {{ flex:0 0 auto; margin:0; color:color-mix(in srgb,var(--accent),white 26%); font-size:9px; font-weight:950; letter-spacing:.18em; }}
+        .entry-index nav {{ display:flex; flex:1 1 auto; flex-wrap:wrap; gap:6px; min-width:0; }}
+        .entry-index a {{ display:block; padding:6px 8px; color:rgba(255,255,255,.68); border:1px solid color-mix(in srgb,var(--accent),transparent 70%); border-radius:10px 3px 10px 3px; background:rgba(255,255,255,.025); font-size:10px; font-weight:800; line-height:1.1; text-decoration:none; }}
+        .entry-index a:hover,.entry-index a:focus-visible {{ color:#fff; border-color:color-mix(in srgb,var(--accent),white 20%); }}
+        .section-card {{ scroll-margin-top:24px; }}
         .entry-reading-layout .sections {{ margin-top:0; }}
         .p53-counterpart {{
             display:inline-flex;
@@ -1191,6 +1140,9 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
             .sections {{ grid-template-columns:1fr; padding:0; }}
             .section-card,.section-card:nth-child(even) {{ width:auto; }}
             .signal-trace {{ width:100%; min-width:0; font-size:11px; overscroll-behavior-inline:contain; scrollbar-width:none; }}
+            .entry-index {{ overflow-x:auto; padding:9px 11px; scrollbar-width:none; }}
+            .entry-index nav {{ flex-wrap:nowrap; width:max-content; }}
+            .entry-index a {{ white-space:nowrap; }}
             .also-appears {{ align-items:flex-start; flex-direction:column; }}
         }}
         @media(min-width:761px) and (max-width:1100px) {{
@@ -1228,67 +1180,17 @@ def build_entry_page(item: dict, artist_counts: dict[str, int] | None = None) ->
             </div>
         </section>
 
-        <div class="entry-reading-layout">
+        <div class="{entry_layout_class}">
+            {entry_index_html}
             <div class="sections">
                 {''.join(section_cards)}
             </div>
         </div>
         {also_appears_html}
     </main>
-    <script>
-        document.querySelectorAll(".section-info-button").forEach(button => {{
-            button.addEventListener("click", () => {{
-                const help = button.closest(".section-card").querySelector(".section-help");
-                const willOpen = button.getAttribute("aria-expanded") !== "true";
-                help.classList.toggle("open", willOpen);
-                help.setAttribute("aria-hidden", String(!willOpen));
-                button.setAttribute("aria-expanded", String(willOpen));
-            }});
-        }});
-        // Preserve the filter and view that led here, without replacing browser Back.
-        const archiveState = new URLSearchParams(window.location.search);
-        const filterLabels = {filter_labels_json};
-        const expectedArtistRoute = {json.dumps(artist_slug)};
-        const artistName = {json.dumps(item["artist"])};
-        const hasArtistRoom = {str(artist_room_exists).lower()};
-        const filter = archiveState.get("filter");
-        const artistRoute = archiveState.get("artist");
-        const view = archiveState.get("view");
-        const archiveParams = new URLSearchParams();
-        if (filter && Object.hasOwn(filterLabels, filter)) archiveParams.set("filter", filter);
-        if (["poster", "wall", "gallery"].includes(view)) archiveParams.set("view", view);
-        const archiveHref = `../index.html${{archiveParams.size ? `?${{archiveParams}}` : ""}}`;
-        document.querySelectorAll("#trace-archive").forEach(link => link.href = archiveHref);
-        document.querySelectorAll("[data-artist-base-href]").forEach(link => {{
-            link.href = `${{link.dataset.artistBaseHref}}${{archiveParams.size ? `?${{archiveParams}}` : ""}}`;
-        }});
-        document.querySelectorAll("[data-filter-route]").forEach(link => {{
-            if (link.dataset.filterRoute === filter) link.hidden = true;
-        }});
-        const alsoAppears = document.querySelector("#also-appears");
-        if (alsoAppears && !alsoAppears.querySelector("a:not([hidden])")) alsoAppears.hidden = true;
-        document.querySelectorAll(".p53-counterpart[data-base-href]").forEach(link => {{
-            const p53Params = new URLSearchParams(archiveParams);
-            if (hasArtistRoom && artistRoute === expectedArtistRoute) p53Params.set("artist", artistRoute);
-            link.href = `${{link.dataset.baseHref}}${{p53Params.size ? `?${{p53Params}}` : ""}}`;
-        }});
-        if (filter && Object.hasOwn(filterLabels, filter)) {{
-            const traceFilter = document.querySelector("#trace-filter");
-            traceFilter.textContent = filterLabels[filter];
-            traceFilter.href = archiveHref;
-            traceFilter.classList.remove("hidden");
-            document.querySelector("#trace-context-separator").classList.remove("hidden");
-            document.querySelector("#trace-filter-separator").classList.remove("hidden");
-        }}
-        if (hasArtistRoom && artistRoute === expectedArtistRoute) {{
-            const artistHref = `../artists/${{expectedArtistRoute}}.html`;
-            const traceArtist = document.querySelector("#trace-artist");
-            traceArtist.textContent = artistName.toUpperCase();
-            traceArtist.href = artistHref;
-            traceArtist.classList.remove("hidden");
-            document.querySelector("#trace-context-separator").classList.remove("hidden");
-        }}
-    </script>
+    <script id="gsi-entry-context" type="application/json">{entry_context_json}</script>
+    <script src="../scripts/gsi-context.js"></script>
+    <script src="../scripts/entry-page.js"></script>
 </body>
 </html>
 """
@@ -1306,8 +1208,12 @@ def prepare_p53_history(config: dict, tracks: list[dict], download_missing: bool
         item = dict(tracks_by_slug.get(slug, {}))
         item.update(record)
         item["slug"] = slug
-        item.setdefault("spotify_url", "")
-        item.setdefault("apple_url", "")
+        for provider, key in (("spotify", "spotify_url"), ("apple", "apple_url")):
+            raw_url = (item.get(key) or "").strip()
+            normalized_url = normalize_provider_url(raw_url, provider)
+            if raw_url and not normalized_url:
+                print(f" Invalid {provider.title()} URL for P53 signal {item.get('track', slug)}; using a search fallback.")
+            item[key] = normalized_url
         item.setdefault("accent", "")
         cover_file = (item.get("cover_file") or f"{slug}.jpg").strip()
         cover_path = COVERS_DIR / cover_file
@@ -1364,8 +1270,13 @@ def merge_p53_into_archive(tracks: list[dict], p53_history: list[dict]) -> list[
 
 def build_p53_page(item: dict, output_name: str) -> None:
     """Build one permanent P53 transmission from explicitly editable P53 copy."""
-    config = load_config()
-    filter_labels_json = json.dumps({key: settings.get("label", key) for key, settings in config.get("filters", {}).items()}).replace("</", "<\\/")
+    config = load_config(CONFIG_FILE)
+    p53_context_json = json.dumps({
+        "filterLabels": {key: settings.get("label", key) for key, settings in config.get("filters", {}).items()},
+        "expectedArtistRoute": slugify(item["artist"]),
+        "artistName": item["artist"],
+        "shareTitle": f"Radio P53 — {item['track']}",
+    }, ensure_ascii=False).replace("</", "<\\/")
     site_url = (config.get("site_url") or "").rstrip("/")
     p53_permalink = f"{site_url}/p53/{item['slug']}.html" if site_url else ""
     p53_description = f"Radio P53 transmission: {item['track']} by {item['artist']}."
@@ -1379,7 +1290,7 @@ def build_p53_page(item: dict, output_name: str) -> None:
     <meta property="og:description" content="{html.escape(p53_description, quote=True)}">
     <meta property="og:image" content="{html.escape(site_url + '/covers/P53_cover.jpg', quote=True)}">
     <meta name="twitter:card" content="summary_large_image">'''
-    signal_label = "CURRENT SIGNAL" if item["slug"] == (config.get("p53_current_slug") or "").strip() else "PAST TRANSMISSION"
+    signal_label = "CURRENT TRANSMISSION" if item["slug"] == (config.get("p53_current_slug") or "").strip() else "PAST TRANSMISSION"
     about_text = (config.get("p53_about") or "").strip()
     transmission_notes = config.get("p53_transmission_notes") or {}
     transmission_note = str(transmission_notes.get(item["slug"], "")).strip()
@@ -1402,206 +1313,12 @@ def build_p53_page(item: dict, output_name: str) -> None:
     <meta name="theme-color" content="#25152b">
     <meta name="description" content="{html.escape(p53_description, quote=True)}">{sharing_meta}
     <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../styles/gsi-tokens.css">
+    <link rel="stylesheet" href="../styles/p53-transmission.css">
     <title>{page_title}</title>
     <style>
         :root {{ --accent: {item["accent"]}; --p53: #ff58a6; --cyan: #35c9e9; }}
-        * {{ box-sizing: border-box; }}
-        body {{
-            margin: 0;
-            min-height: 100vh;
-            overflow-x: hidden;
-            color: #faf6ee;
-            font-family: Arial, sans-serif;
-            background:
-                linear-gradient(118deg, rgba(8,10,9,.88), rgba(31,15,36,.92)),
-                url("../covers/P53_cover.jpg") center / cover fixed;
-        }}
-        body::before {{
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            background:
-                repeating-linear-gradient(0deg, transparent 0 6px, rgba(255,255,255,.035) 6px 7px),
-                radial-gradient(circle at 84% 14%, rgba(255,88,166,.23), transparent 30%);
-            mix-blend-mode: screen;
-        }}
-        .p53-page {{
-            position: relative;
-            width: min(1240px, calc(100% - 36px));
-            margin: 0 auto;
-            padding: 22px 0 80px;
-        }}
-        .p53-nav {{
-            display:grid;
-            grid-template-columns:minmax(0,1fr) auto;
-            align-items:center;
-            gap:12px;
-            margin-bottom: 14px;
-            padding: 13px 16px;
-            border: 1px solid rgba(255,255,255,.18);
-            border-radius: 20px 6px 20px 6px;
-            background: rgba(13,10,17,.82);
-        }}
-        .p53-nav a {{
-            color: #ff8bc2;
-            text-decoration: none;
-            font-size: 12px;
-            font-weight: 950;
-            letter-spacing: .14em;
-            transition: transform 360ms cubic-bezier(.2,.8,.2,1), color 180ms ease;
-        }}
-        .p53-nav a:hover,
-        .p53-nav a:focus-visible {{ color: #fff; transform: translateX(-4px); }}
-        .share-transmission {{
-            padding:7px 9px;
-            color:#ff8bc2;
-            border:1px solid rgba(255,255,255,.2);
-            border-radius:12px 4px 12px 4px;
-            background:transparent;
-            font:950 10px/1 Arial,sans-serif;
-            letter-spacing:.13em;
-            cursor:pointer;
-            transition:transform 220ms ease,border-radius 280ms ease,color 180ms ease;
-        }}
-        .share-transmission:hover,.share-transmission:focus-visible {{ color:#fff; transform:translateY(-2px); border-radius:4px 12px 4px 12px; }}
-        .p53-trace {{ display:flex; align-items:center; gap:10px; min-width:0; overflow:auto; color:rgba(255,255,255,.64); font-size:12px; font-weight:900; letter-spacing:.14em; white-space:nowrap; }}
-        .p53-trace a {{ color:#ff8bc2; font-size:12px; }}
-        .p53-trace .hidden {{ display:none; }}
-        .p53-trace .trace-separator {{ color:rgba(255,255,255,.28); }}
-        .transmission {{
-            display: grid;
-            grid-template-columns: minmax(300px, .9fr) minmax(0, 1.1fr);
-            min-height: 650px;
-            overflow: hidden;
-            border: 2px solid #ff65ad;
-            border-radius: 18px 62px 18px 62px;
-            background: rgba(16,12,22,.91);
-            box-shadow: 10px 10px 0 rgba(53,201,233,.42), -7px -5px 0 rgba(255,88,166,.28), 0 40px 100px rgba(0,0,0,.46);
-        }}
-        .protein-panel {{
-            position: relative;
-            min-height: 100%;
-            overflow: hidden;
-        }}
-        .protein-panel > img {{ width: 100%; height: 100%; object-fit: cover; display: block; }}
-        /* Local experiment: let the current album accent tint, but not replace, the P53 print. */
-        .protein-panel::before {{
-            content: "";
-            position: absolute;
-            inset: 0;
-            z-index: 1;
-            pointer-events: none;
-            opacity: .18;
-            background:
-                radial-gradient(circle at 72% 28%, color-mix(in srgb, var(--accent), white 10%), transparent 48%),
-                var(--accent);
-            mix-blend-mode: color;
-        }}
-        .protein-panel::after {{
-            content: "P53";
-            position: absolute;
-            left: 18px;
-            bottom: 10px;
-            color: rgba(255,255,255,.78);
-            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-            font-size: clamp(90px, 15vw, 220px);
-            line-height: .8;
-            text-shadow: 7px 0 var(--p53), -6px 0 var(--cyan);
-            animation: protein-pulse 5s ease-in-out infinite;
-            z-index: 2;
-        }}
-        .signal-panel {{
-            position: relative;
-            display: grid;
-            align-content: end;
-            padding: clamp(30px, 6vw, 76px);
-            background:
-                linear-gradient(150deg, color-mix(in srgb, var(--accent), transparent 82%), transparent 44%),
-                rgba(14,11,20,.94);
-        }}
-        .signal-panel::before {{
-            content: "{signal_label}";
-            position: absolute;
-            right: 24px;
-            top: 22px;
-            color: #ff82bd;
-            font-size: 10px;
-            font-weight: 950;
-            letter-spacing: .22em;
-        }}
-        .signal-cover {{
-            width: min(230px, 54%);
-            margin-bottom: 26px;
-            border: 2px solid color-mix(in srgb, var(--accent), white 30%);
-            border-radius: 30px 8px 30px 8px;
-            box-shadow: 0 22px 54px rgba(0,0,0,.4);
-            transform: rotate(-2deg);
-        }}
-        .signal-code {{ color: var(--cyan); font-size: 11px; font-weight: 950; letter-spacing: .2em; }}
-        h1 {{ margin: 10px 0 8px; font-size: clamp(58px, 9vw, 126px); line-height: .82; letter-spacing: -.055em; text-wrap: balance; }}
-        .artist {{ margin: 0; font-size: clamp(20px, 3vw, 32px); }}
-        .album {{ margin: 6px 0 0; color: color-mix(in srgb, var(--accent), white 66%); }}
-        .stream-block {{ margin-top: 28px; }}
-        .stream-label {{ margin-bottom: 9px; color: #ff96c8; font-size: 12px; font-weight: 800; }}
-        .stream-links {{ display: flex; flex-wrap: wrap; gap: 8px; }}
-        .stream-link {{
-            padding: 11px 16px;
-            color: #fff;
-            text-decoration: none;
-            font-weight: 800;
-            border: 1px solid rgba(255,255,255,.24);
-            border-radius: 18px 5px 18px 5px;
-            background: rgba(255,255,255,.07);
-            transition: transform 360ms cubic-bezier(.2,.8,.2,1), border-radius 360ms cubic-bezier(.2,.8,.2,1);
-        }}
-        .stream-link:hover,
-        .stream-link:focus-visible {{ transform: translateY(-3px); border-radius: 5px 18px 5px 18px; }}
-        .entry-counterpart {{
-            display:inline-flex;
-            width:max-content;
-            margin-top:16px;
-            padding:8px 10px;
-            color:var(--cyan);
-            border-bottom:1px solid color-mix(in srgb,var(--cyan),transparent 45%);
-            font-size:10px;
-            font-weight:950;
-            letter-spacing:.14em;
-            text-decoration:none;
-            transition:transform 240ms ease,color 180ms ease;
-        }}
-        .entry-counterpart:hover,.entry-counterpart:focus-visible {{ color:#fff; transform:translateX(4px); }}
-        .p53-details {{ display: grid; grid-template-columns: .7fr 1.3fr; gap: 16px; margin-top: 18px; }}
-        .p53-details > :only-child {{ grid-column: 1 / -1; }}
-        .p53-about,
-        .transmission-note {{
-            padding: clamp(22px, 4vw, 38px);
-            border: 1px solid rgba(255,255,255,.16);
-            border-radius: 28px 8px 28px 8px;
-            background: rgba(12,11,15,.88);
-        }}
-        .p53-about h2,
-        .transmission-note h2 {{ margin: 0 0 14px; color: #ff7fbb; font-size: 24px; }}
-        .p53-about p,
-        .transmission-note p {{ margin: 0; color: rgba(255,255,255,.76); line-height: 1.6; }}
-        @keyframes protein-pulse {{
-            0%, 82%, 100% {{ transform: scale(1); filter: none; }}
-            88% {{ transform: scale(1.035); filter: saturate(1.2); }}
-            92% {{ transform: scale(.99); }}
-        }}
-        @media (max-width: 760px) {{
-            .p53-nav {{ grid-template-columns:minmax(0,1fr) auto; gap:8px 10px; }}
-            .p53-index {{ display:none; }}
-            .p53-trace {{ grid-column:1/-1; grid-row:2; width:100%; min-width:0; padding-top:8px; border-top:1px solid rgba(255,255,255,.09); overscroll-behavior-inline:contain; scrollbar-width:none; }}
-            .transmission {{ grid-template-columns: 1fr; min-height: 0; border-radius: 14px 38px 14px 38px; }}
-            .protein-panel {{ min-height: 360px; }}
-            .signal-panel {{ padding: 30px 22px 34px; }}
-            .signal-cover {{ width: 150px; }}
-            .p53-details {{ grid-template-columns: 1fr; }}
-        }}
-        @media (prefers-reduced-motion: reduce) {{
-            *, *::before, *::after {{ animation-duration: .01ms !important; transition-duration: .01ms !important; }}
-        }}
+        .signal-panel::before {{ content: {json.dumps(signal_label)}; }}
     </style>
 </head>
 <body>
@@ -1619,7 +1336,6 @@ def build_p53_page(item: dict, output_name: str) -> None:
             <div class="protein-panel"><img src="../covers/P53_cover.jpg" alt="Expressive P53 protein artwork"></div>
             <div class="signal-panel">
                 {cover_html}
-                <span class="signal-code">GENOME GUARD / ACTIVE</span>
                 <h1>{html.escape(item["track"])}</h1>
                 <p class="artist">{html.escape(item["artist"])}</p>
                 <p class="album">{html.escape(item["album"])}</p>
@@ -1635,62 +1351,9 @@ def build_p53_page(item: dict, output_name: str) -> None:
             {note_html}
         </div>
     </main>
-    <script>
-        // A shared P53 link can still return a visitor to the exact archive room it came from.
-        const archiveState = new URLSearchParams(window.location.search);
-        const filterLabels = {filter_labels_json};
-        const validView = ["poster", "wall", "gallery"].includes(archiveState.get("view"));
-        const filter = archiveState.get("filter");
-        const artistRoute = archiveState.get("artist");
-        const expectedArtistRoute = {json.dumps(slugify(item["artist"]))};
-        const artistName = {json.dumps(item["artist"])};
-        const archiveParams = new URLSearchParams();
-        if (filter && Object.hasOwn(filterLabels, filter)) archiveParams.set("filter", filter);
-        if (validView) archiveParams.set("view", archiveState.get("view"));
-        const archiveHref = `../index.html${{archiveParams.size ? `?${{archiveParams}}` : ""}}`;
-        document.querySelectorAll("#p53-trace-archive").forEach(link => link.href = archiveHref);
-        const p53IndexLink = document.querySelector("#p53-radio-index");
-        if (p53IndexLink) {{
-            const p53IndexParams = new URLSearchParams(archiveParams);
-            if (artistRoute === expectedArtistRoute) p53IndexParams.set("artist", artistRoute);
-            p53IndexLink.href = `index.html${{p53IndexParams.size ? `?${{p53IndexParams}}` : ""}}`;
-        }}
-        if (filter && Object.hasOwn(filterLabels, filter)) {{
-            const traceFilter = document.querySelector("#p53-trace-filter");
-            traceFilter.textContent = filterLabels[filter];
-            traceFilter.href = archiveHref;
-            traceFilter.classList.remove("hidden");
-            document.querySelector("#p53-trace-filter-separator").classList.remove("hidden");
-        }}
-        if (artistRoute === expectedArtistRoute) {{
-            const artistHref = `../artists/${{artistRoute}}.html`;
-            const traceArtist = document.querySelector("#p53-trace-artist");
-            traceArtist.textContent = artistName.toUpperCase();
-            traceArtist.href = artistHref;
-            traceArtist.classList.remove("hidden");
-            document.querySelector("#p53-trace-artist-separator").classList.remove("hidden");
-        }}
-        const entryCounterpart = document.querySelector(".entry-counterpart");
-        if (entryCounterpart) {{
-            const entryParams = new URLSearchParams(archiveParams);
-            if (artistRoute === expectedArtistRoute) entryParams.set("artist", artistRoute);
-            entryCounterpart.href = `${{entryCounterpart.href}}${{entryParams.size ? `?${{entryParams}}` : ""}}`;
-        }}
-        const shareButton = document.querySelector("#share-transmission");
-        shareButton.addEventListener("click", async () => {{
-            const shareData = {{ title: {json.dumps(f'Radio P53 — {item["track"]}')}, text: {json.dumps(item["artist"])}, url: window.location.href }};
-            try {{
-                if (navigator.share) {{
-                    await navigator.share(shareData);
-                    return;
-                }}
-                await navigator.clipboard.writeText(window.location.href);
-                shareButton.textContent = "LINK COPIED";
-            }} catch (error) {{
-                // Cancellation is normal; leave the control ready for another attempt.
-            }}
-        }});
-    </script>
+    <script id="p53-transmission-context" type="application/json">{p53_context_json}</script>
+    <script src="../scripts/gsi-context.js"></script>
+    <script src="../scripts/p53-transmission.js"></script>
 </body>
 </html>
 """
@@ -1709,19 +1372,20 @@ def build_p53_archive(history: list[dict], current_slug: str) -> None:
     transmissions = [current, *remaining] if current else remaining
     total = len(transmissions)
 
-    def cover(item: dict) -> str:
+    def cover(item: dict, eager: bool = False) -> str:
         if item.get("cover_file"):
-            return f'<img src="../covers/{html.escape(item["cover_file"], quote = True)}" alt="{html.escape(item["album"], quote = True)} cover">'
+            loading = 'loading="eager" fetchpriority="high"' if eager else 'loading="lazy" decoding="async"'
+            return f'<img src="../covers/{html.escape(item["cover_file"], quote = True)}" alt="{html.escape(item["album"], quote = True)} cover" {loading}>'
         return '<div class="cover-missing" aria-hidden="true">P53</div>'
 
     def transmission_card(item: dict, index: int) -> str:
         number = str(index + 1).zfill(2)
-        state = "CURRENT TRANSMISSION" if index == 0 else f"SIGNAL {number} / {str(total).zfill(2)}"
+        state = "CURRENT TRANSMISSION" if index == 0 else "PAST TRANSMISSION"
         current_class = " is-current" if index == 0 else ""
         watermark = '<div class="card-watermark" aria-hidden="true"><span>RADIO</span><span>P53</span></div>' if index == 0 else ""
         return f'''<li class="transmission-card{current_class}" id="signal-{number}" data-index="{index}" style="--accent:{item["accent"]}">
-    <a class="transmission-card-link" data-base-href="{html.escape(item["slug"], quote = True)}.html" href="{html.escape(item["slug"], quote = True)}.html">
-        <div class="transmission-art">{cover(item)}</div>
+    <a class="transmission-card-link" {'aria-current="true"' if index == 0 else ''} data-base-href="{html.escape(item["slug"], quote = True)}.html" href="{html.escape(item["slug"], quote = True)}.html">
+        <div class="transmission-art">{cover(item, eager=index == 0)}</div>
         <div class="transmission-copy">{watermark}<div class="copy-content"><span class="signal-state">{state}</span><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small><b>ENTER TRANSMISSION ↗</b></div></div>
     </a>
 </li>'''
@@ -1729,66 +1393,29 @@ def build_p53_archive(history: list[dict], current_slug: str) -> None:
     cards_html = "".join(transmission_card(item, index) for index, item in enumerate(transmissions))
     page = f'''<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#25152b"><link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
-<title>Radio P53 — GSI</title><style>
-*{{box-sizing:border-box}} html,body{{margin:0;min-height:100%;background:#130e18}} body{{min-height:100vh;color:#faf6ee;font-family:Arial,sans-serif;background:linear-gradient(118deg,rgba(8,10,9,.91),rgba(31,15,36,.95)),url("../covers/P53_cover.jpg") center/cover fixed}} body::before{{content:"";position:fixed;inset:0;pointer-events:none;background:repeating-linear-gradient(0deg,transparent 0 7px,rgba(255,255,255,.025) 7px 8px)}}
-main{{position:relative;width:min(1240px,calc(100% - 36px));margin:auto;padding:22px 0 96px}} nav{{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:13px 16px;border:1px solid rgba(255,255,255,.18);border-radius:20px 6px;background:rgba(13,10,17,.86)}} nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}} nav span{{color:rgba(255,255,255,.55);font-size:10px;font-weight:900;letter-spacing:.16em}}
-header{{padding:clamp(46px,7vw,88px) 0 30px}} header>span{{color:#ff7fbb;font-size:10px;font-weight:950;letter-spacing:.2em}} h1{{margin:10px 0 18px;font-size:clamp(62px,11vw,154px);line-height:.8;letter-spacing:-.07em}} header p{{max-width:700px;margin:0;color:rgba(255,255,255,.7);font-size:clamp(16px,1.5vw,20px);line-height:1.55}}
-.field-heading{{display:flex;justify-content:space-between;align-items:end;gap:16px;margin:26px 0 12px;color:rgba(255,255,255,.52);font-size:10px;font-weight:950;letter-spacing:.18em;text-transform:uppercase}} .field-heading strong{{color:#ff7fbb;font-size:11px}} .transmission-list{{display:grid;gap:18px;margin:0;padding:0;list-style:none}} .transmission-card{{width:min(100%,1120px);margin:0 auto;scroll-margin-top:28px;transition:transform 420ms cubic-bezier(.2,.8,.2,1),filter 320ms ease}} .transmission-card-link{{position:relative;display:grid;grid-template-columns:170px minmax(0,1fr);min-height:170px;overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 20%);border-radius:22px 8px 22px 8px;background:linear-gradient(118deg,color-mix(in srgb,var(--accent),transparent 86%),rgba(10,9,13,.95));box-shadow:0 18px 42px rgba(0,0,0,.28);transition:border-radius 420ms ease,box-shadow 320ms ease,border-color 220ms ease}} .transmission-card.is-current .transmission-card-link{{grid-template-columns:minmax(300px,.72fr) minmax(0,1.28fr);min-height:560px;border-width:2px;border-radius:28px 72px 28px 72px}} .transmission-card.is-focused{{transform:translateY(-3px)}} .transmission-card.is-focused .transmission-card-link{{box-shadow:0 22px 52px color-mix(in srgb,var(--accent),transparent 72%),0 0 0 1px color-mix(in srgb,var(--accent),white 20%)}} .transmission-art{{position:relative;z-index:1;min-width:0;min-height:100%;background:rgba(0,0,0,.26)}} .transmission-art img,.cover-missing{{display:block;width:100%;height:100%;object-fit:cover}} .cover-missing{{display:grid;place-items:center;background:#17131b;color:#ff69ad;font-size:42px;font-weight:950}} .transmission-copy{{position:relative;display:flex;align-items:center;min-width:0;overflow:hidden;padding:24px 30px;background:linear-gradient(112deg,rgba(12,11,15,.72),rgba(12,11,15,.9))}} .copy-content{{position:relative;z-index:1;min-width:0}} .signal-state{{display:block;margin-bottom:13px;color:color-mix(in srgb,var(--accent),white 42%);font-size:10px;font-weight:950;letter-spacing:.2em}} .transmission-copy h2{{margin:0 0 7px;max-width:100%;overflow-wrap:anywhere;font-size:clamp(30px,4vw,58px);line-height:.9;letter-spacing:-.055em}} .transmission-copy p{{margin:0;font-size:clamp(17px,2vw,25px)}} .transmission-copy small{{display:block;margin-top:7px;color:rgba(255,255,255,.58);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}} .transmission-copy b{{display:inline-block;margin-top:28px;color:color-mix(in srgb,var(--accent),white 38%);font-size:11px;letter-spacing:.17em}} .transmission-card.is-current .transmission-copy{{align-items:end;padding:clamp(28px,5vw,70px)}} .transmission-card.is-current .transmission-copy h2{{font-size:clamp(48px,6.5vw,104px);line-height:.8}} .transmission-card.is-current .transmission-copy p{{font-size:clamp(20px,2.3vw,32px)}} .transmission-card.is-current .transmission-copy small{{font-size:16px}} .card-watermark{{position:absolute;inset:0;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-start;overflow:hidden;padding:16px 0 10px;color:color-mix(in srgb,var(--accent),transparent 77%);font-size:clamp(100px,12vw,190px);font-weight:950;line-height:.7;letter-spacing:-.1em;pointer-events:none}} .card-watermark span{{display:block;white-space:nowrap}} .signal-note{{max-width:720px;margin:2px 0 0;color:rgba(255,255,255,.58);font-size:13px;line-height:1.5}}
-@media(max-width:760px){{main{{width:min(100% - 24px,620px);padding-top:12px}} nav span{{display:none}} header{{padding:52px 0 24px}} h1{{font-size:clamp(58px,16vw,92px)}} header p{{font-size:16px}} .field-heading{{align-items:start;flex-direction:column;gap:6px;margin-top:18px}} .transmission-list{{gap:14px}} .transmission-card-link,.transmission-card.is-current .transmission-card-link{{grid-template-columns:1fr;min-height:0;border-radius:18px 42px 18px 42px}} .transmission-card.is-current .transmission-card-link{{border-radius:20px 52px 20px 52px}} .transmission-art,.transmission-card.is-current .transmission-art{{height:clamp(250px,72vw,410px);min-height:0}} .transmission-copy,.transmission-card.is-current .transmission-copy{{align-items:flex-start;padding:22px 20px 26px}} .transmission-copy h2,.transmission-card.is-current .transmission-copy h2{{font-size:clamp(32px,10vw,58px);line-height:.86}} .transmission-copy p,.transmission-card.is-current .transmission-copy p{{font-size:20px}} .transmission-copy small,.transmission-card.is-current .transmission-copy small{{font-size:14px}} .transmission-copy b{{margin-top:22px}} .card-watermark{{font-size:clamp(76px,24vw,132px);padding:10px 0 8px}}}}
-@media(prefers-reduced-motion:reduce){{*,*::before,*::after{{animation-duration:.01ms!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}}}
-</style></head><body><main><nav><a id="p53-home-return" href="../index.html">GSI</a><span>→ RADIO P53</span></nav><header><span>TRANSMISSION FIELD / {str(total).zfill(2)} SIGNALS</span><h1>RADIO P53</h1><p>The ever-changing list of songs that hold a current value, scroll down to travel back in time.</p></header><div class="field-heading"><span>ON AIR / CURRENT FIRST</span><strong id="field-position">SIGNAL 01 / {str(total).zfill(2)}</strong></div><ol class="transmission-list">{cards_html}</ol></main><script>
-const p53State = new URLSearchParams(window.location.search);
-const p53Params = new URLSearchParams();
-const p53Filter = p53State.get("filter");
-const p53View = p53State.get("view");
-if (p53Filter) p53Params.set("filter", p53Filter);
-if (["poster", "wall", "gallery"].includes(p53View)) p53Params.set("view", p53View);
-const p53Artist = p53State.get("artist");
-if (p53Artist) p53Params.set("artist", p53Artist);
-const homeParams = new URLSearchParams(p53Params);
-homeParams.delete("artist");
-document.querySelector("#p53-home-return").href = `../index.html${{homeParams.size ? `?${{homeParams}}` : ""}}`;
-document.querySelectorAll("[data-base-href]").forEach(link => {{ link.href = `${{link.dataset.baseHref}}${{p53Params.size ? `?${{p53Params}}` : ""}}`; }});
-const cards = [...document.querySelectorAll(".transmission-card")];
-const position = document.querySelector("#field-position");
-if ("IntersectionObserver" in window) {{
-    const observer = new IntersectionObserver(entries => {{
-        entries.forEach(entry => {{
-            if (!entry.isIntersecting) return;
-            cards.forEach(card => card.classList.remove("is-focused"));
-            entry.target.classList.add("is-focused");
-            const number = String(Number(entry.target.dataset.index) + 1).padStart(2, "0");
-            position.textContent = `SIGNAL ${{number}} / {str(total).zfill(2)}`;
-        }});
-    }}, {{ rootMargin: "-28% 0px -52% 0px", threshold: 0.15 }});
-    cards.forEach(card => observer.observe(card));
-}}
-</script></body></html>'''
+<meta name="theme-color" content="#25152b"><link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../styles/gsi-tokens.css">
+<title>Radio P53 — GSI</title><link rel="stylesheet" href="../styles/p53-landing.css"></head><body><main class="p53-landing"><nav class="p53-path" aria-label="GSI path"><a id="p53-home-return" href="../index.html">GSI</a><span>→ RADIO P53</span></nav><header><span>{str(total).zfill(2)} TRANSMISSIONS</span><h1>RADIO P53</h1><div class="p53-intro"><p id="p53-description">The ever-changing list of songs that hold a current value, scroll down to travel back in time.</p></div></header><ol class="transmission-list" aria-label="Radio P53 transmissions">{cards_html}</ol></main><script src="../scripts/gsi-context.js"></script><script src="../scripts/p53-landing.js"></script></body></html>'''
     output_path = SITE_P53_DIR / "index.html"
     output_path.write_text(page, encoding = "utf-8")
     print(f"Built Radio P53 landing: {output_path}")
 
 
-def build_artist_pages(tracks: list[dict], p53_history: list[dict]) -> None:
-    """Create restrained artist rooms only when GSI contains multiple entries."""
-    grouped: dict[str, list[dict]] = {}
-    for item in tracks:
-        grouped.setdefault(item["artist"], []).append(item)
-    artist_groups = {artist: items for artist, items in grouped.items() if len(items) >= 2}
+def build_artist_pages(artist_groups: dict[str, list[dict]], config: dict | None = None) -> None:
+    """Create artist rooms from one shared catalogue-eligibility inventory."""
     expected_pages = {f"{slugify(artist)}.html" for artist in artist_groups}
     for old_page in SITE_ARTISTS_DIR.glob("*.html"):
         if old_page.name not in expected_pages:
             old_page.unlink()
             print(f" Removed stale generated artist room: {old_page}")
 
-    artist_config = load_config()
+    artist_config = config or load_config(CONFIG_FILE)
     artist_notes = artist_config.get("artist_notes", {})
     album_notes = artist_config.get("album_notes", {})
-    artist_filter_keys_json = json.dumps(list(artist_config.get("filters", {}).keys()))
-    artist_filter_labels_json = json.dumps({key: value.get("label", key) for key, value in artist_config.get("filters", {}).items()})
     for artist, artist_tracks in artist_groups.items():
         artist_slug = slugify(artist)
+        artist_asset = resolve_artist_asset(artist, artist_config, ARTIST_ASSETS_DIR)
+        artist_image_html = artist_image_markup(artist_asset, artist)
+        artist_heading_class = "artist-heading has-artist-image" if artist_image_html else "artist-heading"
         note = str(artist_notes.get(artist, "")).strip()
         note_html = f'<div class="artist-note">{simple_markdown_to_html(note)}</div>' if note else ""
         albums: dict[str, list[dict]] = {}
@@ -1798,71 +1425,71 @@ def build_artist_pages(tracks: list[dict], p53_history: list[dict]) -> None:
         grouped_slugs = {item["slug"] for _, items in grouped_albums for item in items}
 
         def entry_href(item: dict) -> str:
+            if item.get("p53_only"):
+                return f'../p53/{html.escape(item["slug"], quote=True)}.html?artist={artist_slug}'
             return f'../entries/{html.escape(item["html_file"], quote=True)}?artist={artist_slug}'
 
         def entry_base_href(item: dict) -> str:
+            if item.get("p53_only"):
+                return f'../p53/{html.escape(item["slug"], quote=True)}.html'
             return f'../entries/{html.escape(item["html_file"], quote=True)}'
 
         def entry_tile(item: dict, compact: bool = False) -> str:
+            transmission_label = "P53 ↗" if item.get("p53_only") else "OPEN ↗"
+            entry_kind = ' data-entry-kind="transmission"' if item.get("p53_only") else ""
             if compact:
                 # The album stack owns its cover; nested track rows stay text-first.
-                return f'''<a class="album-entry" data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
-                    <span class="album-entry-mark" aria-hidden="true"></span><h3>{html.escape(item["track"])}</h3><b>OPEN ↗</b>
+                return f'''<a class="album-entry"{entry_kind} data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
+                    <span class="album-entry-mark" aria-hidden="true"></span><h3>{html.escape(item["track"])}</h3><b>{transmission_label}</b>
                 </a>'''
+            state = "P53 TRANSMISSION" if item.get("p53_only") else html.escape(item["album"])
             return f'''<a class="artist-signal" data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
                 <img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover">
-                <div><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["album"])}</p></div><b>OPEN ↗</b>
+                <div><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{state}</small></div><b>{transmission_label}</b>
             </a>'''
 
         album_sections = []
         for album, items in grouped_albums:
+            album_href = f'../albums/{slugify(f"{artist}-{album}")}.html'
+            album_title_link = (
+                f'<a class="album-title-link" data-context-base-href="{html.escape(album_href, quote=True)}" '
+                f'href="{html.escape(album_href, quote=True)}">{html.escape(album)}</a>'
+            )
             album_note = str(album_notes.get(artist, {}).get(album, "")).strip()
             album_note_html = f'<div style="margin:9px 0 0;color:rgba(255,255,255,.64);font-size:13px;line-height:1.4">{simple_markdown_to_html(album_note)}</div>' if album_note else ""
             album_sections.append(f'''<section class="album-stack" style="--accent:{items[0]["accent"]}">
-                <header><img src="../covers/{html.escape(items[0]["cover_file"], quote=True)}" alt="{html.escape(album, quote=True)} cover"><div style="min-width:0"><span style="display:block;margin-bottom:6px;color:color-mix(in srgb,var(--accent),white 24%);font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2>{html.escape(album)}</h2>{album_note_html}</div></header>
+                <header><img src="../covers/{html.escape(items[0]["cover_file"], quote=True)}" alt="{html.escape(album, quote=True)} cover"><div style="min-width:0"><span style="display:block;margin-bottom:6px;color:color-mix(in srgb,var(--accent),white 24%);font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2>{album_title_link}</h2>{album_note_html}</div></header>
                 <div>{''.join(entry_tile(item, compact=True) for item in items)}</div>
             </section>''')
         albums_html = "".join(album_sections)
         remaining_html = "".join(entry_tile(item) for item in artist_tracks if item["slug"] not in grouped_slugs)
         page = f'''<!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0d0d0f"><link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml"><title>{html.escape(artist)} — GSI</title><style>
-*{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:#f2f2f2;font-family:Arial,sans-serif;background:radial-gradient(circle at 82% 12%,rgba(99,199,255,.12),transparent 27%),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 13px),#0d0d0f}}main{{width:min(1120px,calc(100% - 36px));margin:auto;padding:22px 0 80px}}nav{{display:flex;align-items:center;gap:9px;padding:13px 16px;border:1px solid rgba(255,255,255,.16);border-radius:20px 6px;background:rgba(13,13,15,.86)}}nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}}nav span{{color:rgba(255,255,255,.35)}}nav strong{{color:rgba(255,255,255,.72);font-size:11px;letter-spacing:.14em}}.artist-heading{{padding:clamp(48px,9vw,112px) 0 32px}}.artist-heading>span{{color:#ff8bc2;font-size:10px;font-weight:950;letter-spacing:.18em}}.artist-heading h1{{max-width:900px;margin:12px 0 0;font-size:clamp(64px,12vw,154px);line-height:.78;letter-spacing:-.065em;overflow-wrap:anywhere}}.artist-note{{max-width:620px;margin:22px 0 0;color:rgba(255,255,255,.68);line-height:1.55}}.artist-note p{{margin:0}}.album-stack{{margin:0 0 14px;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent),white 22%);border-radius:30px 8px 30px 8px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 84%),rgba(13,13,15,.95))}}.album-stack>header{{display:grid;grid-template-columns:116px 1fr;align-items:center;gap:18px;padding:0 20px 0 0;border-bottom:1px solid color-mix(in srgb,var(--accent),transparent 68%)}}.album-stack>header img{{width:116px;height:116px;object-fit:cover}}.album-stack>header h2{{margin:0;font-size:clamp(30px,5vw,60px);line-height:.88;letter-spacing:-.04em}}.album-stack>div{{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;padding:12px}}.album-entry,.artist-signal{{display:grid;align-items:center;min-height:76px;overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 18%);border-radius:18px 5px 18px 5px;background:rgba(0,0,0,.2);transition:transform .24s ease,border-radius .3s ease}}.album-entry{{grid-template-columns:16px minmax(0,1fr) auto;gap:10px;padding:0 12px}}.album-entry-mark{{width:8px;height:8px;border-radius:2px 7px 2px 7px;background:color-mix(in srgb,var(--accent),white 34%);box-shadow:0 0 12px color-mix(in srgb,var(--accent),transparent 45%)}}.album-entry h3{{min-width:0;margin:0;font-size:17px;line-height:.96;overflow-wrap:anywhere}}.album-entry b{{display:block;padding-left:8px;color:color-mix(in srgb,var(--accent),white 34%);font-size:9px;letter-spacing:.11em;white-space:nowrap}}.album-entry:hover,.artist-signal:hover,.album-entry:focus-visible,.artist-signal:focus-visible{{transform:translateY(-3px);border-radius:5px 18px 5px 18px}}.artist-signal{{grid-template-columns:64px 1fr}}.artist-signal img{{width:64px;height:76px;object-fit:cover}}.artist-signal>div{{min-width:0;padding:10px}}.artist-signal h2{{margin:0;font-size:17px;line-height:.96}}.artist-signal p{{margin:5px 0 0;color:rgba(255,255,255,.55);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}.artist-signal{{grid-template-columns:104px 1fr auto;min-height:112px;margin-top:9px;border-radius:22px 7px 22px 7px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 88%),rgba(13,13,15,.92))}}.artist-signal img{{width:104px;height:112px}}.artist-signal h2{{font-size:clamp(23px,3vw,37px)}}.artist-signal b{{padding:16px;color:color-mix(in srgb,var(--accent),white 34%);font-size:10px;letter-spacing:.12em}}@media(max-width:700px){{main{{width:min(100% - 24px,620px);padding-top:12px}}.artist-heading{{padding:52px 0 26px}}.album-stack>header{{grid-template-columns:88px 1fr;padding-right:14px}}.album-stack>header img{{width:88px;height:88px}}.album-stack>div{{grid-template-columns:1fr}}.album-entry{{min-height:68px}}.album-entry b{{display:none}}.artist-signal{{grid-template-columns:82px 1fr}}.artist-signal img{{width:82px;height:104px}}.artist-signal b{{display:none}}}}@media(prefers-reduced-motion:reduce){{*,*::before,*::after{{animation-duration:.01ms!important;transition-duration:.01ms!important}}}}
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#0d0d0f"><link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml"><link rel="stylesheet" href="../styles/gsi-tokens.css"><title>{html.escape(artist)} — GSI</title><style>
+*{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:#f2f2f2;font-family:var(--gsi-reading-font,Arial,sans-serif);background:radial-gradient(circle at 82% 12%,rgba(99,199,255,.12),transparent 27%),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 13px),#0d0d0f}}main{{width:min(1120px,calc(100% - 36px));margin:auto;padding:22px 0 80px}}nav{{display:flex;align-items:center;gap:9px;padding:13px 16px;border:1px solid rgba(255,255,255,.16);border-radius:20px 6px;background:rgba(13,13,15,.86)}}nav a{{color:#ff8bc2;text-decoration:none;font-size:12px;font-weight:950;letter-spacing:.14em}}nav span{{color:rgba(255,255,255,.35)}}nav strong{{color:rgba(255,255,255,.72);font-size:11px;letter-spacing:.14em}}.artist-heading{{padding:clamp(48px,9vw,112px) 0 32px}}.artist-heading>span{{color:#ff8bc2;font-size:10px;font-weight:950;letter-spacing:.18em}}.artist-heading h1{{max-width:900px;margin:12px 0 0;font-size:clamp(64px,12vw,154px);line-height:.78;letter-spacing:-.065em;overflow-wrap:anywhere}}.artist-note{{max-width:620px;margin:22px 0 0;color:rgba(255,255,255,.68);line-height:1.55}}.artist-note p{{margin:0}}.album-stack{{margin:0 0 14px;overflow:hidden;border:1px solid color-mix(in srgb,var(--accent),white 22%);border-radius:30px 8px 30px 8px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 84%),rgba(13,13,15,.95))}}.album-stack>header{{display:grid;grid-template-columns:116px 1fr;align-items:center;gap:18px;padding:0 20px 0 0;border-bottom:1px solid color-mix(in srgb,var(--accent),transparent 68%)}}.album-stack>header img{{width:116px;height:116px;object-fit:cover}}.album-stack>header h2{{margin:0;font-size:clamp(30px,5vw,60px);line-height:.88;letter-spacing:-.04em}}.album-stack>div{{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px;padding:12px}}.album-entry,.artist-signal{{display:grid;align-items:center;min-height:76px;overflow:hidden;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,var(--accent),white 18%);border-radius:18px 5px 18px 5px;background:rgba(0,0,0,.2);transition:transform .24s ease,border-radius .3s ease}}.album-entry{{grid-template-columns:16px minmax(0,1fr) auto;gap:10px;padding:0 12px}}.album-entry-mark{{width:8px;height:8px;border-radius:2px 7px 2px 7px;background:color-mix(in srgb,var(--accent),white 34%);box-shadow:0 0 12px color-mix(in srgb,var(--accent),transparent 45%)}}.album-entry h3{{min-width:0;margin:0;font-size:17px;line-height:.96;overflow-wrap:anywhere}}.album-entry b{{display:block;padding-left:8px;color:color-mix(in srgb,var(--accent),white 34%);font-size:9px;letter-spacing:.12em;white-space:nowrap}}.album-entry[data-entry-kind="transmission"] b{{color:color-mix(in srgb,var(--accent),white 55%)}}.album-entry:hover,.artist-signal:hover,.album-entry:focus-visible,.artist-signal:focus-visible{{transform:translateY(-3px);border-radius:5px 18px 5px 18px}}.artist-signal{{grid-template-columns:64px 1fr}}.artist-signal img{{width:64px;height:76px;object-fit:cover}}.artist-signal>div{{min-width:0;padding:10px}}.artist-signal h2{{margin:0;font-size:17px;line-height:.96}}.artist-signal p{{margin:5px 0 0;color:rgba(255,255,255,.55);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}}.artist-signal{{grid-template-columns:104px 1fr auto;min-height:112px;margin-top:9px;border-radius:22px 7px 22px 7px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent),transparent 88%),rgba(13,13,15,.92))}}.artist-signal img{{width:104px;height:112px}}.artist-signal h2{{font-size:clamp(23px,3vw,37px)}}.artist-signal b{{padding:16px;color:color-mix(in srgb,var(--accent),white 34%);font-size:10px;letter-spacing:.12em}}@media(max-width:700px){{main{{width:min(100% - 24px,620px);padding-top:12px}}.artist-heading{{padding:52px 0 26px}}.album-stack>header{{grid-template-columns:88px 1fr;padding-right:14px}}.album-stack>header img{{width:88px;height:88px}}.album-stack>header img{{width:88px;height:88px}}.album-stack>div{{grid-template-columns:1fr}}.album-entry{{min-height:68px}}.album-entry b{{display:none}}.album-entry[data-entry-kind="transmission"] b{{display:block;padding:0 8px 0 0;font-size:9px}}.artist-signal{{grid-template-columns:82px 1fr}}.artist-signal img{{width:82px;height:104px}}.artist-signal b{{display:none}}}}@media(prefers-reduced-motion:reduce){{*,*::before,*::after{{animation-duration:.01ms!important;transition-duration:.01ms!important}}}}
+/* Optional artist art is opt-in and sits inside the same identity field as the name. */
+.artist-heading-copy{{position:relative;z-index:1;min-width:0}}
+.artist-heading.has-artist-image{{position:relative;display:grid;grid-template-columns:minmax(0,1fr) minmax(260px,38%);align-items:center;gap:clamp(28px,5vw,76px);margin:clamp(42px,8vw,96px) 0 clamp(30px,5vw,52px);padding:clamp(30px,5vw,58px) clamp(24px,5vw,66px);overflow:hidden;border:1px solid color-mix(in srgb,#ff4fa3,white 22%);border-radius:34px 8px 34px 8px;background:linear-gradient(118deg,rgba(255,79,163,.12),rgba(73,217,239,.055) 74%),repeating-linear-gradient(90deg,rgba(255,255,255,.028) 0 1px,transparent 1px 14px),rgba(13,13,15,.72);box-shadow:0 24px 60px rgba(0,0,0,.28);isolation:isolate}}
+.artist-heading.has-artist-image::before{{position:absolute;inset:12px;z-index:0;border:1px solid rgba(255,255,255,.09);border-radius:24px 5px 24px 5px;content:"";pointer-events:none}}
+.artist-heading.has-artist-image::after{{position:absolute;right:-12%;bottom:-52%;width:66%;height:100%;z-index:0;background:radial-gradient(ellipse,color-mix(in srgb,#49d9ef,transparent 85%),transparent 68%);content:"";pointer-events:none}}
+.artist-heading.has-artist-image .artist-heading-copy{{order:1}}
+.artist-heading.has-artist-image h1{{font-size:clamp(60px,8vw,116px);line-height:.84;letter-spacing:-.06em}}
+.artist-image-header{{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;min-width:0;min-height:clamp(220px,30vw,420px);margin:0;padding:0;border:0;background:none;box-shadow:none}}
+.artist-image-header::after{{display:none}}
+.artist-image{{display:block;width:auto;max-width:100%;height:auto;max-height:clamp(220px,32vw,420px);object-fit:contain;border-radius:10px 3px 10px 3px;filter:drop-shadow(0 18px 24px rgba(0,0,0,.32))}}
+.album-title-link{{color:inherit;text-decoration:none}}
+.album-title-link:hover,.album-title-link:focus-visible{{color:color-mix(in srgb,var(--accent),white 28%);text-decoration:underline;text-decoration-thickness:2px;text-underline-offset:5px}}
+@media(max-width:700px){{.artist-heading.has-artist-image{{grid-template-columns:1fr;gap:24px;margin:38px 0 30px;padding:24px 18px 30px;border-radius:26px 7px 26px 7px}}.artist-heading.has-artist-image .artist-image-header{{order:1}}.artist-heading.has-artist-image .artist-heading-copy{{order:2}}.artist-heading.has-artist-image::before{{inset:9px;border-radius:18px 4px 18px 4px}}.artist-image-header{{min-height:260px}}.artist-image{{max-height:260px}}}}
 /* Album headings use their own padding and rounded cover, so the label is never mistaken for an overflow artifact. */
 .album-stack>header{{grid-template-columns:120px minmax(0,1fr);align-items:center;gap:16px;padding:16px;border-bottom:1px solid color-mix(in srgb,var(--accent),transparent 68%)}} .album-stack>header img{{width:120px;height:120px;border-radius:14px 4px 14px 4px}} .album-stack>header h2{{font-size:clamp(32px,5vw,60px)}} .album-stack>header p{{margin:0}} @media(max-width:700px){{.album-stack>header{{grid-template-columns:88px minmax(0,1fr);gap:13px;padding:13px}} .album-stack>header img{{width:88px;height:88px;border-radius:11px 3px 11px 3px}} .album-stack>header h2{{font-size:32px}}}}
-</style></head><body><main><nav aria-label="GSI path"><a id="artist-archive-return" href="../index.html">GSI</a><span>→</span><a id="artist-filter-return" hidden href="../index.html"></a><span id="artist-filter-separator" hidden>→</span><strong>{html.escape(artist).upper()}</strong></nav><header class="artist-heading"><span>ARTIST SIGNALS / {len(artist_tracks):02d}</span><h1>{html.escape(artist)}</h1>{note_html}</header>{albums_html}<section class="artist-signals">{remaining_html}</section></main><script>
-// Artist rooms retain the visitor's path without turning a direct artist link into a dead end.
-const artistRoomState = new URLSearchParams(window.location.search);
-const artistRoomParams = new URLSearchParams();
-const validArtistFilters = {artist_filter_keys_json};
-const artistFilterLabels = {artist_filter_labels_json};
-const artistRoomFilter = artistRoomState.get("filter");
-const artistRoomView = artistRoomState.get("view");
-if (artistRoomFilter && validArtistFilters.includes(artistRoomFilter)) artistRoomParams.set("filter", artistRoomFilter);
-if (["poster", "wall", "gallery"].includes(artistRoomView)) artistRoomParams.set("view", artistRoomView);
-const artistReturn = document.querySelector("#artist-archive-return");
-artistReturn.href = `../index.html${{artistRoomParams.size ? `?${{artistRoomParams}}` : ""}}`;
-artistReturn.textContent = "GSI";
-if (artistRoomFilter && Object.hasOwn(artistFilterLabels, artistRoomFilter)) {{
-    const filterLink = document.querySelector("#artist-filter-return");
-    filterLink.textContent = artistFilterLabels[artistRoomFilter].toUpperCase();
-    filterLink.href = `../index.html?filter=${{encodeURIComponent(artistRoomFilter)}}${{artistRoomView ? `&view=${{encodeURIComponent(artistRoomView)}}` : ""}}`;
-    filterLink.hidden = false;
-    document.querySelector("#artist-filter-separator").hidden = false;
-}}
-document.querySelectorAll("[data-entry-base-href]").forEach(link => {{
-    const entryParams = new URLSearchParams(artistRoomParams);
-    entryParams.set("artist", {json.dumps(artist_slug)});
-    link.href = `${{link.dataset.entryBaseHref}}?${{entryParams}}`;
-}});
-</script></body></html>'''
+</style></head><body><main><nav aria-label="GSI path"><a id="artist-archive-return" href="../index.html">GSI</a><span>→</span><a id="artist-filter-return" hidden href="../index.html"></a><span id="artist-filter-separator" hidden>→</span><strong>{html.escape(artist).upper()}</strong></nav><header class="{artist_heading_class}"><div class="artist-heading-copy"><span>ARTIST SIGNALS / {len(artist_tracks):02d}</span><h1>{html.escape(artist)}</h1>{note_html}</div>{artist_image_html}</header>{albums_html}<section class="artist-signals">{remaining_html}</section></main><script id="artist-room-data" type="application/json">{json.dumps({"filterKeys": list(artist_config.get("filters", {}).keys()), "filterLabels": {key: value.get("label", key) for key, value in artist_config.get("filters", {}).items()}, "artistSlug": artist_slug}, ensure_ascii=False).replace("</", "<\\/")}</script><script src="../scripts/gsi-context.js"></script><script src="../scripts/artist-room.js"></script></body></html>'''
         output_path = SITE_ARTISTS_DIR / f"{artist_slug}.html"
         output_path.write_text(page, encoding="utf-8")
         print(f"Built artist room: {output_path}")
 
 
-def build_album_pages(tracks: list[dict]) -> None:
+def build_album_pages(tracks: list[dict], artist_groups: dict[str, list[dict]] | None = None) -> None:
     """Build a focused room for albums represented by at least two signals."""
-    config = load_config()
+    config = load_config(CONFIG_FILE)
     notes = config.get("album_notes", {})
     grouped: dict[tuple[str, str], list[dict]] = {}
     for item in tracks:
@@ -1872,24 +1499,34 @@ def build_album_pages(tracks: list[dict]) -> None:
             continue
         slug = slugify(f"{artist}-{album}")
         accent = items[0]["accent"]
+        artist_room_exists = artist in (artist_groups or {}) if artist_groups is not None else sum(1 for item in tracks if item.get("artist") == artist) >= 2
+        artist_href = f"../artists/{slugify(artist)}.html"
+        artist_nav = (
+            f'<a id="album-artist-return" class="artist-link" data-artist-base-href="{html.escape(artist_href, quote=True)}" href="{html.escape(artist_href, quote=True)}">{html.escape(artist.upper())}</a>'
+            if artist_room_exists else f'<strong>{html.escape(artist.upper())}</strong>'
+        )
+        artist_display = (
+            f'<a class="artist-link" data-artist-base-href="{html.escape(artist_href, quote=True)}" href="{html.escape(artist_href, quote=True)}">{html.escape(artist)}</a>'
+            if artist_room_exists else html.escape(artist)
+        )
         cover = items[0].get("cover_file", "")
         cover_html = f'<img class="album-cover" src="../covers/{html.escape(cover, quote=True)}" alt="{html.escape(album, quote=True)} cover">' if cover else ""
         song_links = []
         for item in items:
             target = item.get("page_url") or f'entries/{item["html_file"]}'
-            song_links.append(f'<a class="album-song" href="../{html.escape(target, quote=True)}"><span>{html.escape(item["track"])}</span><b>OPEN ↗</b></a>')
+            song_links.append(f'<a class="album-song" data-entry-base-href="../{html.escape(target, quote=True)}" href="../{html.escape(target, quote=True)}"><span>{html.escape(item["track"])}</span><b>OPEN ↗</b></a>')
         note = str(notes.get(artist, {}).get(album, "")).strip()
         note_html = f'<section class="album-note"><span>MY TAKE</span>{simple_markdown_to_html(note)}</section>' if note else ""
-        page = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(album)} — GSI</title><style>
-*{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:#f2f2f2;font-family:Arial,sans-serif;background:radial-gradient(circle at 80% 10%,color-mix(in srgb,{accent},transparent 72%),transparent 34%),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 14px),#0d0d0f}}main{{width:min(980px,calc(100% - 32px));margin:auto;padding:24px 0 80px}}nav{{display:flex;gap:10px;align-items:center;padding:13px 16px;border:1px solid color-mix(in srgb,{accent},white 20%);border-radius:20px 6px;background:rgba(13,13,15,.85);font-size:11px;font-weight:900;letter-spacing:.14em}}nav a{{color:color-mix(in srgb,{accent},white 35%);text-decoration:none}}nav span{{color:rgba(255,255,255,.35)}}header{{display:grid;grid-template-columns:minmax(260px,42%) 1fr;gap:38px;align-items:center;padding:clamp(52px,10vw,120px) 0 42px}}.album-cover{{display:block;width:100%;aspect-ratio:1;object-fit:cover;border:2px solid {accent};border-radius:30px 8px 30px 8px;box-shadow:0 0 34px color-mix(in srgb,{accent},transparent 65%)}}.kicker{{color:color-mix(in srgb,{accent},white 28%);font-size:10px;font-weight:950;letter-spacing:.18em}}h1{{margin:12px 0 8px;font-size:clamp(46px,8vw,104px);line-height:.86;letter-spacing:-.06em;overflow-wrap:anywhere}}.artist{{margin:0;color:rgba(255,255,255,.66);font-size:20px}}.songs{{display:grid;gap:12px}}.album-song{{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:21px 24px;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,{accent},white 18%);border-radius:22px 7px 22px 7px;background:linear-gradient(110deg,color-mix(in srgb,{accent},transparent 86%),rgba(13,13,15,.82));font-size:clamp(20px,3vw,30px);font-weight:850;transition:transform .2s ease,border-radius .25s ease,background .25s ease}}.album-song:hover,.album-song:focus-visible{{transform:translateX(6px);border-radius:7px 22px 7px 22px;background:linear-gradient(110deg,color-mix(in srgb,{accent},transparent 76%),rgba(13,13,15,.82))}}.album-song b{{color:color-mix(in srgb,{accent},white 32%);font-size:9px;letter-spacing:.12em;white-space:nowrap}}.album-note{{max-width:700px;margin:34px 0 0;padding:22px 26px 24px;border-left:3px solid {accent};border-radius:4px 20px 20px 4px;background:linear-gradient(100deg,color-mix(in srgb,{accent},transparent 88%),rgba(13,13,15,.46));color:rgba(255,255,255,.8);font-size:clamp(16px,2vw,20px);line-height:1.5}}.album-note>span{{display:block;margin-bottom:10px;color:color-mix(in srgb,{accent},white 30%);font-size:9px;font-weight:950;letter-spacing:.16em}}.album-note p{{margin:0}}@media(max-width:680px){{main{{width:min(100% - 24px,560px);padding-top:12px}}header{{grid-template-columns:1fr;gap:22px;padding-top:54px}}.album-cover{{max-width:380px}}.album-note{{font-size:16px;padding:18px 19px 20px}}.album-song{{padding:17px 16px}}}}
-</style></head><body><main><nav aria-label="GSI path"><a href="../index.html">GSI</a><span>→</span><strong>{html.escape(artist.upper())}</strong><span>→</span><strong>{html.escape(album.upper())}</strong></nav><header>{cover_html}<div><span class="kicker">ALBUM / {len(items):02d} SIGNALS</span><h1>{html.escape(album)}</h1><p class="artist">{html.escape(artist)}</p>{note_html}</div></header><section class="songs" aria-label="Songs in this album">{"".join(song_links)}</section></main></body></html>'''
+        page = f'''<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="stylesheet" href="../styles/gsi-tokens.css"><title>{html.escape(album)} — GSI</title><style>
+*{{box-sizing:border-box}}body{{margin:0;min-height:100vh;color:#f2f2f2;font-family:var(--gsi-reading-font,Arial,sans-serif);background:radial-gradient(circle at 80% 10%,color-mix(in srgb,{accent},transparent 72%),transparent 34%),repeating-linear-gradient(90deg,rgba(255,255,255,.025) 0 1px,transparent 1px 14px),#0d0d0f}}main{{width:min(980px,calc(100% - 32px));margin:auto;padding:24px 0 80px}}nav{{display:flex;gap:10px;align-items:center;padding:13px 16px;border:1px solid color-mix(in srgb,{accent},white 20%);border-radius:20px 6px;background:rgba(13,13,15,.85);font-size:11px;font-weight:900;letter-spacing:.14em}}nav a{{color:color-mix(in srgb,{accent},white 35%);text-decoration:none}}nav span{{color:rgba(255,255,255,.35)}}header{{display:grid;grid-template-columns:minmax(260px,42%) 1fr;gap:38px;align-items:center;padding:clamp(52px,10vw,120px) 0 42px}}.album-cover{{display:block;width:100%;aspect-ratio:1;object-fit:cover;border:2px solid {accent};border-radius:30px 8px 30px 8px;box-shadow:0 0 34px color-mix(in srgb,{accent},transparent 65%)}}.kicker{{color:color-mix(in srgb,{accent},white 28%);font-size:10px;font-weight:950;letter-spacing:.18em}}h1{{margin:12px 0 8px;font-size:clamp(46px,8vw,104px);line-height:.86;letter-spacing:-.06em;overflow-wrap:anywhere}}.artist{{margin:0;color:rgba(255,255,255,.66);font-size:20px}}.artist-link{{color:inherit;text-decoration:none}}.artist-link:hover,.artist-link:focus-visible{{color:color-mix(in srgb,{accent},white 35%);text-decoration:underline;text-underline-offset:5px}}.songs{{display:grid;gap:12px}}.album-song{{display:flex;justify-content:space-between;align-items:center;gap:14px;padding:21px 24px;color:#fff;text-decoration:none;border:1px solid color-mix(in srgb,{accent},white 18%);border-radius:22px 7px 22px 7px;background:linear-gradient(110deg,color-mix(in srgb,{accent},transparent 86%),rgba(13,13,15,.82));font-size:clamp(20px,3vw,30px);font-weight:850;transition:transform .2s ease,border-radius .25s ease,background .25s ease}}.album-song:hover,.album-song:focus-visible{{transform:translateX(6px);border-radius:7px 22px 7px 22px;background:linear-gradient(110deg,color-mix(in srgb,{accent},transparent 76%),rgba(13,13,15,.82))}}.album-song b{{color:color-mix(in srgb,{accent},white 32%);font-size:9px;letter-spacing:.12em;white-space:nowrap}}.album-note{{max-width:700px;margin:34px 0 0;padding:22px 26px 24px;border-left:3px solid {accent};border-radius:4px 20px 20px 4px;background:linear-gradient(100deg,color-mix(in srgb,{accent},transparent 88%),rgba(13,13,15,.46));color:rgba(255,255,255,.8);font-size:clamp(16px,2vw,20px);line-height:1.5}}.album-note>span{{display:block;margin-bottom:10px;color:color-mix(in srgb,{accent},white 30%);font-size:9px;font-weight:950;letter-spacing:.16em}}.album-note p{{margin:0}}@media(max-width:680px){{main{{width:min(100% - 24px,560px);padding-top:12px}}header{{grid-template-columns:1fr;gap:22px;padding-top:54px}}.album-cover{{max-width:380px}}.album-note{{font-size:16px;padding:18px 19px 20px}}.album-song{{padding:17px 16px}}}}
+</style></head><body><main><nav aria-label="GSI path"><a id="album-archive-return" href="../index.html">GSI</a><span>→</span>{artist_nav}<span>→</span><strong>{html.escape(album.upper())}</strong></nav><header>{cover_html}<div><span class="kicker">ALBUM / {len(items):02d} SIGNALS</span><h1>{html.escape(album)}</h1><p class="artist">{artist_display}</p>{note_html}</div></header><section class="songs" aria-label="Songs in this album">{"".join(song_links)}</section></main><script id="album-room-data" type="application/json">{json.dumps({"filterKeys": list(config.get("filters", {}).keys())}, ensure_ascii=False).replace("</", "<\\/")}</script><script src="../scripts/gsi-context.js"></script><script src="../scripts/album-room.js"></script></body></html>'''
         path = SITE_ALBUMS_DIR / f"{slug}.html"
         path.write_text(page, encoding="utf-8")
         print(f"Built album room: {path}")
 
 
 def build_index_html(tracks: list[dict]) -> None:  #sample homepage
-    config = load_config()
+    config = load_config(CONFIG_FILE)
     project_title = config.get("project_title", "GSI")
     page_title = config.get("page_title", project_title)
     intro = config.get("intro", "")
@@ -1924,7 +1561,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         safe_card_label = html.escape(f'{item["track"]} — {item["artist"]}', quote = True)
         cover_html = ""
         if item["cover_file"]:
-            cover_html = f'<img src="covers/{item["cover_file"]}" alt="{safe_album} cover">'  # image tag
+            cover_html = f'<img src="covers/{item["cover_file"]}" alt="{safe_album} cover" loading="lazy" decoding="async">'  # image tag
         tags = item.get("tags", "")
         tags_for_attr = tags.lower().replace(","," ")
         p53_order = int(item.get("p53_order", 999))
@@ -1969,7 +1606,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
         playlist_url = (filter_settings.get("playlist_url") or "").strip()
         playlist_cover = (filter_settings.get("playlist_cover") or "").strip()
         playlist_cta = (filter_settings.get("playlist_cta") or "Want more of the same?").strip()
-        playlist_src, playlist_color = playlist_visuals(playlist_cover, color)
+        playlist_src, playlist_color = playlist_visuals(playlist_cover, color, BASE)
         filter_tracks = [
             item for item in tracks
             if filter_key in [tag.strip().lower() for tag in item.get("tags", "").split(",")]
@@ -2019,7 +1656,7 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
             <div class="p53-overlay">
                 <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover">
                 <div class="p53-signal-copy">
-                    <span>CURRENT SIGNAL</span>
+                    <span>CURRENT TRANSMISSION</span>
                     <strong>{html.escape(p53_item['track'])}</strong>
                     <small>{html.escape(p53_item['artist'])}</small>
                     <b aria-hidden="true">↗</b>
@@ -2042,1446 +1679,9 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     <meta property="og:title" content="{safe_page_title}">
     <meta property="og:description" content="{safe_meta_description}">{homepage_url_meta}{share_image_meta}
     <link rel="icon" href="covers/GSI_favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles/gsi-tokens.css">
+    <link rel="stylesheet" href="styles/gsi-home.css">
     <title>{safe_project_title}</title>
-    <style>
-        body {{
-            --chrome: #f2f2f2;
-            --danger: #ff2f6d;
-            --electric: #63c7ff;
-            --asphalt: #0d0d0f;
-            transition: background 0.25s ease;
-            margin: 0;
-            min-height: 100vh;
-            padding: 40px;
-            font-family: Arial, sans-serif;
-            background:
-                radial-gradient(circle at 10% 7%, rgba(255,47,109,.18), transparent 24%),
-                radial-gradient(circle at 88% 12%, rgba(99,199,255,.13), transparent 26%),
-                radial-gradient(circle at 48% 96%, rgba(255,255,255,.08), transparent 34%),
-                linear-gradient(135deg, rgba(255,255,255,.045) 0 1px, transparent 1px 18px),
-                #0d0d0f;
-            color: #eee;
-            overflow-x: hidden;
-            position: relative;
-        }}
-        body::before {{
-            content: "";
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-            background:
-                repeating-linear-gradient(
-                    90deg,
-                    rgba(255,255,255,.035) 0 1px,
-                    transparent 1px 11px
-                ),
-                repeating-linear-gradient(
-                    0deg,
-                    transparent 0 23px,
-                    rgba(255,255,255,.025) 23px 24px
-                );
-            opacity: .42;
-            mix-blend-mode: screen;
-        }}
-        body::after {{
-            content: "";
-            position: fixed;
-            inset: -20%;
-            pointer-events: none;
-            z-index: 0;
-            background:
-                radial-gradient(circle at 22% 18%, rgba(255,47,109,.13), transparent 22%),
-                radial-gradient(circle at 80% 20%, rgba(99,199,255,.11), transparent 24%),
-                radial-gradient(circle at 65% 86%, rgba(255,180,70,.09), transparent 28%);
-            filter: blur(18px) saturate(1.25);
-            opacity: .8;
-            transition: background .35s ease, opacity .35s ease;
-        }}
-        body.filter-active::after {{
-            background:
-                radial-gradient(
-                    circle at 68% 28%,
-                    color-mix(in srgb, var(--page-tint, #ffffff), transparent 70%),
-                    transparent 36%
-                ),
-                radial-gradient(
-                    circle at 18% 78%,
-                    color-mix(in srgb, var(--page-tint, #ffffff), transparent 84%),
-                    transparent 30%
-                );
-            opacity: 1;
-        }}
-        body > * {{
-            position: relative;
-            z-index: 1;
-        }}
-
-        .site-hero {{
-            margin: 0 0 30px;
-            padding: 8px 0 4px;
-            position: relative;
-            isolation: isolate;
-        }}
-        .site-hero::before {{
-            content: "GENOME STABILITY INDUCERS";
-            display: block;
-            margin: 0 0 10px 4px;
-            color: rgba(255,255,255,.52);
-            font-size: 12px;
-            font-weight: 800;
-            letter-spacing: .32em;
-            text-transform: uppercase;
-        }}
-        .site-hero::after {{
-            content: "ARCHIVE";
-            position: absolute;
-            left: 8px;
-            bottom: -10px;
-            color: rgba(99,199,255,.62);
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: .22em;
-            text-transform: uppercase;
-            transform: skew(-12deg);
-        }}
-        .wordmark {{
-            position: relative;
-            display: inline-block;
-            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-            font-size: clamp(76px, 14vw, 168px);
-            line-height: .78;
-            font-weight: 950;
-            letter-spacing: -0.075em;
-            text-transform: uppercase;
-            color: #f2f2f2;
-            -webkit-text-stroke: 1px rgba(255,255,255,.22);
-            text-shadow:
-                5px 5px 0 rgba(255,47,109,.34),
-                -5px 4px 0 rgba(99,199,255,.28),
-                0 0 26px rgba(255,255,255,.18),
-                0 0 82px rgba(255,47,109,.13);
-            transform: skew(-9deg) rotate(-1deg);
-            animation: wordmark-idle 5.4s infinite;
-        }}
-        .wordmark::before {{
-            content: "GSI";
-            position: absolute;
-            inset: 0;
-            z-index: -1;
-            color: transparent;
-            -webkit-text-stroke: 2px rgba(255,47,109,.72);
-            transform: translate(-7px, 5px);
-            clip-path: polygon(0 0, 100% 0, 100% 32%, 0 46%);
-            opacity: .78;
-        }}
-        .wordmark::after {{
-            content: "GSI";
-            position: absolute;
-            inset: 0;
-            z-index: -2;
-            color: transparent;
-            -webkit-text-stroke: 2px rgba(99,199,255,.62);
-            transform: translate(7px, -4px);
-            clip-path: polygon(0 52%, 100% 38%, 100% 100%, 0 100%);
-            opacity: 0.72;
-        }}
-        .wordmark:hover {{
-            animation: wordmark-wobble .38s steps(2, end);
-            text-shadow:
-                7px 5px 0 rgba(255,47,109,.46),
-                -7px 5px 0 rgba(99,199,255,.38),
-                0 0 34px rgba(255,255,255,.26),
-                0 0 100px rgba(255,47,109,.18);
-        }}
-        .subtitle {{
-            margin-top: 16px;
-            max-width: 780px;
-            font-size: 20px;
-            line-height: 1.35;
-            color: #d7d7d7;
-            letter-spacing: .02em;
-            text-shadow: 0 2px 10px rgba(0,0,0,.55);
-        }}
-        @keyframes wordmark-wobble {{
-            0% {{transform: skew(-9deg) rotate(-1deg) translate(0,0); }}
-            25% {{transform: skew(-15deg) rotate(-1deg) translate(-3px,2px); }}
-            50% {{transform: skew(-6deg) rotate(-2deg) translate(4px,-1px); }}
-            75% {{transform: skew(-13deg) rotate(0deg) translate(-2px,-2px); }}
-            100% {{transform: skew(-9deg) rotate(-1deg) translate(0,0); }}
-        }}
-        @keyframes wordmark-idle {{
-            0%, 88%, 100% {{ filter: none; }}
-            90% {{ filter: brightness(1.18) contrast(1.16);}}
-            92% {{ filter: brightness(.88) contrast(1.3);}}
-            94% {{ filter: none; }}
-        }}
-        .intro {{
-            max-width: 850px;
-            margin: 0 0 30px;
-            padding: 20px 22px;
-            border-radius: 24px;
-            background: rgba(28, 28, 28, .86);
-            border: 1px solid rgba(255, 255, 255, .09);
-            box-shadow: 0 0 35px rgba(0,0,0,.22);
-            max-height: 400px;
-            overflow: hidden;
-            opacity: 1;
-            transform: translateY(0);
-            transition:
-                max-height .35s ease,
-                opacity .22s ease,
-                transform .35s ease,
-                margin .35s ease,
-                padding .35s ease,
-                border-width .35s ease;
-        }}
-
-        .intro p {{
-            margin: 0;
-            line-height: 1.6;
-            color: #d8d8d8;
-            font-size: 16px;
-        }}
-        body.filter-active .intro{{
-            max-height: 0;
-            margin-bottom: 0;
-            padding-top: 0;
-            padding-bottom: 0;
-            border-width: 0;
-            opacity: 0;
-            transform: translateY(-12px);
-        }}
-        .filter-panel {{
-            margin: 0 0 34px;
-            padding: 16px 0 4px;
-            border-top: 1px solid rgba(255,255,255,.08);
-            border-bottom: 1px solid rgba(255,255,255,.06);
-        }}
-
-        .filter-row {{
-            display: flex;
-            flex-wrap: wrap;
-            gap: 11px;
-            margin-bottom: 16px;
-        }}
-
-        .filter-btn {{
-            border: 1px solid rgba(255,255,255,.16);
-            border-radius: 8px;
-            padding: 10px 14px;
-            background:
-                linear-gradient(180deg, rgba(255,255,255,.08), transparent),
-                #171717;
-            color: #eaeaea;
-            cursor: pointer;
-            font-weight: 850;
-            letter-spacing: 0.08em;
-            text-transform: uppercase;
-            transform: skew(-8deg);
-            box-shadow: 0 10px 22px rgba(0,0,0,.24);
-            transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease, background 0.15s ease;
-        }}
-
-        .filter-btn:hover,
-        .filter-btn:focus-visible {{
-            transform: skew(-8deg) translateY(-3px);
-            border-color: color-mix(in srgb, var(--page-tint, #ffffff), white 30%);
-            box-shadow: 0 0 20px color-mix(in srgb, var(--page-tint, #ffffff), transparent 66%),
-            0 14px 28px rgba(0,0,0,.28);
-        }}
-
-        .filter-btn.active {{
-            border-color: color-mix(in srgb, var(--page-tint, #ffffff), white 44%);
-            background:
-                linear-gradient(180deg, rgba(255,255,255,.13), transparent),
-                color-mix(in srgb, var(--page-tint, #ffffff), #111 72%);
-            box-shadow: 0 0 24px color-mix(in srgb, var(--page-tint, #ffffff), transparent 55%),
-            0 14px 30px rgba(0,0,0,.32);
-        }}
-        .filter-description {{
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-            gap: 24px;
-            max-height:520px;
-            overflow: hidden;
-            opacity: 1;
-            transform: translateY(0);
-            transition:
-                max-height .38s ease,
-                opacity .24s ease,
-                transform .38s ease;
-        }}
-        body.filter-active .filter-description{{
-            padding: 22px;
-            border-radius: 24px;
-            background:
-                linear-gradient(135deg, rgba(255,255,255,.055), rgba(0,0,0,.18)),
-                color-mix(in srgb, var(--page-tint, #ffffff), #111 88%);
-                border: 1px solid color-mix(in srgb, var(--page-tint, #ffffff), white 18%);
-                box-shadow: 0 0 44px color-mix(in srgb, var(--page-tint, #ffffff), transparent 78%),
-                0 20px 46px rgba(0,0,0,.26);
-        }}
-        .filter-copy {{
-            flex: 1;
-            min-width: 0;
-        }}
-        .playlist-card {{
-            --playlist-accent: var(--page-tint, #ffffff);
-            width: min(210px, 26vw);
-            min-width: 150px;
-            display: flex;
-            flex-direction: column;
-            align-self: flex-start;
-            overflow: hidden;
-            text-decoration: none;
-            color: #f4f4f4;
-            border-radius: 18px;
-            background:
-                linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.22)),
-                color-mix(in srgb, var(--playlist-accent), #111 84%);
-            border: 1px solid color-mix(in srgb, var(--playlist-accent), white 28%);
-            box-shadow:
-                0 0 26px color-mix(in srgb, var(--playlist-accent), transparent 68%),
-                0 18px 34px rgba(0,0,0,.28);
-            transition: transform .16s ease, box-shadow .16s, border-color .16s ease;
-        }}
-        .playlist-card:hover,
-        .playlist-card:focus-visible {{
-            transform: translateY(-4px) rotate(-0.4deg);
-            border-color: color-mix(in srgb, var(--playlist-accent), white 48%);
-            box-shadow:
-                0 0 34px color-mix(in srgb, var(--playlist-accent), transparent 50%),
-                0 22px 42px rgba(0,0,0,.34);
-        }}
-        .playlist-card.hidden {{
-            display: none;
-        }}
-        .playlist-card img {{
-            width: 100%;
-            aspect-ratio: 1/1;
-            object-fit: cover;
-            display:block;
-        }}
-        .playlist-card-text {{
-            padding: 13px 14px;
-            font-size: 14px;
-            font-weight: 800;
-            line-height: 1.25;
-            text-shadow: 0 2px 8px rgba(0,0,0,.75);
-        }}
-
-        .filter-description h2 {{
-            margin: 0 0 8px;
-            font-size: 22px;
-            color: color-mix(in srgb, var(--page-tint, #ffffff), white 35%);
-        }}
-
-        .filter-description p {{
-            margin: 0;
-            max-width: 760px;
-            line-height: 1.55;
-            color: #d8d8d8;
-        }}
-        .filter-description.hidden {{
-            max-height: 0;
-            opacity: 0;
-            transform: translateY(-12px);
-            pointer-events: none;
-        }}
-        .view-control {{
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 8px;
-            margin: 0 0 20px;
-        }}
-        .view-control-label {{
-            margin-right:4px;
-            color: rgba(255, 255, 255, .48);
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: .2em;
-        }}
-
-        .view-btn {{
-            padding: 7px 10px;
-            border: 1px solid rgba(255, 255, 255, .14);
-            border-radius: 6px;
-            background: #171719;
-            color: #aaa;
-            cursor: pointer;
-            font-size: 11px;
-            font-weight: 900;
-            letter-spacing: .08em;
-            text-transform: uppercase;
-            transform: skew(-7deg);
-            transition:
-                color .16s ease,
-                border-color .16s ease,
-                background .16s ease,
-                box-shadow .16s ease,
-                transform .16s ease;
-        }}
-
-        .view-btn:hover,
-        .view-btn:focus-visible {{
-            color: #fff;
-            border-color: rgba(255, 255, 255, .4);
-            transform: skew(-7deg) translateY(-2px);
-        }}
-
-        .view-btn.active {{
-            color: #fff;
-            border-color: color-mix(
-                in srgb,
-                var(--page-tint, #ffffff),
-                white 32%
-            );
-            background: color-mix(
-                in srgb,
-                var(--page-tint, #ffffff),
-                #151515 82%
-            );
-            box-shadow:
-                0 0 16px color-mix(
-                    in srgb,
-                    var(--page-tint, #ffffff),
-                    transparent 68%
-                );
-        }}
-
-        .grid {{
-            display: grid;
-            opacity: 1;
-            transform: translateY(0);
-            transition: opacity 120ms ease, transform 120ms ease;
-        }}
-        body[data-active-filter="p53"] .card {{ order: 999; }}
-        body[data-active-filter="p53"] .card[data-tags~="p53"] {{ order: var(--p53-order); }}
-        .grid.view-switching {{
-            opacity: .18;
-            transform: translateY(5px);
-        }}
-        .filter-album-group {{ display:none; position:relative; grid-column:span 1; min-width:0; }}
-        .filter-album-summary {{ display:flex; flex-direction:column; width:100%; min-width:0; overflow:hidden; color:#eee; background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 34%),color-mix(in srgb,var(--accent),#1b1b1b 86%); border:2px solid color-mix(in srgb,var(--accent),white 12%); border-radius:20px; box-shadow:0 0 24px color-mix(in srgb,var(--accent),transparent 76%),0 18px 42px rgba(0,0,0,.25); transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease; }}
-        .filter-album-summary img {{ width:100%; aspect-ratio:1; object-fit:cover; display:block; border-radius:22px 6px 0 0; }}
-        .filter-album-summary {{ text-decoration:none; }}
-        .filter-album-summary {{ border-radius:24px 8px 24px 8px; }}
-        .filter-album-summary-copy {{ display:flex; flex-direction:column; gap:6px; padding:14px; }}
-        .filter-album-summary-copy strong {{ font-size:20px; line-height:1; }}
-        .filter-album-summary-copy > em {{ color:rgba(255,255,255,.68); font-size:13px; font-style:normal; font-weight:700; }}
-        .filter-album-summary-copy > span {{ color:color-mix(in srgb,var(--accent),white 34%); font-size:10px; font-weight:950; letter-spacing:.12em; }}
-        .filter-album-summary:hover,.filter-album-summary:focus-visible {{ border-color:color-mix(in srgb,var(--accent),white 35%); box-shadow:0 0 28px color-mix(in srgb,var(--accent),transparent 42%),0 24px 52px rgba(0,0,0,.35); transform:translateY(-5px) scale(1.012); border-radius:8px 24px 8px 24px; }}
-        body[data-view="gallery"] .filter-album-group {{ display:contents !important; }}
-        body[data-format="albums"][data-view="gallery"] .filter-album-group {{ display:block !important; }}
-        body[data-format="albums"][data-view="gallery"] .filter-album-summary-copy {{ display:none; }}
-        @media (max-width:760px) {{ .filter-album-summary-copy strong {{ font-size:18px; }} }}
-
-        body[data-view="poster"] .grid {{
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 24px;
-        }}
-
-        body[data-view="wall"] .grid {{
-            grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
-            gap: 16px;
-        }}
-
-        body[data-view="gallery"] .grid {{
-            grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
-            gap: 9px;
-        }}
-
-        body[data-view="gallery"] .card {{
-            border-radius: 10px;
-        }}
-
-        body[data-view="gallery"] .card .info {{ display: none; }}
-        .card {{
-            display: flex;
-            flex-direction: column;
-            text-decoration: none;
-            color: #eee;
-            background:
-                linear-gradient(180deg, rgba(255,255,255,.035), transparent 34%),
-                color-mix(in srgb, var(--accent), #1b1b1b 86%);
-            border: 2px solid color-mix(in srgb, var(--accent), white 12%);
-            border-radius: 20px;
-            overflow: hidden;
-            box-shadow:
-                0 0 24px color-mix(in srgb, var(--accent), transparent 76%),
-                0 18px 42px rgba(0,0,0,.25);
-            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-        }}
-
-        .card:hover,
-        .card:focus-visible {{
-            transform: translateY(-7px) scale(1.018) rotate(-0.35deg);
-            border-color: color-mix(in srgb, var(--accent), white 35%);
-            box-shadow:
-                0 0 28px color-mix(in srgb, var(--accent), transparent 42%),
-                0 0 80px color-mix(in srgb, var(--accent), transparent 72%),
-                0 24px 52px rgba(0,0,0,.35);
-        }}
-        .filter-btn:focus-visible,
-        .playlist-card:focus-visible,
-        .card:focus-visible {{
-            outline: 2px solid color-mix(in srgb, var(--page-tint, #ffffff), white 35%);
-            outline-offset: 4px;
-        }}
-
-        .card img {{
-            width: 100%;
-            aspect-ratio: 1 / 1;
-            object-fit: cover;
-            display: block;
-        }}
-
-        .info {{
-            flex: 1;
-            padding: 18px;
-            background:
-                linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.28));
-        }}
-
-        .info h2 {{
-            margin: 0 0 8px;
-            font-size: 22px;
-            color: #f7f7f7;
-            text-shadow: 0 2px 12px rgba(0,0,0,.72);
-        }}
-
-        .info p {{
-            margin: 0 0 7px;
-            color: #d6d6d6;
-            text-shadow: 0 2px 10px rgba(0,0,0,.62);
-        }}
-
-        .info span {{
-            display: block;
-            max-width: 100%;
-            margin-top: 8px;
-            padding: 0;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            font-size: 12px;
-            font-weight: 750;
-            letter-spacing: .035em;
-            color: color-mix(in srgb, var(--accent), white 70%);
-            background: none;
-            border: none;
-            box-shadow: none;
-            text-shadow: 0 2px 8px rgba(0,0,0,.85);
-        }}
-        @media (max-width: 760px) {{
-            body {{
-                padding: 22px;
-            }}
-            .wordmark {{
-                font-size: clamp(68px, 28vw, 110px);
-            }}
-            .filter-description {{
-                flex-direction: column;
-                align-items: stretch;
-                gap: 18px;
-            }}
-            body.filter-active .filter-description {{
-                padding: 18px;
-            }}
-            .playlist-card {{
-                width: min(100%, 240px);
-                min-width: 0;
-                align-self: flex-start;
-            }}
-        body[data-view="poster"] .grid {{
-            grid-template-columns: minmax(0, 1fr);
-            gap: 18px;
-        }}
-
-        body[data-view="wall"] .grid {{
-            grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 11px;
-        }}
-
-        body[data-view="gallery"] .grid {{
-            grid-template-columns: repeat(4, minmax(0, 1fr));
-            gap: 6px;
-        }}
-
-        body[data-view="wall"] .info {{
-            padding: 12px;
-        }}
-
-        body[data-view="wall"] .info h2 {{
-            margin-bottom: 6px;
-            font-size: 16px;
-            line-height: 1.15;
-        }}
-
-        body[data-view="wall"] .info p {{
-            margin-bottom: 5px;
-            font-size: 13px;
-        }}
-
-        body[data-view="wall"] .info span {{
-            font-size: 10px;
-        }}
-
-        body[data-view="gallery"] .card {{
-            border-width: 1px;
-            border-radius: 7px;
-        }}
-        }}
-        /* GSI 1.09: expressive controls mounted onto a distressed signal wall. */
-        body {{
-            --surface: #101012;
-            --paper: #e8e2d3;
-            --ink: #111114;
-            --signal-pink: #ff4f9a;
-            --signal-cyan: #32c9e8;
-            padding: clamp(18px, 4vw, 54px);
-            background:
-                radial-gradient(circle at 78% 4%, color-mix(in srgb, var(--page-tint, #687080), transparent 80%), transparent 32%),
-                linear-gradient(118deg, rgba(255,255,255,.035), transparent 28%),
-                repeating-linear-gradient(96deg, rgba(255,255,255,.018) 0 1px, transparent 1px 16px),
-                #0b0b0d;
-        }}
-        body::before {{
-            opacity: .28;
-            mix-blend-mode: soft-light;
-        }}
-        body::after {{
-            inset: 0;
-            filter: none;
-            opacity: .72;
-            background:
-                linear-gradient(90deg, transparent 0 48%, rgba(255,255,255,.018) 48% 49%, transparent 49%),
-                radial-gradient(circle at 18% 88%, color-mix(in srgb, var(--page-tint, #ffffff), transparent 90%), transparent 34%);
-        }}
-        .signal-transform {{
-            position: fixed;
-            inset: -15%;
-            z-index: 20;
-            pointer-events: none;
-            opacity: 0;
-            background:
-                linear-gradient(104deg, transparent 0 34%, color-mix(in srgb, var(--page-tint), transparent 48%) 42%, transparent 50%),
-                repeating-linear-gradient(0deg, transparent 0 8px, rgba(255,255,255,.08) 8px 9px);
-            mix-blend-mode: screen;
-            transform: translateX(-65%) skewX(-12deg);
-        }}
-        body.signal-transforming .signal-transform {{
-            animation: signal-sweep 700ms cubic-bezier(.2,.8,.2,1) both;
-        }}
-        @keyframes signal-sweep {{
-            0% {{ opacity: 0; transform: translateX(-65%) skewX(-12deg); }}
-            28% {{ opacity: .72; }}
-            100% {{ opacity: 0; transform: translateX(65%) skewX(-12deg); }}
-        }}
-        .site-hero {{
-            display: grid;
-            grid-template-columns: minmax(0, 1.25fr) minmax(310px, .75fr);
-            gap: clamp(20px, 4vw, 54px);
-            align-items: stretch;
-            margin-bottom: 24px;
-            padding: 0;
-        }}
-        .site-hero::before,
-        .site-hero::after {{
-            content: none;
-        }}
-        .hero-copy {{
-            position: relative;
-            display: flex;
-            flex-direction: column;
-            justify-content: center; /* balance the desktop panel against the tall P53 artwork */
-            min-height: 330px;
-            padding: clamp(22px, 4vw, 48px);
-            overflow: hidden;
-            border: 1px solid rgba(255,255,255,.13);
-            border-radius: 52px 14px 52px 14px;
-            background:
-                linear-gradient(140deg, rgba(255,255,255,.07), transparent 38%),
-                linear-gradient(115deg, color-mix(in srgb, var(--page-tint, #fff), transparent 91%), transparent 58%),
-                rgba(14,14,16,.86);
-            box-shadow: 0 28px 80px rgba(0,0,0,.3);
-            isolation: isolate;
-            transition: background 520ms ease, border-radius 520ms cubic-bezier(.2,.8,.2,1), border-color 300ms ease;
-        }}
-        body.filter-active .hero-copy {{
-            border-color: color-mix(in srgb, var(--page-tint), white 20%);
-            border-radius: 18px 58px 18px 58px;
-        }}
-        .hero-architecture {{
-            position: absolute;
-            inset: 0;
-            z-index: -1;
-            overflow: hidden;
-            pointer-events: none;
-            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-            line-height: .72;
-            transition: transform 650ms cubic-bezier(.2,.8,.2,1), opacity 300ms ease;
-        }}
-        .hero-architecture span {{
-            position: absolute;
-            color: color-mix(in srgb, var(--page-tint, #fff), transparent 89%);
-            font-size: clamp(72px, 9vw, 142px);
-            letter-spacing: -.04em;
-            white-space: nowrap;
-        }}
-        .hero-architecture span:nth-child(1) {{ top: -10px; right: -18px; transform: none; }}
-        .hero-architecture span:nth-child(2) {{ top: 39%; left: -26px; color: transparent; -webkit-text-stroke: 2px color-mix(in srgb, var(--page-tint, #fff), transparent 82%); transform: scaleX(1.18); }}
-        .hero-architecture span:nth-child(3) {{ right: -16px; bottom: -10px; transform: skew(-10deg); }}
-        body.signal-transforming .hero-architecture {{ transform: translateX(12px) skew(-2deg); opacity: .72; }}
-        body.signal-transforming .hero-copy {{
-            box-shadow: inset 8px 0 0 color-mix(in srgb, var(--page-tint), transparent 34%), 0 28px 80px rgba(0,0,0,.3);
-        }}
-        .wordmark {{
-            align-self: flex-start;
-            padding: 12px 28px 16px 22px;
-            border-radius: 44px 12px 44px 12px;
-            color: var(--ink);
-            background: var(--paper);
-            -webkit-text-stroke: 0;
-            text-shadow: 6px 0 0 var(--signal-pink), -5px 0 0 var(--signal-cyan);
-            box-shadow: 12px 12px 0 color-mix(in srgb, var(--page-tint, #7b5cff), #000 34%);
-            transform: rotate(-2deg);
-            animation: none;
-            transition:
-                border-radius 500ms cubic-bezier(.2,.8,.2,1),
-                transform 500ms cubic-bezier(.2,.8,.2,1),
-                box-shadow 240ms ease;
-        }}
-        .wordmark::before,
-        .wordmark::after {{
-            content: none;
-        }}
-        .wordmark:hover {{
-            animation: none;
-            border-radius: 12px 44px 12px 44px;
-            transform: rotate(1deg) scale(1.025);
-            text-shadow: 6px 0 0 var(--signal-pink), -5px 0 0 var(--signal-cyan);
-        }}
-        .hero-copy .intro {{
-            max-width: 760px;
-            max-height: none;
-            margin: 28px 0 0;
-            padding: 0;
-            border: 0;
-            border-radius: 0;
-            background: none;
-            box-shadow: none;
-        }}
-        .hero-copy .intro p {{
-            margin: 0;
-            color: rgba(255,255,255,.72);
-            font-size: clamp(14px, 1.6vw, 18px);
-            line-height: 1.55;
-        }}
-        body.filter-active .hero-copy .intro {{
-            max-height: none;
-            margin-top: 28px;
-            padding: 0;
-            opacity: .36;
-            transform: none;
-        }}
-        .p53-broadcast {{
-            position: relative;
-            display: block;
-            min-height: 330px;
-            overflow: hidden;
-            color: #f8f5eb;
-            text-decoration: none;
-            border: 2px solid #ff72b5;
-            border-radius: 16px 54px 16px 54px;
-            background: #283625;
-            box-shadow: 0 0 0 6px rgba(255,79,154,.08), 0 26px 70px rgba(0,0,0,.38);
-            transition:
-                transform 520ms cubic-bezier(.2,.8,.2,1),
-                border-radius 520ms cubic-bezier(.2,.8,.2,1),
-                box-shadow 220ms ease;
-        }}
-        .p53-broadcast:hover,
-        .p53-broadcast:focus-visible {{
-            transform: translateY(-7px) rotate(.5deg);
-            border-radius: 54px 16px 54px 16px;
-            box-shadow: 8px 8px 0 #22bce3, -7px -5px 0 rgba(255,79,154,.52), 0 32px 80px rgba(0,0,0,.42);
-        }}
-        .p53-art {{
-            position: absolute;
-            inset: 0;
-            overflow: hidden;
-        }}
-        .p53-art img {{
-            width: 100%;
-            height: 100%;
-            min-height: 100%;
-            object-fit: cover;
-            display: block;
-            transition: transform 900ms cubic-bezier(.2,.8,.2,1), filter 300ms ease;
-        }}
-        .p53-art::after {{
-            content: "";
-            position: absolute;
-            inset: 0;
-            pointer-events: none;
-            opacity: .22;
-            background:
-                radial-gradient(circle at 24% 72%, color-mix(in srgb, var(--signal-accent), white 12%), transparent 46%),
-                var(--signal-accent);
-            mix-blend-mode: color;
-        }}
-        .p53-broadcast:hover .p53-art img {{
-            transform: scale(1.045) rotate(-1deg);
-            filter: saturate(1.12) contrast(1.04);
-        }}
-        .p53-overlay {{
-            position: absolute;
-            inset: 0;
-            display: grid;
-            grid-template-columns: auto minmax(0, 1fr);
-            grid-template-rows: 1fr auto;
-            align-items: end;
-            gap: 14px;
-            padding: 20px;
-            background: linear-gradient(180deg, transparent 34%, rgba(12,10,18,.22) 55%, rgba(12,10,18,.94) 100%);
-        }}
-        .p53-album {{
-            grid-row: 2;
-            width: 82px;
-            aspect-ratio: 1;
-            object-fit: cover;
-            border: 2px solid rgba(255,255,255,.78);
-            border-radius: 15px 5px 15px 5px;
-            box-shadow: 6px 6px 0 rgba(53,201,233,.58);
-            transform: rotate(-3deg);
-        }}
-        .p53-signal-copy {{
-            grid-column: 2;
-            grid-row: 1;
-            align-self: end;
-            justify-self: end;
-            max-width: 72%;
-            text-align: right;
-        }}
-        .p53-signal-copy span {{
-            color: #5ee4fa;
-            font-size: 10px;
-            font-weight: 950;
-            letter-spacing: .17em;
-        }}
-        .p53-signal-copy strong {{
-            display: block;
-            margin-top: 6px;
-            font-size: clamp(21px, 2.1vw, 31px);
-            line-height: 1;
-        }}
-        .p53-signal-copy small {{
-            display: block;
-            margin-top: 5px;
-            color: rgba(255,255,255,.68);
-        }}
-        .p53-signal-copy b {{
-            display: inline-grid;
-            place-items: center;
-            width: 32px;
-            height: 32px;
-            margin-top: 10px;
-            border-radius: 50% 50% 16% 50%;
-            color: #111;
-            background: #ff79bb;
-            font-size: 18px;
-        }}
-        .p53-radio {{
-            grid-column: 2;
-            grid-row: 2;
-            align-self: end;
-            justify-self: end;
-            color: #f4ed50;
-            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-            font-size: clamp(36px, 4.6vw, 68px);
-            line-height: .78;
-            letter-spacing: -.035em;
-            text-align: right;
-            text-shadow: 4px 0 0 rgba(255,79,163,.72), -3px 0 0 rgba(53,201,233,.7);
-        }}
-        .filter-panel {{
-            margin-bottom: 20px;
-            padding: clamp(14px, 2vw, 22px);
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 28px 8px 28px 8px;
-            background: rgba(12,12,14,.82);
-        }}
-        .filter-row {{
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
-            margin-bottom: 0;
-        }}
-        .filter-btn {{
-            flex: 1 1 112px;
-            min-height: 52px;
-            padding: 12px 16px;
-            border-radius: 20px 7px 20px 7px;
-            transform: none;
-            box-shadow: none;
-            transition:
-                flex-grow 520ms cubic-bezier(.2,.8,.2,1),
-                border-radius 520ms cubic-bezier(.2,.8,.2,1),
-                transform 360ms cubic-bezier(.2,.8,.2,1),
-                color 180ms ease,
-                background 220ms ease;
-        }}
-        .filter-btn span {{
-            display: inline-block;
-            transition: transform 420ms cubic-bezier(.2,.8,.2,1), letter-spacing 420ms cubic-bezier(.2,.8,.2,1);
-        }}
-        .filter-btn:hover,
-        .filter-btn:focus-visible {{
-            transform: translateY(-3px);
-            border-radius: 7px 20px 7px 20px;
-        }}
-        .filter-btn.active {{
-            flex-grow: 2.25;
-            border-radius: 32px 8px 32px 8px;
-            transform: translateY(-2px);
-        }}
-        .filter-btn.active span {{
-            transform: scale(1.08);
-            letter-spacing: .14em;
-        }}
-        .filter-btn.filter-p53 {{
-            color: #160d18;
-            border-color: #ff78b9;
-            background: linear-gradient(110deg, #ff64aa, #57d6e9);
-        }}
-        .filter-description {{
-            position: relative;
-            display: grid;
-            grid-template-columns: minmax(0, 1fr) minmax(190px, 300px);
-            align-items: stretch;
-            gap: clamp(18px, 3vw, 38px);
-            isolation: isolate;
-        }}
-        body.filter-active .filter-description {{
-            min-height: clamp(320px, 34vw, 410px);
-            margin-top: 16px;
-            padding: clamp(24px, 4vw, 46px);
-            overflow: hidden;
-            border-radius: 42px 10px 42px 10px;
-        }}
-        .filter-room-label {{
-            position: absolute;
-            left: -4%;
-            bottom: 9%;
-            z-index: 0;
-            color: color-mix(in srgb, var(--page-tint), transparent 68%);
-            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
-            font-size: clamp(112px, 16vw, 236px);
-            line-height: .8;
-            text-transform: uppercase;
-            transform: skew(-8deg);
-            pointer-events: none;
-        }}
-        .filter-room-label span {{
-            display: block;
-            white-space: nowrap;
-        }}
-        .filter-room-label span + span {{ margin-left: .16em; }}
-        .filter-decor {{
-            position: absolute;
-            inset: 0;
-            z-index: 0;
-            overflow: hidden;
-            pointer-events: none;
-        }}
-        .filter-decor::before,
-        .filter-decor::after {{
-            content: "";
-            position: absolute;
-        }}
-        .filter-description[data-filter="bassline"] .filter-room-label {{
-            /* The word itself is the pressure field; extra framing made this room read as a diagram. */
-            filter: drop-shadow(8px 0 0 color-mix(in srgb, var(--page-tint), transparent 90%));
-            letter-spacing: -.05em;
-            transform-origin: left bottom;
-            animation: bass-pressure 1.9s linear infinite;
-            bottom: -2%;
-            font-size: clamp(118px, 17vw, 250px);
-            color: color-mix(in srgb, var(--page-tint), transparent 72%);
-        }}
-        @keyframes bass-pressure {{ 0%,100% {{ transform:skew(-8deg) scale(1); }} 40% {{ transform:skew(-8deg) scale(1.035,.965); }} 63% {{ transform:skew(-8deg) scale(.99,1.018); }} }}
-        .filter-description[data-filter="dreamy"] .filter-room-label {{
-            left: auto; right: -8%; bottom: -5%;
-            color: transparent;
-            -webkit-text-stroke: 3px color-mix(in srgb, var(--page-tint), transparent 72%);
-            animation: dreamy-drift 12s ease-in-out infinite;
-        }}
-        @keyframes dreamy-drift {{ 0%,100% {{ transform:translate3d(0,0,0) rotate(-10deg) scale(1.04); }} 50% {{ transform:translate3d(-8%,-7%,0) rotate(-5deg) scale(1.08); }} }}
-        .filter-description[data-filter="bite"] .filter-room-label span:last-child {{
-            margin-left:-.08em;
-        }}
-        .filter-description[data-filter="bite"] .filter-room-label {{ bottom:4%; }}
-        .filter-description[data-filter="pop"] .filter-room-label {{ display:none; }}
-        .filter-description[data-filter="pop"] .filter-decor span {{
-            position:absolute;
-            left:var(--pop-x); top:var(--pop-y);
-            color: color-mix(in srgb, var(--page-tint), transparent 78%);
-            font:900 var(--pop-size)/1 Arial,sans-serif;
-            animation:pop-signal var(--pop-speed) cubic-bezier(.18,.85,.25,1.12) var(--pop-delay) infinite;
-        }}
-        @keyframes pop-signal {{ 0%,18% {{ opacity:0; transform:scale(.18) rotate(-9deg); }} 38% {{ opacity:.78; transform:scale(1.14) rotate(3deg); }} 52% {{ opacity:.58; transform:scale(1); }} 72%,100% {{ opacity:0; transform:scale(.82) translateY(-12px); }} }}
-        .filter-description[data-filter="distortion"] .filter-decor {{
-            background:repeating-linear-gradient(0deg,transparent 0 17px,color-mix(in srgb,var(--page-tint),transparent 88%) 18px 20px,transparent 21px 38px);
-            animation:distortion-scan 2.6s steps(6,end) infinite;
-        }}
-        .filter-description[data-filter="distortion"] .filter-decor::before {{
-            content:"DISTORTION";
-            inset:20% auto auto -4%;
-            color:transparent;
-            -webkit-text-stroke:3px color-mix(in srgb,var(--page-tint),transparent 68%);
-            font:900 clamp(90px,16vw,230px)/.8 Impact,Haettenschweiler,"Arial Black",sans-serif;
-            letter-spacing:-.045em;
-            animation:distortion-echo 2.6s steps(5,end) infinite;
-        }}
-        .filter-description[data-filter="distortion"] .playlist-card img {{ animation:distorted-cover 2.6s steps(7,end) infinite; }}
-        @keyframes distortion-scan {{ 0% {{ transform:translateY(-12px); opacity:.25; }} 50% {{ transform:translateY(8px); opacity:.62; }} 100% {{ transform:translateY(-12px); opacity:.25; }} }}
-        @keyframes distortion-echo {{ 0%,100% {{ transform:translate(0); opacity:.28; }} 24% {{ transform:translate(11px,-3px) skewX(-4deg); opacity:.5; }} 27% {{ transform:translate(-8px,4px); }} 70% {{ transform:translate(4px); opacity:.34; }} }}
-        @keyframes distorted-cover {{ 0%,100% {{ transform:translate(0) scale(1.01); filter:saturate(1); }} 22% {{ transform:translate(5px,-2px) scale(1.025); filter:saturate(1.35) contrast(1.12); }} 25% {{ transform:translate(-4px,2px) scale(1.02); filter:hue-rotate(12deg) contrast(1.18); }} 64% {{ transform:translate(2px) scale(1.015); filter:saturate(.86); }} }}
-        .filter-description[data-filter="ulas"] .filter-decor::before,
-        .filter-description[data-filter="ulas"] .filter-decor::after {{
-            width:90px; height:90px; border-color:color-mix(in srgb,var(--page-tint),transparent 42%); border-style:solid; border-radius:30px 8px 30px 8px;
-        }}
-        .filter-description[data-filter="ulas"] .filter-decor::before {{ left:18px; top:18px; border-width:4px 0 0 4px; }}
-        .filter-description[data-filter="ulas"] .filter-decor::after {{ right:18px; bottom:18px; border-width:0 4px 4px 0; }}
-        .filter-description[data-filter="ulas"] .filter-room-label {{ color:color-mix(in srgb,var(--page-tint),transparent 82%); }}
-        .filter-description[data-filter="ulas"] .filter-decor {{ opacity:.58; }}
-        @media (max-width:760px) {{
-            .filter-room-label {{ font-size:clamp(82px,28vw,150px); }}
-            .filter-description[data-filter="ulas"] .filter-room-label {{ font-size:clamp(66px,22vw,118px); }}
-            /* A deliberate three-line field survives narrow screens better than cropped edge fragments. */
-            .hero-architecture span {{
-                color:color-mix(in srgb,var(--page-tint,#fff),transparent 93%);
-                font-size:clamp(62px,18vw,92px);
-                letter-spacing:-.055em;
-                -webkit-text-stroke:0;
-            }}
-            .hero-architecture span:nth-child(1) {{ top:4%; left:3%; right:auto; }}
-            .hero-architecture span:nth-child(2) {{ top:39%; left:-3%; color:color-mix(in srgb,var(--page-tint,#fff),transparent 94%); transform:none; }}
-            .hero-architecture span:nth-child(3) {{ right:-5%; bottom:4%; transform:skew(-7deg); }}
-        }}
-        .filter-copy {{
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-            /* Copy has a fixed reading anchor; decoration never decides its vertical position. */
-            justify-content: flex-start;
-            padding-top: clamp(8px, 1.8vw, 28px);
-            min-height: 0;
-            min-width: 0;
-            position: relative;
-            z-index: 1;
-        }}
-        .filter-count {{
-            margin-bottom: 12px;
-            color: color-mix(in srgb, var(--page-tint), white 60%);
-            font-size: 11px;
-            font-weight: 950;
-            letter-spacing: .2em;
-        }}
-        .filter-description h2 {{
-            margin: 0 0 14px;
-            font-size: clamp(44px, 8vw, 104px);
-            line-height: .82;
-            letter-spacing: -.055em;
-            text-wrap: balance;
-            overflow-wrap: anywhere;
-        }}
-        .filter-description p {{
-            max-width: 680px;
-            font-size: 16px;
-        }}
-        .playlist-card {{
-            width: min(100%, 300px);
-            min-width: 0;
-            align-self: center;
-            position: relative;
-            z-index: 1;
-            overflow: hidden;
-            border-radius: 14px 38px 14px 38px;
-            transform: rotate(1.2deg);
-            transition: transform 520ms cubic-bezier(.2,.8,.2,1), border-radius 520ms cubic-bezier(.2,.8,.2,1), box-shadow 220ms ease;
-        }}
-        .playlist-card:hover,
-        .playlist-card:focus-visible {{
-            transform: translateY(-7px) rotate(-.6deg) scale(1.015);
-            border-radius: 38px 14px 38px 14px;
-        }}
-        .playlist-card-text {{
-            padding: 16px 18px;
-        }}
-        .view-control {{
-            width: fit-content;
-            gap: 4px;
-            padding: 5px;
-            border: 1px solid rgba(255,255,255,.1);
-            border-radius: 20px 7px 20px 7px;
-            background: rgba(10,10,12,.74);
-            flex-wrap: nowrap;
-            overflow: hidden;
-            white-space: nowrap;
-        }}
-        .layout-format-controls {{ display:grid; grid-template-columns:auto auto; align-items:stretch; justify-content:start; gap:8px; margin:0 0 20px; min-width:0; }}
-        .layout-format-controls > .view-control,
-        .layout-format-controls > .format-control {{ width:clamp(376px,30vw,400px); max-width:100%; min-height:0; margin:0; align-self:stretch; box-sizing:border-box; }}
-        .layout-format-controls > .view-control {{ display:grid; grid-template-columns:auto repeat(3,minmax(0,1fr)); gap:4px; }}
-        .layout-format-controls > .view-control .view-btn {{ display:flex; align-items:center; justify-content:center; width:100%; height:38px; min-width:0; padding:0 8px; line-height:1; }}
-        .layout-format-controls > .view-control .view-control-label {{ display:flex; align-items:center; min-width:0; white-space:nowrap; }}
-        .layout-format-controls.has-playlist {{ grid-template-columns:minmax(376px,400px) minmax(376px,400px) minmax(220px,1fr); }}
-        .layout-format-controls.has-playlist > .view-control,
-        .layout-format-controls.has-playlist > .format-control {{ width:100%; }}
-        .format-control {{ position:relative; isolation:isolate; display:flex; align-items:stretch; gap:0; width:fit-content; overflow:hidden; padding:4px; border:1px solid rgba(255,255,255,.16); border-radius:999px; background:rgba(10,10,12,.74); box-shadow:inset 0 1px 0 rgba(255,255,255,.05); }}
-        .format-control::before {{ content:""; position:absolute; z-index:0; top:4px; bottom:4px; left:4px; width:calc((100% - 8px) / 3); border-radius:999px; background:color-mix(in srgb,var(--page-tint,#ffffff),#151515 70%); box-shadow:0 2px 7px rgba(0,0,0,.34),0 0 0 1px color-mix(in srgb,var(--page-tint,#ffffff),white 42%); transform:translateX(0); transition:transform .62s cubic-bezier(.2,.8,.2,1),background .52s ease; }}
-        .format-control[data-format="albums"]::before {{ transform:translateX(100%); }}
-        .format-control[data-format="artists"]::before {{ transform:translateX(200%); }}
-        .format-option {{ position:relative; z-index:1; flex:1 1 0; min-width:0; min-height:38px; padding:0 9px; border:0; border-radius:999px; color:rgba(255,255,255,.48); background:transparent; cursor:pointer; font:900 10px/38px Arial,sans-serif; letter-spacing:.1em; text-align:center; text-transform:uppercase; transition:color .52s ease,opacity .52s ease; }}
-        .format-option[aria-pressed="true"] {{ color:#fff; background:transparent; }}
-        .format-option:disabled {{ color:rgba(255,255,255,.2); opacity:.6; cursor:not-allowed; }}
-        .format-option:not(:disabled):hover,.format-option:not(:disabled):focus-visible {{ color:#fff; background:rgba(255,255,255,.08); outline-offset:2px; }}
-        .layout-format-controls > .mini-playlist-card {{ grid-column:3; grid-row:1; width:100%; max-width:none; min-width:0; min-height:50px; align-self:stretch; justify-content:center; border-radius:15px 5px 15px 5px; transform:none; text-decoration:none; }}
-        .layout-format-controls .mini-playlist-card img {{ display:none !important; }}
-        .layout-format-controls .mini-playlist-card .playlist-card-text {{ display:block; box-sizing:border-box; width:100%; max-width:none; padding:8px 12px; overflow:hidden; color:#fff; font-size:clamp(10px,1vw,12px); font-weight:950; letter-spacing:.065em; line-height:1.18; text-align:center; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }}
-        .layout-format-controls .mini-playlist-card:hover,.layout-format-controls .mini-playlist-card:focus-visible {{ border-radius:5px 15px 5px 15px; transform:translateY(-3px) rotate(-.6deg); }}
-
-        @media (max-width: 1100px) and (min-width: 761px) {{
-            .layout-format-controls {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
-            .layout-format-controls.has-playlist {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
-            .layout-format-controls > .view-control,
-            .layout-format-controls > .format-control {{ width:100%; }}
-            .layout-format-controls.has-playlist > .mini-playlist-card {{ grid-column:1/-1; grid-row:auto; }}
-            .layout-format-controls.has-playlist > .view-control,
-            .layout-format-controls.has-playlist > .format-control {{ width:100%; }}
-            .layout-format-controls > .view-control {{ gap:3px; }}
-            .layout-format-controls > .view-control .view-btn {{ padding-inline:10px; font-size:10px; }}
-        }}
-        .view-btn {{
-            min-height: 38px;
-            padding-inline: 14px;
-            border-radius: 15px 5px 15px 5px;
-            transform: none;
-        }}
-        .view-btn:hover,
-        .view-btn:focus-visible {{
-            transform: translateY(-2px);
-            border-radius: 5px 15px 5px 15px;
-        }}
-        .view-btn.active {{
-            border-radius: 18px 5px 18px 5px;
-            transform: scale(1.04);
-        }}
-        .layout-format-controls .view-btn.active {{ transform:none; }}
-        .card {{
-            border-radius: 24px 8px 24px 8px;
-            transition:
-                transform 420ms cubic-bezier(.2,.8,.2,1),
-                border-radius 420ms cubic-bezier(.2,.8,.2,1),
-                box-shadow 220ms ease,
-                border-color 180ms ease;
-        }}
-        .card:hover,
-        .card:focus-visible {{
-            border-radius: 8px 24px 8px 24px;
-            transform: translateY(-8px) scale(1.02) rotate(-.35deg);
-        }}
-        body.view-rearranging .card {{
-            pointer-events: none;
-            will-change: transform, opacity;
-        }}
-        body[data-view="gallery"] .card {{
-            border-radius: 12px 4px 12px 4px;
-        }}
-        @media (max-width: 820px) {{
-            .site-hero {{
-                grid-template-columns: 1fr;
-            }}
-            .hero-copy {{
-                min-height: 0;
-            }}
-            .p53-broadcast {{
-                min-height: 280px; /* leave room for Radio P53 and the album transmission */
-                border-radius: 12px 34px 12px 34px;
-            }}
-            .p53-art img {{ min-height: 100%; }}
-            .filter-btn {{ flex-basis: calc(33.333% - 5px); }}
-            .filter-btn.active {{ flex-grow: 1.8; }}
-            .filter-description {{ grid-template-columns: 1fr; }}
-            body.filter-active .filter-description {{ min-height: 0; }}
-            .playlist-card {{
-                width: min(100%, 300px);
-                justify-self: start;
-            }}
-        }}
-        @media (max-width: 520px) {{
-            .wordmark {{
-                font-size: clamp(72px, 25vw, 108px);
-                padding: 9px 20px 13px 15px;
-            }}
-            .hero-copy .intro p {{ font-size: 14px; }}
-            .p53-overlay {{ padding: 15px; gap: 10px; }}
-            .p53-album {{ width: 68px; }}
-            .p53-signal-copy {{ max-width: 78%; }}
-            .p53-radio {{ font-size: 38px; }}
-            .filter-btn {{
-                flex-basis: calc(50% - 5px);
-                min-height: 48px;
-            }}
-            .filter-btn.active {{ flex-basis: 100%; }}
-            body.filter-active .filter-description {{
-                max-height:none;
-                padding:24px 18px;
-            }}
-            .filter-description h2 {{ font-size: clamp(38px, 15vw, 68px); }}
-            .playlist-card {{ width:min(100%,260px); }}
-            .view-control {{ width: auto; }}
-            .view-btn {{ flex: 1; }}
-        }}
-
-        /* Mobile is its own signal-room composition, not a compressed desktop flex row. */
-        @media (max-width: 760px) {{
-            .layout-format-controls {{ grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }}
-            .layout-format-controls.has-playlist {{ grid-template-columns:repeat(2,minmax(0,1fr)); }}
-            .layout-format-controls > .view-control {{ grid-template-columns:auto repeat(3,minmax(0,1fr)); width:100%; max-width:100%; gap:2px; white-space:nowrap; }}
-            .layout-format-controls > .view-control .view-control-label {{ margin-right:0; font-size:10px; letter-spacing:.14em; }}
-            .layout-format-controls > .view-control .view-btn {{ padding-inline:8px; font-size:10px; letter-spacing:.06em; }}
-            .layout-format-controls > .mini-playlist-card {{ grid-column:1/-1; grid-row:auto; min-height:50px; }}
-            .layout-format-controls .mini-playlist-card .playlist-card-text {{ font-size:clamp(11px,3.1vw,14px); letter-spacing:.06em; }}
-            /* Android may substitute unavailable desktop display faces; make the mobile weight intentional. */
-            .filter-panel,
-            .filter-description,
-            .view-control {{
-                font-family:Roboto,Arial,sans-serif;
-                font-synthesis:weight;
-                text-size-adjust:100%;
-                -webkit-text-size-adjust:100%;
-            }}
-            .filter-row {{
-                display:grid;
-                grid-template-columns:repeat(2,minmax(0,1fr));
-                gap:7px;
-            }}
-            .filter-btn {{
-                min-width:0;
-                min-height:54px;
-                padding:11px 8px;
-                flex:initial;
-            }}
-            .filter-btn span {{
-                max-width:100%;
-                overflow:hidden;
-                font-size:clamp(11px,3.35vw,14px);
-                font-weight:900;
-                -webkit-text-stroke:.22px currentColor;
-                text-overflow:ellipsis;
-                white-space:nowrap;
-            }}
-            .filter-btn.filter-ulas,
-            .filter-btn.filter-p53 {{
-                grid-column:1/-1;
-                flex-basis:auto;
-            }}
-            .filter-btn.active {{
-                grid-column:auto;
-                flex-grow:initial;
-                transform:none;
-            }}
-            .filter-btn.filter-ulas.active,
-            .filter-btn.filter-p53.active {{ grid-column:1/-1; }}
-            .filter-description {{
-                grid-template-columns:minmax(0,1fr);
-                gap:24px;
-            }}
-            body.filter-active .filter-description {{
-                min-height:0;
-                max-height:none;
-                padding:26px 20px 22px;
-            }}
-            .filter-copy {{
-                min-height:220px;
-                padding-top:16px;
-                justify-content:flex-start;
-            }}
-            .filter-description h2 {{
-                font-size:clamp(42px,14vw,68px);
-                font-weight:900;
-                -webkit-text-stroke:.35px currentColor;
-                text-wrap:pretty;
-            }}
-            .filter-count,
-            .playlist-card-text,
-            .view-btn {{ font-weight:900; -webkit-text-stroke:.18px currentColor; }}
-            .filter-room-label {{
-                left:-4%;
-                bottom:14%;
-                color:color-mix(in srgb,var(--page-tint),transparent 63%);
-                font-family:"Arial Black",Roboto,Arial,sans-serif;
-                font-weight:900;
-                -webkit-text-stroke:.55px currentColor;
-                font-size:clamp(84px,24vw,132px);
-            }}
-            .filter-description[data-filter="bassline"] .filter-room-label {{
-                left:-5%;
-                bottom:3%;
-                font-size:clamp(82px,23vw,132px);
-            }}
-            .filter-description[data-filter="bite"] .filter-room-label {{ bottom:8%; }}
-            .filter-description[data-filter="ulas"] .filter-room-label {{ color:color-mix(in srgb,var(--page-tint),transparent 86%); }}
-            .filter-description[data-filter="dreamy"] .filter-room-label {{
-                right:-16%;
-                bottom:-6%;
-            }}
-            .playlist-card {{
-                width:min(100%,290px);
-                justify-self:center;
-                align-self:auto;
-                margin-inline:auto;
-                transform:rotate(.7deg);
-            }}
-            .filter-description[data-filter="distortion"] .playlist-card img {{ animation:none; }}
-            .filter-description[data-filter="pop"] .filter-decor span {{
-                color:color-mix(in srgb,var(--page-tint),transparent 66%);
-                -webkit-text-stroke:.3px currentColor;
-            }}
-            @media (max-width:400px) {{
-                .layout-format-controls {{ grid-template-columns:1fr; column-gap:8px; }}
-                .layout-format-controls.has-playlist {{ grid-template-columns:1fr; }}
-                .layout-format-controls > .view-control .view-control-label {{ font-size:9px; letter-spacing:.08em; }}
-                .layout-format-controls > .view-control .view-btn {{ padding-inline:5px; font-size:9px; letter-spacing:.04em; }}
-                .layout-format-controls .mini-playlist-card {{ width:100%; min-width:0; }}
-            }}
-
-            /* Mobile rooms are independent, content-sized signal cards — not a narrowed desktop stage. */
-            .hero-copy {{
-                min-height:0;
-                padding:22px 20px 26px;
-                justify-content:flex-start;
-            }}
-            .wordmark {{
-                padding:9px 18px 12px 14px;
-                font-size:clamp(56px,18vw,78px);
-            }}
-            .hero-copy .intro {{ margin-top:20px; }}
-            .hero-architecture span:nth-child(2) {{ -webkit-text-stroke:0; }}
-
-            body.filter-active .filter-description {{
-                grid-template-columns:minmax(0,1fr);
-                grid-template-rows:auto auto;
-                gap:20px;
-                min-height:0;
-                padding:22px 20px;
-            }}
-            .filter-copy {{
-                min-height:0;
-                padding-top:0;
-            }}
-            .filter-description h2 {{
-                margin-bottom:12px;
-                font-size:clamp(42px,13vw,62px);
-                line-height:.88;
-                letter-spacing:-.05em;
-                font-synthesis:none;
-            }}
-            .filter-description p {{
-                position:relative;
-                z-index:1;
-                font-size:16px;
-                line-height:1.52;
-            }}
-            /* Decorative type is powerful on desktop but makes the small room feel like it is malfunctioning. */
-            .filter-room-label {{ display:none; }}
-            .filter-decor {{ opacity:1; }}
-            .playlist-card {{
-                grid-row:2;
-                width:min(100%,250px);
-                justify-self:center;
-                margin:0 auto;
-                transform:none;
-            }}
-            .layout-format-controls .mini-playlist-card {{ width:100%; max-width:none; min-width:0; justify-self:stretch; margin:0; transform:none; }}
-            .filter-description[data-has-playlist-cover="false"] .playlist-card {{
-                width:100%;
-                max-width:none;
-                min-height:64px;
-                justify-content:center;
-                border-radius:18px 8px 18px 8px;
-            }}
-            .filter-description[data-has-playlist-cover="false"] .playlist-card-text {{
-                padding:18px;
-                text-align:center;
-            }}
-
-            /* Each small room gets one reliable, legible environmental cue instead of a fragile animation stack. */
-            .filter-description[data-filter="personal"] .filter-decor,
-            .filter-description[data-filter="p53"] .filter-decor,
-            .filter-description[data-filter="ulas"] .filter-decor {{ background:none; }}
-            .filter-description[data-filter="ulas"] .filter-decor::before,
-            .filter-description[data-filter="ulas"] .filter-decor::after {{ display:none; }}
-            .filter-description[data-filter="dreamy"] .filter-decor {{
-                background:radial-gradient(ellipse 54% 46% at 76% 74%,color-mix(in srgb,var(--page-tint),transparent 83%),transparent 100%);
-                animation:dreamy-room-breathe 12s ease-in-out infinite;
-            }}
-            @keyframes dreamy-room-breathe {{
-                0%,100% {{ opacity:.44; transform:scale(.96); }}
-                50% {{ opacity:.82; transform:scale(1.04); }}
-            }}
-            .filter-description[data-filter="bassline"] .filter-decor {{
-                background:linear-gradient(90deg,transparent 0 10%,color-mix(in srgb,var(--page-tint),transparent 91%) 10% 11%,transparent 11% 100%),radial-gradient(ellipse 68% 32% at 16% 94%,color-mix(in srgb,var(--page-tint),transparent 85%),transparent 100%);
-                animation:none;
-            }}
-            .filter-description[data-filter="bite"] .filter-decor::before {{
-                content:"BITE";
-                left:18px;
-                bottom:12px;
-                color:color-mix(in srgb,var(--page-tint),transparent 86%);
-                font:900 clamp(62px,20vw,96px)/.75 Roboto,Arial,sans-serif;
-                letter-spacing:-.08em;
-            }}
-            .filter-description[data-filter="pop"] .filter-decor span {{
-                /* POP is the one room that earns a persistent mobile loop. */
-                animation:pop-signal-mobile var(--pop-speed) cubic-bezier(.18,.85,.25,1.12) var(--pop-delay) infinite;
-                color:color-mix(in srgb,var(--page-tint),transparent 68%);
-                -webkit-text-stroke:0;
-                will-change:transform,opacity;
-            }}
-            @keyframes pop-signal-mobile {{
-                0%,20% {{ opacity:0; transform:scale(.25) rotate(-7deg); }}
-                34% {{ opacity:.86; transform:scale(1.1) rotate(3deg); }}
-                56% {{ opacity:.64; transform:scale(1); }}
-                78%,100% {{ opacity:0; transform:scale(.84) translateY(-9px); }}
-            }}
-            .filter-description[data-filter="distortion"] .filter-decor {{
-                opacity:.64;
-                animation:none;
-                background:repeating-linear-gradient(0deg,transparent 0 15px,color-mix(in srgb,var(--page-tint),transparent 86%) 16px 18px,transparent 19px 36px);
-            }}
-            .filter-description[data-filter="distortion"] .filter-decor::before {{
-                animation:none;
-                opacity:.34;
-                -webkit-text-stroke:2px color-mix(in srgb,var(--page-tint),transparent 74%);
-            }}
-        }}
-        @media (prefers-reduced-motion: reduce) {{
-            *, *::before, *::after {{
-                animation-duration: .01ms !important;
-                animation-iteration-count: 1 !important;
-                transition-duration: .01ms !important;
-                scroll-behavior: auto !important;
-            }}
-        }}
-    </style>
 </head>
 <body data-view="wall">
     <div class="signal-transform" aria-hidden="true"></div>
@@ -3525,333 +1725,9 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     <div class="grid">
         {''.join(cards)}
     </div>
-<script>
-    document.addEventListener("DOMContentLoaded", () => {{ // wait until the page exists before selecting buttons/cards
-        const viewButtons = document.querySelectorAll(".view-btn");
-        const formatButtons = document.querySelectorAll(".format-option");
-        const formatControl = document.querySelector(".format-control");
-        const allowedViews = new Set(["poster", "wall", "gallery"]);
-        const filterInfo = {filter_data_json}; // filter data generated from config.json
-        const buttons = document.querySelectorAll(".filter-btn"); // all clickable filter buttons
-        const cards = document.querySelectorAll(".card"); // all song cards
-        const grid = document.querySelector(".grid");
-        const box = document.querySelector("#filter-description-box"); // whole description box
-        const title = document.querySelector("#filter-title"); // filter description title
-        const description = document.querySelector("#filter-description"); // filter description text
-        const playlistCard = document.querySelector("#playlist-card");
-        const playlistCover = document.querySelector("#playlist-cover");
-        const playlistCta = document.querySelector("#playlist-cta");
-        const layoutFormatControls = document.querySelector(".layout-format-controls");
-        const filterCount = document.querySelector("#filter-count");
-        const filterRoomLabel = document.querySelector("#filter-room-label");
-        const filterDecor = document.querySelector("#filter-decor");
-
-        let activeFilter = null; // no filter is active when page first loads
-        let activeFormat = "songs";
-        let basslineResizeFrame = null;
-        function renderRoomLabel(info, filterName) {{
-            // Bassline grows with its room but remains one intentionally unbroken word.
-            const lines = filterName === "bassline"
-                ? [`BA${{"S".repeat(Math.max(5, Math.min(15, Math.round(box.clientWidth / 92))))}}LINE`]
-                : info.room_label_lines;
-            filterRoomLabel.replaceChildren(...lines.map(line => {{
-                const span = document.createElement("span");
-                span.textContent = line;
-                return span;
-            }}));
-        }}
-        window.addEventListener("resize", () => {{
-            if (activeFilter !== "bassline") return;
-            window.cancelAnimationFrame(basslineResizeFrame);
-            basslineResizeFrame = window.requestAnimationFrame(() => renderRoomLabel(filterInfo.bassline, "bassline"));
-        }});
-        function archiveContextHref(baseHref) {{
-            const params = new URLSearchParams();
-            if (activeFilter) params.set("filter", activeFilter);
-            const activeView = document.body.dataset.view;
-            if (allowedViews.has(activeView)) params.set("view", activeView);
-            if (activeFormat === "albums") params.set("format", activeFormat);
-            return `${{baseHref}}${{params.size ? `?${{params}}` : ""}}`;
-        }}
-        function syncArchiveContext() {{
-            document.querySelectorAll("[data-base-href], [data-group-base-href]").forEach(link => {{
-                link.href = archiveContextHref(link.dataset.baseHref || link.dataset.groupBaseHref);
-            }});
-            const params = new URLSearchParams();
-            if (activeFilter) params.set("filter", activeFilter);
-            const activeView = document.body.dataset.view;
-            if (allowedViews.has(activeView)) params.set("view", activeView);
-            const query = params.size ? `?${{params}}` : "";
-            window.history.replaceState(null, "", `${{window.location.pathname}}${{query}}${{window.location.hash}}`);
-        }}
-        function storeView(viewName) {{
-            try {{
-                localStorage.setItem("gsi-view", viewName);
-            }} catch (error) {{
-                // the view still works if storage is unavailable.
-            }}
-        }}
-        let viewSwitchTimer = null;
-        function applyView(viewName, animate = true, sync = true) {{
-            if (!allowedViews.has(viewName)) {{
-                viewName = "wall"; // default view
-            }}
-            const updateView = () => {{
-                document.body.dataset.view = viewName;
-                viewButtons.forEach(button => {{
-                    const isActive = button.dataset.view === viewName;
-                    button.classList.toggle("active", isActive);
-                    button.setAttribute("aria-pressed", String(isActive));
-                }});
-                storeView(viewName);
-                if (sync) syncArchiveContext();
-            }};
-            const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-            if (!animate || reducedMotion) {{
-                updateView();
-                return;
-            }}
-            // Fade only the grid; moving every card made view changes stutter.
-            window.clearTimeout(viewSwitchTimer);
-            grid.classList.add("view-switching");
-            viewSwitchTimer = window.setTimeout(() => {{
-                updateView();
-                requestAnimationFrame(() => requestAnimationFrame(() => {{
-                    grid.classList.remove("view-switching");
-                }}));
-            }}, 110);
-        }}
-        viewButtons.forEach(button => {{
-            button.addEventListener("click", () => {{
-                applyView(button.dataset.view);
-            }});
-        }});
-        function hidePlaylist() {{
-            playlistCard.classList.add("hidden");
-            layoutFormatControls.classList.remove("has-playlist");
-            playlistCard.removeAttribute("href");
-            playlistCover.removeAttribute("src");
-            playlistCover.style.display = "none";
-            playlistCta.textContent = "";
-        }}
-        let signalTransformTimer = null;
-        let filterEntranceTimer = null;
-        function triggerSignalTransform() {{
-            if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-            window.clearTimeout(signalTransformTimer);
-            document.body.classList.remove("signal-transforming");
-            void document.body.offsetWidth; // restart the short transformation on repeated filter changes
-            document.body.classList.add("signal-transforming");
-            signalTransformTimer = window.setTimeout(() => document.body.classList.remove("signal-transforming"), 720);
-        }}
-        function applyFormat(formatName, sync = true) {{
-            activeFormat = formatName === "albums" ? "albums" : "songs";
-            document.body.dataset.format = activeFormat;
-            formatControl.dataset.format = activeFormat;
-            formatButtons.forEach(button => {{
-                const isActive = button.dataset.formatOption === activeFormat;
-                button.classList.toggle("active", isActive);
-                button.setAttribute("aria-pressed", String(isActive));
-            }});
-            renderFilterAlbumGroups(activeFilter);
-            if (sync) syncArchiveContext();
-        }}
-        formatButtons.forEach(button => {{
-            if (button.disabled) return;
-            button.addEventListener("click", () => applyFormat(button.dataset.formatOption));
-        }});
-        function clearFilterAlbumGroups() {{
-            const hiddenCards = [...document.querySelectorAll('.card[data-album-pocket-hidden="true"]')];
-            document.querySelectorAll(".filter-album-group").forEach(group => {{
-                group.remove();
-            }});
-            hiddenCards.forEach(card => {{
-                card.style.display = "flex";
-                card.removeAttribute("data-album-pocket-hidden");
-                grid.appendChild(card);
-            }});
-        }}
-        function renderFilterAlbumGroups(filterName) {{
-            // A repeated record becomes one album pocket in the archive or active filter.
-            clearFilterAlbumGroups();
-            if (activeFormat !== "albums") return;
-            const visibleCards = [...cards].filter(card => card.style.display !== "none");
-            const byAlbum = new Map();
-            visibleCards.forEach(card => {{
-                const key = `${{card.dataset.artist}}::${{card.dataset.album}}`;
-                byAlbum.set(key, [...(byAlbum.get(key) || []), card]);
-            }});
-            const groupedCards = new Set();
-            byAlbum.forEach(groupCards => {{
-                if (groupCards.length < 2) return;
-                groupCards.forEach(card => groupedCards.add(card));
-                const first = groupCards[0];
-                const group = document.createElement("section");
-                group.className = "filter-album-group";
-                group.setAttribute("data-album-pocket", "true");
-                group.setAttribute("aria-label", `${{first.dataset.album}} by ${{first.dataset.artist}}`);
-                group.dataset.album = first.dataset.album;
-                group.dataset.signalCount = String(groupCards.length).padStart(2, "0");
-                group.style.setProperty("--album-count", String(groupCards.length));
-                group.style.setProperty("--album-columns", String(Math.min(3, groupCards.length)));
-                group.style.display = "grid";
-                group.style.setProperty("--accent", first.style.getPropertyValue("--accent"));
-                grid.insertBefore(group, first);
-                const firstImage = first.querySelector("img");
-                const imageSrc = firstImage ? firstImage.getAttribute("src") : "";
-                const albumHref = archiveContextHref(first.dataset.albumHref);
-                group.innerHTML = `<a class="filter-album-summary" href="${{albumHref}}"><img src="${{imageSrc}}" alt="${{first.dataset.album}} cover"><div class="filter-album-summary-copy"><strong>${{first.dataset.album}}</strong><em>${{first.dataset.artist}}</em><span>${{String(groupCards.length).padStart(2, "0")}} signals</span></div></a>`;
-                groupCards.forEach(card => {{ card.style.display = "none"; card.dataset.albumPocketHidden = "true"; }});
-            }});
-            // Albums format is deliberately sparse: single-song albums do not appear yet.
-            visibleCards.forEach(card => {{
-                if (!groupedCards.has(card)) {{
-                    card.style.display = "none";
-                    card.dataset.albumPocketHidden = "true";
-                }}
-            }});
-        }}
-        function clearFilter(sync = true) {{ // return to default homepage state
-            activeFilter = null; // forget active filter
-            document.body.classList.remove("filter-active");
-            document.body.removeAttribute("data-active-filter");
-            document.documentElement.style.setProperty("--page-tint", "#ffffff"); // reset tint/glow
-
-            buttons.forEach(button => {{ // remove active look from every button
-                button.classList.remove("active");
-                button.setAttribute("aria-pressed", "false");
-            }});
-
-            clearFilterAlbumGroups();
-            cards.forEach(card => {{ // show every song card
-                card.style.display = "flex";
-            }});
-            renderFilterAlbumGroups(null);
-
-            box.classList.add("hidden"); // hide description panel
-            title.textContent = ""; // clear title
-            description.textContent = ""; // clear text
-            box.removeAttribute("data-filter-label");
-            box.removeAttribute("data-filter");
-            window.clearTimeout(filterEntranceTimer);
-            box.classList.remove("filter-entering");
-            filterRoomLabel.replaceChildren();
-            filterDecor.replaceChildren();
-            filterCount.textContent = "";
-            delete box.dataset.hasPlaylistCover;
-            hidePlaylist();
-            if (sync) syncArchiveContext();
-        }}
-
-        function setFilter(filterName, animate = true, sync = true) {{ // activate a filter
-            if (activeFilter === filterName) {{ // clicking same filter again clears it
-                clearFilter(sync);
-                return;
-            }}
-
-            activeFilter = filterName; // remember active filter
-            if (animate) triggerSignalTransform();
-            document.body.classList.add("filter-active"); // we attach and remove a CSS class whose appearance is controlled by javascript
-            document.body.dataset.activeFilter = filterName;
-            const info = filterInfo[filterName]; // get label/description/color from config.json
-
-            document.documentElement.style.setProperty("--page-tint", info.color); // update glow/tint
-            title.textContent = info.label; // update panel title
-            description.textContent = info.description; // update panel text
-            description.hidden = !info.description;
-            box.dataset.filterLabel = info.label;
-            box.dataset.filter = filterName;
-            box.dataset.hasPlaylistCover = String(Boolean(info.playlist_cover));
-            box.classList.remove("hidden"); // reveal before restarting entrance animations
-            box.classList.remove("filter-entering");
-            if (animate) {{
-                window.clearTimeout(filterEntranceTimer);
-                void box.offsetWidth; // restart filter-specific entrance effects
-                box.classList.add("filter-entering");
-                filterEntranceTimer = window.setTimeout(() => box.classList.remove("filter-entering"), 1000);
-            }}
-            renderRoomLabel(info, filterName);
-            filterDecor.replaceChildren();
-            if (filterName === "pop") {{
-                const popSignals = [
-                    [12, 16, 26, -900, 3.7], [72, 12, 52, -2400, 5.1], [42, 36, 34, -600, 4.3],
-                    [82, 58, 24, -3100, 5.7], [18, 70, 58, -1700, 4.9], [58, 78, 30, -3800, 6.2], [34, 8, 20, -1200, 3.4]
-                ];
-                popSignals.forEach(([x, y, size, delay, speed]) => {{
-                    const pop = document.createElement("span");
-                    pop.textContent = "POP";
-                    pop.style.setProperty("--pop-x", `${{x}}%`);
-                    pop.style.setProperty("--pop-y", `${{y}}%`);
-                    pop.style.setProperty("--pop-size", `${{size}}px`);
-                    pop.style.setProperty("--pop-delay", `${{delay}}ms`);
-                    pop.style.setProperty("--pop-speed", `${{speed}}s`);
-                    filterDecor.append(pop);
-                }});
-            }}
-            filterCount.textContent = `${{String(info.count).padStart(2, "0")}} SIGNAL${{info.count === 1 ? "" : "S"}}`;
-            box.classList.remove("hidden"); // show description panel
-            if (info.playlist_url || info.playlist_cover) {{
-                playlistCard.href = info.playlist_url || "#";
-                if (info.playlist_url) {{
-                    playlistCard.target = "_blank";
-                }} else {{
-                    playlistCard.removeAttribute("target");
-                }}
-                playlistCard.style.setProperty("--playlist-accent", info.playlist_color || info.color);
-                playlistCta.textContent = info.playlist_url ? "FOLLOW THE SIGNAL / ON APPLE MUSIC ↗" : "PLAYLIST UNAVAILABLE";
-                if (info.playlist_cover) {{
-                    playlistCover.src = info.playlist_cover;
-                    playlistCover.style.display = "block";
-                }} else {{
-                    playlistCover.removeAttribute("src");
-                    playlistCover.style.display = "none";
-                }}
-                playlistCard.classList.remove("hidden");
-                layoutFormatControls.classList.add("has-playlist");
-            }} else {{
-                hidePlaylist();
-            }}
-            buttons.forEach(button => {{ // update active button style
-                const isActive = button.dataset.filter === filterName; // === checks exact equality
-                button.classList.toggle("active", isActive);
-                button.setAttribute("aria-pressed", String(isActive)); // converts boolean true/false into text
-            }});
-
-            clearFilterAlbumGroups();
-            cards.forEach(card => {{ // show/hide cards based on tags
-                const tags = (card.dataset.tags || "").split(" "); // tags from tracks.csv
-                const shouldShow = tags.includes(filterName); // overlap works here
-                card.style.display = shouldShow ? "flex" : "none";
-            }});
-            renderFilterAlbumGroups(filterName);
-            if (sync) syncArchiveContext();
-        }}
-
-        buttons.forEach(button => {{ // attach click behavior to every filter button
-            button.addEventListener("click", () => {{
-                setFilter(button.dataset.filter);
-            }});
-        }});
-        let savedView = "wall";
-        try {{
-            savedView = localStorage.getItem("gsi-view") || "wall";
-        }} catch (error) {{
-            savedView = "wall"; // fallback if localStorage is unavailable
-        }}
-        const requestedState = new URLSearchParams(window.location.search);
-        const requestedView = requestedState.get("view");
-        const requestedFilter = requestedState.get("filter");
-        const requestedFormat = requestedState.get("format");
-        applyView(allowedViews.has(requestedView) ? requestedView : savedView, false, false);
-        applyFormat(requestedFormat === "albums" ? "albums" : "songs", false);
-        if (requestedFilter && Object.hasOwn(filterInfo, requestedFilter)) {{
-            setFilter(requestedFilter, false, false);
-        }} else {{
-            clearFilter(false);
-        }}
-        syncArchiveContext(); // normalize a shared link after all state is in place
-    }});
-</script>
+<script src="scripts/gsi-context.js"></script>
+<script id="gsi-filter-data" type="application/json">{filter_data_json}</script>
+<script src="scripts/home-page.js"></script>
 </body>
 </html>
 """  # full HTML page as one string
@@ -3861,23 +1737,24 @@ def build_index_html(tracks: list[dict]) -> None:  #sample homepage
     print(f"\nBuilt visual index: {index_path}")
 
 def build_404_page(tracks: list[dict]) -> None:
-    config = load_config()
+    config = load_config(CONFIG_FILE)
     copy = config.get("not_found", {}) # editable 404 wording lives in config.json
     site_url = (config.get("site_url") or "").rstrip("/")
     site_path = "/" + site_url.split("/", 3)[-1].split("/", 1)[-1].strip("/") + "/" if ".github.io/" in site_url else "/"
-    recommendations = [
-        {
+    def recommendation_record(item: dict) -> dict:
+        links = resolve_provider_links(item)
+        return {
             "track": item["track"],
             "artist": item["artist"],
             "album": item["album"],
             "cover": item.get("cover_file", ""),
             "url": item.get("page_url") or f'entries/{item["html_file"]}',
             "accent": item["accent"],
-            "spotify": item.get("spotify_url") or f'https://open.spotify.com/search/{quote(item["artist"] + " " + item["track"], safe="")}',
-            "apple": item.get("apple_url") or f'https://music.apple.com/search?term={quote_plus(item["artist"] + " " + item["track"])}',
+            "spotify": links["spotify"]["url"],
+            "apple": links["apple"]["url"],
         }
-        for item in tracks
-    ]
+
+    recommendations = [recommendation_record(item) for item in tracks]
     recommendation_json = json.dumps(recommendations, ensure_ascii = False).replace("</", "<\\/")
     not_found_title = html.escape(copy.get("title", "THIS FREQUENCY DOES NOT EXIST."))
     not_found_title = not_found_title.replace(" NOT ", ' <em>NOT</em> ')
@@ -3931,7 +1808,7 @@ def build_404_page(tracks: list[dict]) -> None:
         <section>
             <div class="eyebrow">{html.escape(copy.get("eyebrow", "SIGNAL LOST / 404"))}</div>
             <h1>{not_found_title}</h1>
-            <p class="message">{html.escape(copy.get("message", "The page slipped out of the archive."))}</p>
+            <p class="message">{html.escape(copy.get("message", "The page slipped out of GSI."))}</p>
             <a class="home" id="home-link" href="./">RETURN TO GSI</a>
         </section>
         <article class="recommendation" id="recommendation" style="--accent:#ff4fa3">
@@ -3973,6 +1850,42 @@ def build_404_page(tracks: list[dict]) -> None:
     not_found_path.write_text(page, encoding = "utf-8")
     print(f"Built playful 404 page: {not_found_path}")
 
+
+def write_catalog_manifest(items: list[dict]) -> None:
+    """Write deterministic link and local-art metadata for build-time auditing."""
+    cover_root = COVERS_DIR.resolve()
+    records = []
+    for item in items:
+        cover_file = (item.get("cover_file") or "").replace("\\", "/")
+        cover_path = (COVERS_DIR / cover_file).resolve() if cover_file else None
+        try:
+            if cover_path is None:
+                raise ValueError("no cover")
+            cover_path.relative_to(cover_root)
+        except ValueError:
+            cover_metadata = {
+                "exists": False,
+                "valid": False,
+                "width": None,
+                "height": None,
+                "bytes": None,
+            }
+        else:
+            cover_metadata = local_image_metadata(cover_path)
+        records.append(catalogue_record(item, COVERS_DIR, cover_metadata))
+
+    manifest = {
+        "schema": 1,
+        "description": "Generated GSI media-link and local-art inventory; review prose is never included.",
+        "signals": records,
+    }
+    manifest_path = SITE_DATA_DIR / "catalog.json"
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii = False, indent = 2) + "\n",
+        encoding = "utf-8",
+    )
+    print(f"Wrote catalogue manifest: {manifest_path}")
+
 def main() -> None:
     parser = argparse.ArgumentParser(description = "Build the GSI static website.")
     parser.add_argument(
@@ -3980,15 +1893,30 @@ def main() -> None:
         action = "store_true",
         help = "Generate site files without creating or updating entries and covers.",
     )
+    parser.add_argument(
+        "--validate-links",
+        action = "store_true",
+        help = "Check generated internal pages, assets, and stable route attributes after building.",
+    )
     args = parser.parse_args()
     tracks = build_entries(write_sources = not args.site_only)
-    config = load_config()
-    p53_history = prepare_p53_history(config, tracks, download_missing = True)
+    config = load_config(CONFIG_FILE)
+    p53_history = prepare_p53_history(config, tracks, download_missing = not args.site_only)
     archive_tracks = merge_p53_into_archive(tracks, p53_history)
-    artist_counts = {}
-    for item in tracks:
-        artist_counts[item["artist"]] = artist_counts.get(item["artist"], 0) + 1
-    copy_site_covers()
+    artist_groups = artist_room_groups(tracks, p53_history)
+    artist_counts = {
+        artist: len(items)
+        for artist, items in artist_groups.items()
+    }
+    copy_site_covers(COVERS_DIR, SITE_COVERS_DIR)
+    copy_site_artist_assets(ARTIST_ASSETS_DIR, SITE_ARTIST_ASSETS_DIR)
+    copy_site_scripts(WEB_DIR, SITE_SCRIPTS_DIR)
+    copy_site_styles(WEB_DIR, SITE_STYLES_DIR)
+    write_catalog_manifest(archive_tracks)
+    write_artist_manifest(
+        artist_catalogue_records(artist_groups, config, ARTIST_ASSETS_DIR),
+        SITE_DATA_DIR / "artists.json",
+    )
     remove_stale_entry_pages(tracks)
     for item in tracks:
         build_entry_page(item, artist_counts)
@@ -4000,10 +1928,18 @@ def main() -> None:
         build_p53_page(p53_item, "latest.html")
     if p53_history:
         build_p53_archive(p53_history, p53_slug)
-    build_artist_pages(tracks, p53_history)
-    build_album_pages(archive_tracks)
+    build_artist_pages(artist_groups, config)
+    build_album_pages(archive_tracks, artist_groups)
     build_index_html(archive_tracks)
     build_404_page(archive_tracks)
+    if args.validate_links:
+        link_errors = validate_generated_links(SITE_DIR)
+        if link_errors:
+            print("\nGenerated link validation failed:")
+            for error in link_errors:
+                print(f" - {error}")
+            raise SystemExit(1)
+        print("\nValidated generated local links and assets.")
     print("\nDone.")
 
 if __name__ == "__main__":

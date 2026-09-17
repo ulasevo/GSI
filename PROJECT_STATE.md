@@ -6,6 +6,12 @@ The repository files are the authority on what is currently implemented. This do
 
 If the files and this document disagree, report the discrepancy rather than silently choosing one.
 
+## 2026-09 reconciliation
+
+This document preserves useful design history, but several of its phase labels now describe completed work rather than the current order of operations. In particular, the filter-room transition and Radio P53 landing/permanent pages are implemented in the source tree; P53 is no longer a post-1.0 future feature.
+
+For the current implementation sequence, use [docs/IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md). It reflects the present source architecture, URL-state contract, accepted Albums rule, and the remaining P53, catalogue, reading-orientation, and delivery work. The historical sections below should not be treated as a request to undo implemented systems.
+
 -What GSI is
 
 GSI began as a place to archive songs that do something more significant than merely sounding good.
