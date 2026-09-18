@@ -23,8 +23,18 @@ from builder.entry_drafts import (
     metadata_from_link,
     p53_record_from_draft,
     render_empty_entry,
+    slugify,
 )
-from gsi_data import load_config, read_tracks
+try:
+    from gsi_data import load_config, read_tracks
+except ModuleNotFoundError:
+    # Compatibility for the pre-migration main checkout.
+    def load_config(config_file: Path) -> dict:
+        return json.loads(config_file.read_text(encoding="utf-8"))
+
+    def read_tracks(tracks_file: Path) -> list[dict]:
+        with tracks_file.open("r", encoding="utf-8", newline="") as file:
+            return list(csv.DictReader(file))
 
 
 TRACK_COLUMNS = [
@@ -82,8 +92,6 @@ def _assert_new_slug(root: Path, slug: str) -> None:
     for row in read_tracks(root / "tracks.csv"):
         if (row.get("artist", "") + "-" + row.get("track", "")).strip().casefold() == "":
             continue
-        from gsi_text import slugify
-
         if slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == slug:
             raise DraftMetadataError(f"tracks.csv already contains this artist/track: {slug}")
 

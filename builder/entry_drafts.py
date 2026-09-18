@@ -13,9 +13,73 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 from urllib.request import Request, urlopen
 
-from builder.source_pipeline import make_markdown_template
-from gsi_links import normalize_provider_url
-from gsi_text import slugify
+try:
+    from builder.source_pipeline import make_markdown_template
+except ModuleNotFoundError:
+    # The published/main checkout predates the structural migration. Keep this
+    # small authoring tool runnable there without copying the whole build stack.
+    def _section_prompt(section: str) -> str:
+        prompts = {
+            "Charge": "What state does this song trigger?",
+            "Sonical Attraction": "What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence.",
+            "Lyric/Vocal Detail": "Any line, delivery, breath, pronunciation, or vocal moment worth preserving?",
+            "Version of ulaş": "What version of me does this song store? Time period, grind, breakup, desire, motion.",
+            "Lore": "Any personal history, repeated use, place, habit, person attached to this track?",
+            "Reading": "What do I think the song is doing or narrating?",
+            "Comment": "Free field. Final take, vibe, joke, conclusion, or whatever does not fit elsewhere.",
+        }
+        return prompts.get(section, "Write whatever belongs here.")
+
+    def make_markdown_template(
+        artist: str,
+        track: str,
+        album: str,
+        cover_file: str,
+        accent: str,
+        sections: list[str],
+    ) -> str:
+        cover = f"![cover](../covers/{cover_file})\n\n" if cover_file else ""
+        section_text = "\n\n".join(
+            f"## {section}\n\n<!-- {_section_prompt(section)} -->\n"
+            for section in sections
+        )
+        return (
+            f"---\nartist: {json.dumps(artist, ensure_ascii=False)}\n"
+            f"track: {json.dumps(track, ensure_ascii=False)}\n"
+            f"album: {json.dumps(album, ensure_ascii=False)}\n"
+            f"cover: {json.dumps(f'../covers/{cover_file}', ensure_ascii=False)}\n"
+            f"accent: {json.dumps(accent, ensure_ascii=False)}\n---\n\n"
+            f"# {track} — {artist}\n\n{cover}"
+            f"**Album:** {album}\n**Accent:** `{accent}`\n\n{section_text}"
+        )
+
+try:
+    from gsi_links import normalize_provider_url
+except ModuleNotFoundError:
+    from urllib.parse import urlunsplit
+
+    def normalize_provider_url(value: str, provider: str) -> str:
+        raw = (value or "").strip()
+        allowed = {
+            "apple": {"music.apple.com", "itunes.apple.com"},
+            "spotify": {"open.spotify.com"},
+        }.get(provider, set())
+        try:
+            parsed = urlsplit(raw)
+            hostname = (parsed.hostname or "").lower()
+        except ValueError:
+            return ""
+        if parsed.scheme.lower() != "https" or hostname not in allowed:
+            return ""
+        return urlunsplit(("https", hostname, parsed.path, parsed.query, parsed.fragment))
+
+try:
+    from gsi_text import slugify
+except ModuleNotFoundError:
+    import re
+
+    def slugify(text: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "-", text.lower().strip()).strip("-")
 
 
 class DraftMetadataError(ValueError):
