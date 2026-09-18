@@ -146,6 +146,9 @@ venv.bak/
 # mkdocs documentation
 /site
 
+# Codex-provided reference attachments; preserve locally, never stage as source
+.codex-remote-attachments/
+
 # mypy
 .mypy_cache/
 .dmypy.json

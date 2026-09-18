@@ -1,0 +1,39 @@
+<!-- 404 template: a stable recovery shell filled by scripts/error-page.js. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <meta name="theme-color" content="#0d0d0f">
+    <link rel="icon" id="favicon" href="/covers/GSI_favicon.svg" type="image/svg+xml">
+    <title>Signal Lost — GSI</title>
+    <link rel="stylesheet" href="styles/error-page.css">
+</head>
+<body>
+    <div class="protein-rain" aria-hidden="true">@@PROTEIN_DROPS@@</div>
+    <main>
+        <section>
+            <div class="eyebrow">@@EYEBROW@@</div>
+            <h1>@@NOT_FOUND_TITLE@@</h1>
+            <p class="message">@@MESSAGE@@</p>
+            <a class="home" id="home-link" href="./">RETURN TO GSI</a>
+        </section>
+        <article class="recommendation" id="recommendation" style="--accent:#ff4fa3">
+            <img id="signal-cover" alt="">
+            <div class="signal-copy">
+                <span>@@RECOMMENDATION_LABEL@@</span>
+                <strong id="signal-track"></strong>
+                <small id="signal-artist"></small>
+                <div class="signal-actions">
+                    <a id="signal-spotify" href="#" target="_blank" rel="noopener noreferrer">SPOTIFY ↗</a>
+                    <a id="signal-apple" href="#" target="_blank" rel="noopener noreferrer">APPLE MUSIC ↗</a>
+                    <a class="read" id="signal-read" href="#">OPEN SIGNAL IN GSI</a>
+                </div>
+            </div>
+        </article>
+    </main>
+    <script id="error-page-data" type="application/json">@@ERROR_PAGE_DATA@@</script>
+    <script src="scripts/error-page.js"></script>
+</body>
+</html>

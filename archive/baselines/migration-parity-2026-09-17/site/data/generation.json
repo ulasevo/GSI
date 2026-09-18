@@ -1,0 +1,278 @@
+{
+  "schema": 1,
+  "description": "Generated GSI route relationships and expected outputs; review prose is never included.",
+  "relationships": {
+    "entries": [
+      {
+        "slug": "arctic-monkeys-perhaps-vampires-is-a-bit-strong-but",
+        "href": "entries/arctic-monkeys-perhaps-vampires-is-a-bit-strong-but.html"
+      },
+      {
+        "slug": "arctic-monkeys-secret-door",
+        "href": "entries/arctic-monkeys-secret-door.html"
+      },
+      {
+        "slug": "beach-house-wishes",
+        "href": "entries/beach-house-wishes.html"
+      },
+      {
+        "slug": "broken-social-scene-this-briefest-kiss",
+        "href": "entries/broken-social-scene-this-briefest-kiss.html"
+      },
+      {
+        "slug": "james-blake-barefoot-in-the-park-feat-rosal-a",
+        "href": "entries/james-blake-barefoot-in-the-park-feat-rosal-a.html"
+      },
+      {
+        "slug": "k-flay-time-for-you",
+        "href": "entries/k-flay-time-for-you.html"
+      },
+      {
+        "slug": "kanye-west-champion",
+        "href": "entries/kanye-west-champion.html"
+      },
+      {
+        "slug": "kendrick-lamar-tv-off",
+        "href": "entries/kendrick-lamar-tv-off.html"
+      },
+      {
+        "slug": "matt-maeson-year-after-year",
+        "href": "entries/matt-maeson-year-after-year.html"
+      },
+      {
+        "slug": "metric-combat-baby",
+        "href": "entries/metric-combat-baby.html"
+      },
+      {
+        "slug": "metric-empty",
+        "href": "entries/metric-empty.html"
+      },
+      {
+        "slug": "metric-poster-of-a-girl",
+        "href": "entries/metric-poster-of-a-girl.html"
+      },
+      {
+        "slug": "metric-too-little-too-late",
+        "href": "entries/metric-too-little-too-late.html"
+      },
+      {
+        "slug": "michael-jackson-thriller",
+        "href": "entries/michael-jackson-thriller.html"
+      },
+      {
+        "slug": "miki-matsubara-mayonaka-no-door-stay-with-me",
+        "href": "entries/miki-matsubara-mayonaka-no-door-stay-with-me.html"
+      },
+      {
+        "slug": "mitski-first-love-late-spring",
+        "href": "entries/mitski-first-love-late-spring.html"
+      },
+      {
+        "slug": "muse-sing-for-absolution",
+        "href": "entries/muse-sing-for-absolution.html"
+      },
+      {
+        "slug": "silversun-pickups-skin-graph",
+        "href": "entries/silversun-pickups-skin-graph.html"
+      },
+      {
+        "slug": "slowdive-sugar-for-the-pill",
+        "href": "entries/slowdive-sugar-for-the-pill.html"
+      },
+      {
+        "slug": "tame-impala-let-it-happen",
+        "href": "entries/tame-impala-let-it-happen.html"
+      },
+      {
+        "slug": "travis-scott-coffee-bean",
+        "href": "entries/travis-scott-coffee-bean.html"
+      },
+      {
+        "slug": "travis-scott-through-the-late-night",
+        "href": "entries/travis-scott-through-the-late-night.html"
+      },
+      {
+        "slug": "tyler-the-creator-november",
+        "href": "entries/tyler-the-creator-november.html"
+      },
+      {
+        "slug": "wet-leg-mangetout",
+        "href": "entries/wet-leg-mangetout.html"
+      }
+    ],
+    "p53": [
+      {
+        "slug": "arctic-monkeys-secret-door",
+        "href": "p53/arctic-monkeys-secret-door.html"
+      },
+      {
+        "slug": "asap-rocky-holy-ghost-feat-joe-fox",
+        "href": "p53/asap-rocky-holy-ghost-feat-joe-fox.html"
+      },
+      {
+        "slug": "beach-house-new-year",
+        "href": "p53/beach-house-new-year.html"
+      },
+      {
+        "slug": "david-bowie-lazarus",
+        "href": "p53/david-bowie-lazarus.html"
+      },
+      {
+        "slug": "depeche-mode-personal-jesus",
+        "href": "p53/depeche-mode-personal-jesus.html"
+      },
+      {
+        "slug": "emily-haines-the-soft-skeleton-doctor-blind",
+        "href": "p53/emily-haines-the-soft-skeleton-doctor-blind.html"
+      },
+      {
+        "slug": "emily-haines-the-soft-skeleton-minefield-of-memory",
+        "href": "p53/emily-haines-the-soft-skeleton-minefield-of-memory.html"
+      },
+      {
+        "slug": "kendrick-lamar-god",
+        "href": "p53/kendrick-lamar-god.html"
+      },
+      {
+        "slug": "massive-attack-psyche",
+        "href": "p53/massive-attack-psyche.html"
+      },
+      {
+        "slug": "metric-the-twist",
+        "href": "p53/metric-the-twist.html"
+      },
+      {
+        "slug": "metric-too-little-too-late",
+        "href": "p53/metric-too-little-too-late.html"
+      },
+      {
+        "slug": "miki-matsubara-mayonaka-no-door-stay-with-me",
+        "href": "p53/miki-matsubara-mayonaka-no-door-stay-with-me.html"
+      },
+      {
+        "slug": "mitski-shouldve-been-me",
+        "href": "p53/mitski-shouldve-been-me.html"
+      },
+      {
+        "slug": "peter-murphy-the-prince-old-lady-shade",
+        "href": "p53/peter-murphy-the-prince-old-lady-shade.html"
+      },
+      {
+        "slug": "phantogram-running-through-colors",
+        "href": "p53/phantogram-running-through-colors.html"
+      },
+      {
+        "slug": "wet-leg-mangetout",
+        "href": "p53/wet-leg-mangetout.html"
+      },
+      {
+        "slug": "yeah-yeah-yeahs-slave",
+        "href": "p53/yeah-yeah-yeahs-slave.html"
+      }
+    ],
+    "artists": [
+      {
+        "artist": "Arctic Monkeys",
+        "href": "artists/arctic-monkeys.html"
+      },
+      {
+        "artist": "Beach House",
+        "href": "artists/beach-house.html"
+      },
+      {
+        "artist": "Emily Haines & The Soft Skeleton",
+        "href": "artists/emily-haines-the-soft-skeleton.html"
+      },
+      {
+        "artist": "Kendrick Lamar",
+        "href": "artists/kendrick-lamar.html"
+      },
+      {
+        "artist": "Metric",
+        "href": "artists/metric.html"
+      },
+      {
+        "artist": "Mitski",
+        "href": "artists/mitski.html"
+      },
+      {
+        "artist": "Travis Scott",
+        "href": "artists/travis-scott.html"
+      }
+    ],
+    "albums": [
+      {
+        "artist": "Beach House",
+        "album": "Bloom",
+        "href": "albums/beach-house-bloom.html"
+      },
+      {
+        "artist": "Metric",
+        "album": "Live It Out",
+        "href": "albums/metric-live-it-out.html"
+      }
+    ]
+  },
+  "expected_pages": {
+    "entries": [
+      "arctic-monkeys-perhaps-vampires-is-a-bit-strong-but.html",
+      "arctic-monkeys-secret-door.html",
+      "beach-house-wishes.html",
+      "broken-social-scene-this-briefest-kiss.html",
+      "james-blake-barefoot-in-the-park-feat-rosal-a.html",
+      "k-flay-time-for-you.html",
+      "kanye-west-champion.html",
+      "kendrick-lamar-tv-off.html",
+      "matt-maeson-year-after-year.html",
+      "metric-combat-baby.html",
+      "metric-empty.html",
+      "metric-poster-of-a-girl.html",
+      "metric-too-little-too-late.html",
+      "michael-jackson-thriller.html",
+      "miki-matsubara-mayonaka-no-door-stay-with-me.html",
+      "mitski-first-love-late-spring.html",
+      "muse-sing-for-absolution.html",
+      "silversun-pickups-skin-graph.html",
+      "slowdive-sugar-for-the-pill.html",
+      "tame-impala-let-it-happen.html",
+      "travis-scott-coffee-bean.html",
+      "travis-scott-through-the-late-night.html",
+      "tyler-the-creator-november.html",
+      "wet-leg-mangetout.html"
+    ],
+    "p53": [
+      "arctic-monkeys-secret-door.html",
+      "asap-rocky-holy-ghost-feat-joe-fox.html",
+      "beach-house-new-year.html",
+      "david-bowie-lazarus.html",
+      "depeche-mode-personal-jesus.html",
+      "emily-haines-the-soft-skeleton-doctor-blind.html",
+      "emily-haines-the-soft-skeleton-minefield-of-memory.html",
+      "index.html",
+      "kendrick-lamar-god.html",
+      "latest.html",
+      "massive-attack-psyche.html",
+      "metric-the-twist.html",
+      "metric-too-little-too-late.html",
+      "miki-matsubara-mayonaka-no-door-stay-with-me.html",
+      "mitski-shouldve-been-me.html",
+      "peter-murphy-the-prince-old-lady-shade.html",
+      "phantogram-running-through-colors.html",
+      "wet-leg-mangetout.html",
+      "yeah-yeah-yeahs-slave.html"
+    ],
+    "artists": [
+      "arctic-monkeys.html",
+      "beach-house.html",
+      "emily-haines-the-soft-skeleton.html",
+      "kendrick-lamar.html",
+      "metric.html",
+      "mitski.html",
+      "travis-scott.html"
+    ],
+    "albums": [
+      "beach-house-bloom.html",
+      "metric-live-it-out.html"
+    ]
+  }
+}

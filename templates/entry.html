@@ -1,0 +1,56 @@
+<!-- Entry template: the reading-room frame around authored Markdown sections. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="@@SAFE_PAGE_DESCRIPTION@@">
+    <meta name="theme-color" content="@@ACCENT@@">
+    <meta property="og:type" content="article">
+    <meta property="og:site_name" content="GSI">
+    <meta property="og:title" content="@@SAFE_PAGE_TITLE@@">
+    <meta property="og:description" content="@@SAFE_PAGE_DESCRIPTION@@">@@SHARING_META@@
+    <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="../styles/gsi-tokens.css">
+    <title>@@SAFE_PAGE_TITLE@@</title>
+<link rel="stylesheet" href="../styles/entry-room.css">
+</head>
+<body style="--accent:@@ACCENT@@;@@BG_STYLE@@">
+    <main class="page">
+        <header class="entry-nav">
+            <nav class="signal-trace" aria-label="GSI path">
+                <a id="trace-archive" href="../index.html">GSI</a>
+                <span id="trace-context-separator" class="trace-separator hidden">→</span>
+                <a id="trace-filter" class="hidden" href="../index.html"></a>
+                <span id="trace-filter-separator" class="trace-separator hidden">→</span>
+                <a id="trace-artist" class="hidden" href="../index.html"></a>
+                <span class="trace-entry-separator trace-separator">→</span>
+                <span class="trace-current">@@TRACK@@</span>
+            </nav>
+        </header>
+
+        <section class="hero">
+            <div class="cover-frame">@@COVER_HTML@@</div>
+            <div class="meta">
+                <div class="entry-architecture" aria-hidden="true"><span>GENOME</span><span>STABILITY</span><span>INDUCER</span></div>
+                <h1>@@TRACK@@</h1>
+                <p>@@ARTIST_DISPLAY@@</p>
+                <p class="album">@@ALBUM_DISPLAY@@</p>
+                @@P53_COUNTERPART_HTML@@
+                @@STREAMING_LINKS_HTML@@
+            </div>
+        </section>
+
+        <div class="@@ENTRY_LAYOUT_CLASS@@">
+            @@ENTRY_INDEX_HTML@@
+            <div class="sections">
+                @@SECTION_CARDS_HTML@@
+            </div>
+        </div>
+        @@ALSO_APPEARS_HTML@@
+    </main>
+    <script id="gsi-entry-context" type="application/json">@@ENTRY_CONTEXT_JSON@@</script>
+    <script src="../scripts/gsi-context.js"></script>
+    <script src="../scripts/entry-page.js"></script>
+</body>
+</html>

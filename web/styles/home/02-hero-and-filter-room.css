@@ -1,0 +1,274 @@
+/* Hero, Radio P53 feature, and expressive filter-room art. */
+        /* GSI 1.09: expressive controls mounted onto a distressed signal wall. */
+        body {
+            --surface: #101012;
+            --paper: #e8e2d3;
+            --ink: #111114;
+            --signal-pink: #ff4f9a;
+            --signal-cyan: #32c9e8;
+            padding: clamp(18px, 4vw, 54px);
+            background:
+                radial-gradient(circle at 78% 4%, color-mix(in srgb, var(--page-tint, #687080), transparent 80%), transparent 32%),
+                linear-gradient(118deg, rgba(255,255,255,.035), transparent 28%),
+                repeating-linear-gradient(96deg, rgba(255,255,255,.018) 0 1px, transparent 1px 16px),
+                #0b0b0d;
+        }
+        body::before {
+            opacity: .28;
+            mix-blend-mode: soft-light;
+        }
+        body::after {
+            inset: 0;
+            filter: none;
+            opacity: .72;
+            background:
+                linear-gradient(90deg, transparent 0 48%, rgba(255,255,255,.018) 48% 49%, transparent 49%),
+                radial-gradient(circle at 18% 88%, color-mix(in srgb, var(--page-tint, #ffffff), transparent 90%), transparent 34%);
+        }
+        .signal-transform {
+            position: fixed;
+            inset: -15%;
+            z-index: 20;
+            pointer-events: none;
+            opacity: 0;
+            background:
+                linear-gradient(104deg, transparent 0 34%, color-mix(in srgb, var(--page-tint), transparent 48%) 42%, transparent 50%),
+                repeating-linear-gradient(0deg, transparent 0 8px, rgba(255,255,255,.08) 8px 9px);
+            mix-blend-mode: screen;
+            transform: translateX(-65%) skewX(-12deg);
+        }
+        body.signal-transforming .signal-transform {
+            animation: signal-sweep 700ms cubic-bezier(.2,.8,.2,1) both;
+        }
+        @keyframes signal-sweep {
+            0% { opacity: 0; transform: translateX(-65%) skewX(-12deg); }
+            28% { opacity: .72; }
+            100% { opacity: 0; transform: translateX(65%) skewX(-12deg); }
+        }
+        .site-hero {
+            display: grid;
+            grid-template-columns: minmax(0, 1.25fr) minmax(310px, .75fr);
+            gap: clamp(20px, 4vw, 54px);
+            align-items: stretch;
+            margin-bottom: 24px;
+            padding: 0;
+        }
+        .site-hero::before,
+        .site-hero::after {
+            content: none;
+        }
+        .hero-copy {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            justify-content: center; /* balance the desktop panel against the tall P53 artwork */
+            min-height: 330px;
+            padding: clamp(22px, 4vw, 48px);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,.13);
+            border-radius: 52px 14px 52px 14px;
+            background:
+                linear-gradient(140deg, rgba(255,255,255,.07), transparent 38%),
+                linear-gradient(115deg, color-mix(in srgb, var(--page-tint, #fff), transparent 91%), transparent 58%),
+                rgba(14,14,16,.86);
+            box-shadow: 0 28px 80px rgba(0,0,0,.3);
+            isolation: isolate;
+            transition: background 520ms ease, border-radius 520ms cubic-bezier(.2,.8,.2,1), border-color 300ms ease;
+        }
+        body.filter-active .hero-copy {
+            border-color: color-mix(in srgb, var(--page-tint), white 20%);
+            border-radius: 18px 58px 18px 58px;
+        }
+        .hero-architecture {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            pointer-events: none;
+            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+            line-height: .72;
+            transition: transform 650ms cubic-bezier(.2,.8,.2,1), opacity 300ms ease;
+        }
+        .hero-architecture span {
+            position: absolute;
+            color: color-mix(in srgb, var(--page-tint, #fff), transparent 89%);
+            font-size: clamp(72px, 9vw, 142px);
+            letter-spacing: -.04em;
+            white-space: nowrap;
+        }
+        .hero-architecture span:nth-child(1) { top: -10px; right: -18px; transform: none; }
+        .hero-architecture span:nth-child(2) { top: 39%; left: -26px; color: transparent; -webkit-text-stroke: 2px color-mix(in srgb, var(--page-tint, #fff), transparent 82%); transform: scaleX(1.18); }
+        .hero-architecture span:nth-child(3) { right: -16px; bottom: -10px; transform: skew(-10deg); }
+        body.signal-transforming .hero-architecture { transform: translateX(12px) skew(-2deg); opacity: .72; }
+        body.signal-transforming .hero-copy {
+            box-shadow: inset 8px 0 0 color-mix(in srgb, var(--page-tint), transparent 34%), 0 28px 80px rgba(0,0,0,.3);
+        }
+        .wordmark {
+            align-self: flex-start;
+            padding: 12px 28px 16px 22px;
+            border-radius: 44px 12px 44px 12px;
+            color: var(--ink);
+            background: var(--paper);
+            -webkit-text-stroke: 0;
+            text-shadow: 6px 0 0 var(--signal-pink), -5px 0 0 var(--signal-cyan);
+            box-shadow: 12px 12px 0 color-mix(in srgb, var(--page-tint, #7b5cff), #000 34%);
+            transform: rotate(-2deg);
+            animation: none;
+            transition:
+                border-radius 500ms cubic-bezier(.2,.8,.2,1),
+                transform 500ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 240ms ease;
+        }
+        .wordmark::before,
+        .wordmark::after {
+            content: none;
+        }
+        .wordmark:hover {
+            animation: none;
+            border-radius: 12px 44px 12px 44px;
+            transform: rotate(1deg) scale(1.025);
+            text-shadow: 6px 0 0 var(--signal-pink), -5px 0 0 var(--signal-cyan);
+        }
+        .hero-copy .intro {
+            max-width: 760px;
+            max-height: none;
+            margin: 28px 0 0;
+            padding: 0;
+            border: 0;
+            border-radius: 0;
+            background: none;
+            box-shadow: none;
+        }
+        .hero-copy .intro p {
+            margin: 0;
+            color: rgba(255,255,255,.72);
+            font-size: clamp(14px, 1.6vw, 18px);
+            line-height: 1.55;
+        }
+        body.filter-active .hero-copy .intro {
+            max-height: none;
+            margin-top: 28px;
+            padding: 0;
+            opacity: .36;
+            transform: none;
+        }
+        .p53-broadcast {
+            position: relative;
+            display: block;
+            min-height: 330px;
+            overflow: hidden;
+            color: #f8f5eb;
+            text-decoration: none;
+            border: 2px solid #ff72b5;
+            border-radius: 16px 54px 16px 54px;
+            background: #283625;
+            box-shadow: 0 0 0 6px rgba(255,79,154,.08), 0 26px 70px rgba(0,0,0,.38);
+            transition:
+                transform 520ms cubic-bezier(.2,.8,.2,1),
+                border-radius 520ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 220ms ease;
+        }
+        .p53-broadcast:hover,
+        .p53-broadcast:focus-visible {
+            transform: translateY(-7px) rotate(.5deg);
+            border-radius: 54px 16px 54px 16px;
+            box-shadow: 8px 8px 0 #22bce3, -7px -5px 0 rgba(255,79,154,.52), 0 32px 80px rgba(0,0,0,.42);
+        }
+        .p53-art {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+        }
+        .p53-art img {
+            width: 100%;
+            height: 100%;
+            min-height: 100%;
+            object-fit: cover;
+            display: block;
+            transition: transform 900ms cubic-bezier(.2,.8,.2,1), filter 300ms ease;
+        }
+        .p53-art::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+            opacity: .22;
+            background:
+                radial-gradient(circle at 24% 72%, color-mix(in srgb, var(--signal-accent), white 12%), transparent 46%),
+                var(--signal-accent);
+            mix-blend-mode: color;
+        }
+        .p53-broadcast:hover .p53-art img {
+            transform: scale(1.045) rotate(-1deg);
+            filter: saturate(1.12) contrast(1.04);
+        }
+        .p53-overlay {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            grid-template-columns: auto minmax(0, 1fr);
+            grid-template-rows: 1fr auto;
+            align-items: end;
+            gap: 14px;
+            padding: 20px;
+            background: linear-gradient(180deg, transparent 34%, rgba(12,10,18,.22) 55%, rgba(12,10,18,.94) 100%);
+        }
+        .p53-album {
+            grid-row: 2;
+            width: 82px;
+            aspect-ratio: 1;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,.78);
+            border-radius: 15px 5px 15px 5px;
+            box-shadow: 6px 6px 0 rgba(53,201,233,.58);
+            transform: rotate(-3deg);
+        }
+        .p53-signal-copy {
+            grid-column: 2;
+            grid-row: 1;
+            align-self: end;
+            justify-self: end;
+            max-width: 72%;
+            text-align: right;
+        }
+        .p53-signal-copy span {
+            color: #5ee4fa;
+            font-size: 10px;
+            font-weight: 950;
+            letter-spacing: .17em;
+        }
+        .p53-signal-copy strong {
+            display: block;
+            margin-top: 6px;
+            font-size: clamp(21px, 2.1vw, 31px);
+            line-height: 1;
+        }
+        .p53-signal-copy small {
+            display: block;
+            margin-top: 5px;
+            color: rgba(255,255,255,.68);
+        }
+        .p53-signal-copy b {
+            display: inline-grid;
+            place-items: center;
+            width: 32px;
+            height: 32px;
+            margin-top: 10px;
+            border-radius: 50% 50% 16% 50%;
+            color: #111;
+            background: #ff79bb;
+            font-size: 18px;
+        }
+        .p53-radio {
+            grid-column: 2;
+            grid-row: 2;
+            align-self: end;
+            justify-self: end;
+            color: #f4ed50;
+            font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+            font-size: clamp(36px, 4.6vw, 68px);
+            line-height: .78;
+            letter-spacing: -.035em;
+            text-align: right;
+            text-shadow: 4px 0 0 rgba(255,79,163,.72), -3px 0 0 rgba(53,201,233,.7);
+        }

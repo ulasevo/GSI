@@ -25,7 +25,11 @@ Unknown values are ignored. URLs should omit default state where possible.
 
 - Songs are the primary records.
 - An album room exists only once two or more represented songs share an artist and displayed album name.
-- Filtered Albums use the whole-album rule recorded in `AUDIT_2026-09-16.md`.
+- Filtered Albums use the whole-album rule recorded in `AUDIT_2026-09-16.md`:
+  if an album room exists and at least one represented song matches the active
+  filter, the album appears with all represented songs, even when the other
+  songs do not match that filter. A future author-written “why in …” note may
+  explain the inclusion; the builder must not invent one.
 - Artist rooms include P53-only signals only when the artist has two or more represented signals. Those records link to their P53 transmission and are visibly labelled as transmissions, not as written entries.
 - Album names and user prose are exact source data. No code may normalize their casing or manufacture an interpretation.
 

@@ -10,6 +10,7 @@ import re
 from gsi_links import streaming_link_markup
 
 
+# Slugs are shared by source files, generated routes, and query-state links.
 def slugify(text: str) -> str:
     """Turn a display name into the stable, URL-safe slug used by GSI."""
     text = text.lower().strip()
@@ -27,6 +28,8 @@ def simple_markdown_to_html(markdown_text: str) -> str:
     )
 
 
+# Keep provider markup in gsi_links so every page labels canonical and search
+# links the same way.
 def make_streaming_links(item: dict) -> str:
     """Return the Spotify/Apple Music links for one generated item."""
     return streaming_link_markup(item)

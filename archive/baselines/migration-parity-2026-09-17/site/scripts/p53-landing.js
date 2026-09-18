@@ -1,14 +1,22 @@
 /* Radio P53 landing-page context and focus behavior. */
 (() => {
+  const contextNode = document.querySelector("#p53-landing-context");
+  let landingContext = {};
+  if (contextNode) {
+    try {
+      landingContext = JSON.parse(contextNode.textContent || "{}");
+    } catch {
+      landingContext = {};
+    }
+  }
   const p53State = GSIContext.read();
-  const p53Params = new URLSearchParams();
-  const p53Filter = p53State.get("filter");
-  const p53View = p53State.get("view");
-  if (p53Filter) p53Params.set("filter", p53Filter);
-  if (GSIContext.allowedViews.has(p53View)) p53Params.set("view", p53View);
-  if (p53State.get("format") === "albums") p53Params.set("format", "albums");
+  const p53Params = GSIContext.archiveParams({
+    state: p53State,
+    filterLabels: landingContext.filterLabels || {},
+  });
   const p53Artist = p53State.get("artist");
-  if (p53Artist) p53Params.set("artist", p53Artist);
+  const artistSlugs = Array.isArray(landingContext.artistSlugs) ? landingContext.artistSlugs : [];
+  if (p53Artist && artistSlugs.includes(p53Artist)) p53Params.set("artist", p53Artist);
 
   const query = p53Params.size ? `?${p53Params}` : "";
   const homeParams = new URLSearchParams(p53Params);

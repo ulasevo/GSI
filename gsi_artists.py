@@ -15,6 +15,7 @@ from gsi_assets import local_image_metadata
 from gsi_text import slugify
 
 
+# Artist art is optional. Resolve it only inside the reviewed local asset folder.
 def _safe_asset_path(asset_root: Path, asset_file: str) -> Path | None:
     """Resolve an artist image only when it remains inside the asset root."""
     normalized = (asset_file or "").replace("\\", "/").strip()
@@ -61,6 +62,8 @@ def resolve_artist_asset(artist: str, config: dict, asset_root: Path) -> dict:
     }
 
 
+# Copying is kept separate from metadata preparation so tests can inspect either
+# decision without touching the generated site.
 def copy_site_artist_assets(asset_root: Path, site_asset_root: Path) -> None:
     """Copy optional local artist imagery into generated output."""
     if site_asset_root.exists():

@@ -16,6 +16,7 @@ PROVIDER_HOSTS = {
 }
 
 
+# Only explicit HTTPS links to known provider hosts count as canonical.
 def normalize_provider_url(value: str, provider: str) -> str:
     """Return a safe HTTPS provider URL, or an empty string when it is invalid."""
     raw = (value or "").strip()
@@ -48,6 +49,8 @@ def provider_search_url(provider: str, artist: str, track: str, album: str) -> s
     raise ValueError(f"Unsupported provider: {provider}")
 
 
+# Keep the distinction between a supplied link and a search fallback visible to
+# both the generated page and the catalogue manifest.
 def resolve_provider_links(item: dict) -> dict[str, dict[str, str]]:
     """Resolve canonical-or-search links for one song-like item."""
     links: dict[str, dict[str, str]] = {}
@@ -90,6 +93,7 @@ def streaming_link_markup(item: dict) -> str:
 """
 
 
+# File checks below prevent a metadata row from escaping the covers directory.
 def _safe_cover_path(covers_dir: Path, cover_file: str) -> Path | None:
     """Resolve a cover path only when it stays inside the source cover directory."""
     normalized = (cover_file or "").replace("\\", "/").strip()

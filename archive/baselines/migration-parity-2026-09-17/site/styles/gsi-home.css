@@ -1107,7 +1107,7 @@
         .format-option[aria-pressed="true"] { color:#fff; background:transparent; }
         .format-option:disabled { color:rgba(255,255,255,.2); opacity:.6; cursor:not-allowed; }
         .format-option:not(:disabled):hover,.format-option:not(:disabled):focus-visible { color:#fff; background:rgba(255,255,255,.08); outline-offset:2px; }
-        .layout-format-controls > .mini-playlist-card { grid-column:3; grid-row:1; width:100%; max-width:none; min-width:0; min-height:50px; align-self:stretch; justify-content:center; border-radius:15px 5px 15px 5px; transform:none; text-decoration:none; }
+        .layout-format-controls > .mini-playlist-card { grid-column:3; grid-row:1; width:100%; max-width:none; min-width:0; min-height:50px; align-self:stretch; justify-content:center; box-sizing:border-box; border-radius:15px 5px 15px 5px; transform:none; text-decoration:none; }
         .layout-format-controls .mini-playlist-card img { display:none !important; }
         .layout-format-controls .mini-playlist-card .playlist-card-text { display:block; box-sizing:border-box; width:100%; max-width:none; padding:8px 12px; overflow:hidden; color:#fff; font-size:clamp(10px,1vw,12px); font-weight:950; letter-spacing:.065em; line-height:1.18; text-align:center; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
         .layout-format-controls .mini-playlist-card:hover,.layout-format-controls .mini-playlist-card:focus-visible { border-radius:5px 15px 5px 15px; transform:translateY(-3px) rotate(-.6deg); }
@@ -1428,6 +1428,18 @@
                 -webkit-text-stroke:2px color-mix(in srgb,var(--page-tint),transparent 74%);
             }
         }
+        /* Final containment guard: controls must size to the room, even when no
+           filter is selected and the playlist rail is hidden. */
+        @media (max-width:760px) {
+            .layout-format-controls,
+            .layout-format-controls > .view-control,
+            .layout-format-controls > .format-control {
+                width:100%;
+                max-width:100%;
+                min-width:0;
+            }
+        }
+
         @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
                 animation-duration: .01ms !important;

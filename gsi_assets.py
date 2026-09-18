@@ -7,6 +7,17 @@ from pathlib import Path
 from PIL import Image
 
 
+# Homepage CSS is authored in readable layers but shipped as one stylesheet so
+# the browser keeps one stable public asset and the cascade order stays clear.
+HOME_STYLE_PARTS = (
+    "01-foundation.css",
+    "02-hero-and-filter-room.css",
+    "03-filter-and-controls.css",
+    "04-cards-and-responsive.css",
+)
+
+
+# Artwork supplies accents, but a damaged or flat image must never stop a build.
 def dominant_color(image_path: Path) -> str:
     """Extract a vivid accent color from an image, with a safe fallback."""
     try:
@@ -64,6 +75,8 @@ def local_image_metadata(image_path: Path) -> dict:
     return metadata
 
 
+# Generated output receives fresh copies so removed or renamed source assets do
+# not linger in the published tree.
 def copy_site_covers(covers_dir: Path, site_covers_dir: Path) -> None:
     """Refresh generated artwork from the editable cover directory."""
     if site_covers_dir.exists():
@@ -75,17 +88,35 @@ def copy_site_covers(covers_dir: Path, site_covers_dir: Path) -> None:
 def copy_site_scripts(web_dir: Path, site_scripts_dir: Path) -> None:
     """Copy source browser helpers into the generated GSI site."""
     site_scripts_dir.mkdir(parents=True, exist_ok=True)
-    for source in web_dir.glob("*.js"):
+    scripts_dir = web_dir / "scripts"
+    for source in scripts_dir.glob("*.js"):
         shutil.copy2(source, site_scripts_dir / source.name)
 
 
 def copy_site_styles(web_dir: Path, site_styles_dir: Path) -> None:
-    """Copy source stylesheets into the generated GSI site."""
+    """Copy stylesheets and assemble the layered homepage stylesheet."""
     site_styles_dir.mkdir(parents=True, exist_ok=True)
-    for source in web_dir.glob("*.css"):
+    styles_dir = web_dir / "styles"
+    for source in styles_dir.glob("*.css"):
         shutil.copy2(source, site_styles_dir / source.name)
+    home_parts_dir = styles_dir / "home"
+    if home_parts_dir.is_dir():
+        parts = []
+        for part_name in HOME_STYLE_PARTS:
+            part_path = home_parts_dir / part_name
+            if not part_path.is_file():
+                raise FileNotFoundError(f"Missing homepage style part: {part_path}")
+            parts.append(part_path.read_text(encoding="utf-8").rstrip())
+        (site_styles_dir / "gsi-home.css").write_text(
+            "/* Generated from web/styles/home/*.css in HOME_STYLE_PARTS order. */\n"
+            + "\n\n".join(parts)
+            + "\n",
+            encoding="utf-8",
+        )
 
 
+# Playlist art is a visual hint only; a missing optional cover falls back to the
+# filter color and does not make that filter unusable.
 def playlist_visuals(
     playlist_cover: str, fallback_color: str, base_dir: Path
 ) -> tuple[str, str]:

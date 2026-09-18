@@ -34,8 +34,13 @@
     document.querySelectorAll("#trace-archive").forEach((link) => {
         link.href = archiveHref;
     });
-    document.querySelectorAll("[data-artist-base-href]").forEach((link) => {
-        link.href = `${link.dataset.artistBaseHref}${archiveParams.size ? `?${archiveParams}` : ""}`;
+    document.querySelectorAll("[data-artist-base-href], [data-album-base-href]").forEach((link) => {
+        const contextParams = new URLSearchParams(archiveParams);
+        if (link.dataset.albumBaseHref && hasArtistRoom && artistRoute === expectedArtistRoute) {
+            contextParams.set("artist", artistRoute);
+        }
+        const baseHref = link.dataset.artistBaseHref || link.dataset.albumBaseHref;
+        link.href = `${baseHref}${contextParams.size ? `?${contextParams}` : ""}`;
     });
     document.querySelectorAll("[data-filter-route]").forEach((link) => {
         if (link.dataset.filterRoute === filter) link.hidden = true;

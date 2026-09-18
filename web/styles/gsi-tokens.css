@@ -1,0 +1,16 @@
+/*
+ * Shared visual vocabulary. These are the few values every room may trust;
+ * page-specific styles can add detail without redefining the whole language.
+ */
+:root {
+  --gsi-bg: #0d0d0f;
+  --gsi-paper: #f2f2f2;
+  --gsi-muted: rgba(255, 255, 255, .68);
+  --gsi-display-font: Impact, Haettenschweiler, "Arial Black", sans-serif;
+  --gsi-ui-font: Arial, sans-serif;
+  --gsi-reading-font: Arial, sans-serif;
+  --gsi-content-max: 1160px;
+  --gsi-control-radius: 12px 4px 12px 4px;
+  --gsi-panel-radius: 30px 8px 30px 8px;
+  --gsi-motion: cubic-bezier(.2, .8, .2, 1);
+}
