@@ -166,8 +166,20 @@ def metadata_from_link(
 ) -> dict:
     """Resolve a link, allowing explicit overrides for uncertain metadata."""
     provider = provider_for_url(url)
-    if provider == "apple":
+    # A fully specified manual record is a safe offline path. The provider URL
+    # remains canonical; artwork can still be discovered by the normal build.
+    if provider == "apple" and not all(value.strip() for value in (artist, track, album)):
         metadata = metadata_from_apple_link(url, timeout=timeout, opener=opener)
+    elif provider == "apple":
+        metadata = {
+            "provider": "apple",
+            "artist": "",
+            "track": "",
+            "album": "",
+            "apple_url": normalize_provider_url(url, "apple"),
+            "spotify_url": "",
+            "cover_url": "",
+        }
     else:
         normalized_url = normalize_provider_url(url, "spotify")
         metadata = {

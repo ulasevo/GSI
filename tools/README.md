@@ -25,6 +25,14 @@ Apple's public lookup fills artist, track, album, and artwork metadata. The
 draft contains every configured review heading as an empty, prompted section.
 Add `--tags dreamy,bassline` and `--section "A new heading"` when needed.
 
+If the machine cannot reach Apple's lookup endpoint, supply all three names to
+use the link safely offline; the canonical Apple URL is still preserved:
+
+```text
+python tools/new_entry.py "https://music.apple.com/...?...&i=..." \
+  --artist "Artist" --track "Track" --album "Album"
+```
+
 The command is preview-only by default. Add `--write` only after reviewing the
 resolved metadata; add `--p53` if the song should also become an explicit P53
 history record. Spotify links are accepted with explicit `--artist`, `--track`,
