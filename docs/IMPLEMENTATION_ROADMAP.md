@@ -114,6 +114,19 @@ reports the current canonical/search split, and `tools/provider_candidates.py`
 can write review-only candidates from provider search endpoints. Neither tool
 edits source data automatically.
 
+The first dynamic-entry slice is now available through `tools/new_entry.py`.
+It is preview-only by default: an Apple Music song link can resolve artist,
+track, album, and artwork metadata, then render every configured review heading
+as an empty prompted section. `--write` is the explicit catalogue mutation;
+`--section` adds an occasional custom heading and `--p53` opts into a P53
+history record. Spotify links are accepted with explicit names, but API-based
+metadata lookup remains deferred.
+
+Next dynamic-entry work should add a dry-run source validator and a review
+report before considering a browser editor or private submission flow. The
+source model must remain one record per song, with generated album, artist, and
+P53 relationships derived from it rather than maintained by separate forms.
+
 - Define a small asset budget for P53 art and defer noncritical images.
 - Validate generated links, data attributes, provider URL shape, and manifest cover paths.
 - Add an opt-in external availability check only if provider throttling and false

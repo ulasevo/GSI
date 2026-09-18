@@ -12,3 +12,20 @@ before copying an exact URL into the source catalogue.
 
 Use `--provider apple` or `--provider spotify` to limit a run, and `--output`
 to choose another report path.
+
+## New entry drafts
+
+Paste an Apple Music song link to preview a complete source draft:
+
+```text
+python tools/new_entry.py "https://music.apple.com/...?...&i=..."
+```
+
+Apple's public lookup fills artist, track, album, and artwork metadata. The
+draft contains every configured review heading as an empty, prompted section.
+Add `--tags dreamy,bassline` and `--section "A new heading"` when needed.
+
+The command is preview-only by default. Add `--write` only after reviewing the
+resolved metadata; add `--p53` if the song should also become an explicit P53
+history record. Spotify links are accepted with explicit `--artist`, `--track`,
+and `--album` values, but Spotify API metadata lookup is intentionally deferred.
