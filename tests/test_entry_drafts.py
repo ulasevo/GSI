@@ -67,6 +67,16 @@ class EntryDraftTests(unittest.TestCase):
         )
         self.assertEqual(metadata["spotify_url"], "https://open.spotify.com/track/abc123")
 
+    def test_apple_link_accepts_complete_manual_metadata_offline(self):
+        metadata = metadata_from_link(
+            "https://music.apple.com/tr/album/foo/123?i=456",
+            artist="Artist",
+            track="Track",
+            album="Album",
+        )
+        self.assertEqual(metadata["apple_url"], "https://music.apple.com/tr/album/foo/123?i=456")
+        self.assertEqual(metadata["artist"], "Artist")
+
     def test_draft_record_and_all_sections_render(self):
         record = draft_record({
             "artist": "Artist",
