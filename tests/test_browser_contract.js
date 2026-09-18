@@ -19,12 +19,16 @@ const storage = {
   setItem(key, value) { stored.set(key, value); },
 };
 const sandbox = {
+  URL,
   URLSearchParams,
   Object,
   Set,
   localStorage: storage,
   window: {
-    location: { search: "?filter=dreamy&view=gallery&format=albums" },
+    location: {
+      href: "https://gsi.test/p53/secret-door.html?filter=dreamy&view=gallery&format=albums#signal",
+      search: "?filter=dreamy&view=gallery&format=albums",
+    },
     localStorage: storage,
   },
 };
@@ -41,6 +45,7 @@ const valid = context.archiveParams({
 });
 assert.equal(valid.toString(), "filter=dreamy&view=gallery&format=albums");
 assert.equal(context.href("../index.html", valid), "../index.html?filter=dreamy&view=gallery&format=albums");
+assert.equal(context.canonicalHref(), "https://gsi.test/p53/secret-door.html");
 
 const cleaned = context.archiveParams({
   state: new URLSearchParams("filter=unknown&view=sideways&format=artists"),

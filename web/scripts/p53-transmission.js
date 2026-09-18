@@ -78,7 +78,8 @@
   };
 
   shareButton.addEventListener("click", async () => {
-    const shareData = { title: context.shareTitle || document.title, text: artistName, url: window.location.href };
+    const shareUrl = GSIContext.canonicalHref();
+    const shareData = { title: context.shareTitle || document.title, text: artistName, url: shareUrl };
     try {
       if (navigator.share) {
         await navigator.share(shareData);
@@ -86,10 +87,10 @@
         return;
       }
       if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(shareUrl);
       } else {
         const fallback = document.createElement("textarea");
-        fallback.value = window.location.href;
+        fallback.value = shareUrl;
         fallback.setAttribute("readonly", "");
         fallback.style.cssText = "position:fixed;opacity:0;pointer-events:none";
         document.body.append(fallback);

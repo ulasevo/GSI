@@ -10,6 +10,7 @@ from pathlib import Path # cross OS handling
 from gsi_assets import copy_site_covers, copy_site_scripts, copy_site_styles
 from gsi_artists import artist_catalogue_records, copy_site_artist_assets, write_artist_manifest
 from gsi_data import artist_room_groups, build_generation_inventory, load_config, ordered_tracks, read_tracks
+from gsi_links import print_provider_link_audit, provider_link_audit
 from gsi_text import slugify
 from gsi_validation import validate_generated_links, validate_source_contract
 
@@ -58,6 +59,11 @@ def main() -> None:
         action = "store_true",
         help = "Check generated internal pages, assets, and stable route attributes after building.",
     )
+    parser.add_argument(
+        "--audit-provider-links",
+        action = "store_true",
+        help = "Report canonical provider URLs and search fallbacks without generating the site.",
+    )
     args = parser.parse_args()
     # Validate before any normal build can touch entries or download artwork.
     source_errors, source_warnings = validate_source_contract(
@@ -78,6 +84,12 @@ def main() -> None:
             print(f" - {error}")
         raise SystemExit(2)
     print("Source preflight passed.")
+    if args.audit_provider_links:
+        config = load_config(CONFIG_FILE)
+        audit_items = read_tracks(TRACKS_FILE)
+        audit_items.extend(config.get("p53_history", []))
+        print_provider_link_audit(provider_link_audit(audit_items))
+        return
     # Prepared records are shared by every page family so counts and links agree.
     tracks = build_entries(write_sources = not args.site_only)
     config = load_config(CONFIG_FILE)

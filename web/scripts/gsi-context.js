@@ -29,6 +29,15 @@
     return `${baseHref}${params.size ? `?${params}` : ""}`;
   }
 
+  // A shared link should identify the page itself, not the temporary filter or
+  // layout that happened to be active when someone pressed Share.
+  function canonicalHref(location = window.location) {
+    const url = new URL(location.href);
+    url.search = "";
+    url.hash = "";
+    return url.href;
+  }
+
   // The last layout is a convenience only; a broken storage area falls back to
   // the supplied default and never blocks the page.
   function loadView(fallback = "wall") {
@@ -47,5 +56,13 @@
     }
   }
 
-  window.GSIContext = Object.freeze({ allowedViews, read, archiveParams, href, loadView, storeView });
+  window.GSIContext = Object.freeze({
+    allowedViews,
+    read,
+    archiveParams,
+    href,
+    canonicalHref,
+    loadView,
+    storeView,
+  });
 })();

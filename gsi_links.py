@@ -65,6 +65,73 @@ def resolve_provider_links(item: dict) -> dict[str, dict[str, str]]:
     return links
 
 
+def provider_link_audit(items: list[dict]) -> dict:
+    """Summarize canonical links and search fallbacks without making network calls.
+
+    P53 history can repeat a row already present in ``tracks.csv``. The audit
+    deduplicates those records so its counts describe signals, not appearances
+    in multiple source registries.
+    """
+    providers = ("spotify", "apple")
+    counts = {
+        provider: {"canonical": 0, "search": 0}
+        for provider in providers
+    }
+    rows: list[dict] = []
+    seen: set[str] = set()
+    for item in items:
+        identity_fields = tuple(
+            str(item.get(field) or "").strip()
+            for field in ("artist", "track", "album")
+        )
+        identity = "\x1f".join(identity_fields) if any(identity_fields) else str(item.get("slug") or "").strip()
+        if identity in seen:
+            continue
+        seen.add(identity)
+        links = resolve_provider_links(item)
+        kinds = {provider: links[provider]["kind"] for provider in providers}
+        for provider, kind in kinds.items():
+            counts[provider][kind] += 1
+        rows.append({
+            "identity": identity,
+            "artist": str(item.get("artist") or "").strip(),
+            "track": str(item.get("track") or "").strip(),
+            "album": str(item.get("album") or "").strip(),
+            "kinds": kinds,
+        })
+    return {
+        "signals_inspected": len(rows),
+        "counts": counts,
+        "fallbacks": [
+            row for row in rows
+            if any(kind == "search" for kind in row["kinds"].values())
+        ],
+    }
+
+
+def print_provider_link_audit(audit: dict) -> None:
+    """Print a short human-readable provider-link report for local audits."""
+    print("Provider link audit")
+    print(f"Signals inspected: {audit['signals_inspected']}")
+    for provider, label in (("spotify", "Spotify"), ("apple", "Apple Music")):
+        counts = audit["counts"][provider]
+        print(
+            f"{label}: {counts['canonical']} canonical, "
+            f"{counts['search']} search fallback(s)"
+        )
+    if not audit["fallbacks"]:
+        print("No search fallbacks remain.")
+        return
+    print("Search fallback rows:")
+    for row in audit["fallbacks"]:
+        providers = ", ".join(
+            label
+            for provider, label in (("spotify", "Spotify"), ("apple", "Apple Music"))
+            if row["kinds"][provider] == "search"
+        )
+        print(f" - {row['artist']} — {row['track']} ({row['album']}): {providers}")
+
+
 def streaming_link_markup(item: dict) -> str:
     """Render stable provider links while retaining a truthful fallback label."""
     links = resolve_provider_links(item)

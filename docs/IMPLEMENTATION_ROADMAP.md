@@ -109,6 +109,11 @@ query-state and focus helper now lives in `web/scripts/p53-landing.js` alongside
 other browser helpers. Permanent transmission routing and sharing now live in
 `web/scripts/p53-transmission.js` with a generated context node.
 
+Provider reliability now has two offline-safe checks: `--audit-provider-links`
+reports the current canonical/search split, and `tools/provider_candidates.py`
+can write review-only candidates from provider search endpoints. Neither tool
+edits source data automatically.
+
 - Define a small asset budget for P53 art and defer noncritical images.
 - Validate generated links, data attributes, provider URL shape, and manifest cover paths.
 - Add an opt-in external availability check only if provider throttling and false

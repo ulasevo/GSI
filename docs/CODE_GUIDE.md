@@ -36,6 +36,12 @@ site/ (HTML, styles, scripts, images, manifests)
 | Appearance | `web/styles/*.css` | Layout, color, type, and responsive rules |
 | Build checks | `gsi_validation.py` and `tests/` | Rules that catch broken sources or output |
 
+Provider links have a deliberately separate review loop. Run
+`python build.py --audit-provider-links` for the current offline status, then
+run `python tools/provider_candidates.py` when you want provider search
+candidates. That report is advisory: inspect its exact track and album match
+before copying any URL into `tracks.csv`.
+
 ## The page path
 
 1. `build.py` chooses the source and output directories and starts the build.
