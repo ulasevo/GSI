@@ -9,6 +9,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
+import shutil
 import sys
 
 
@@ -55,6 +56,24 @@ def _root() -> Path:
     return ROOT
 
 
+def _install_browser_editor(root: Path) -> None:
+    """Copy the safe browser authoring surface into the generated site."""
+    source_dir = root / "tools" / "editor"
+    destination = root / "site" / "tools"
+    destination.mkdir(parents=True, exist_ok=True)
+    for filename in ("new-entry.html", "new-entry.css", "new-entry.js"):
+        source = source_dir / filename
+        if not source.is_file():
+            raise DraftMetadataError(f"Browser editor asset is missing: {source}")
+        shutil.copy2(source, destination / filename)
+    config = load_config(root / "config.json")
+    (destination / "editor-config.json").write_text(
+        json.dumps({"sections": config.get("sections", [])}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"Installed browser editor: {destination / 'new-entry.html'}")
+
+
 def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("link", nargs="?", help="Apple Music or Spotify song URL")
@@ -79,6 +98,11 @@ def _parse_args() -> argparse.Namespace:
         "--interactive",
         action="store_true",
         help="Walk through link, metadata, headings, and write confirmation",
+    )
+    parser.add_argument(
+        "--install-editor",
+        action="store_true",
+        help="Install the browser authoring editor into site/tools/",
     )
     parser.add_argument("--p53", action="store_true", help="Also add an explicit P53 history record")
     parser.add_argument("--write", action="store_true", help="Write the draft and catalogue data")
@@ -165,6 +189,14 @@ def main() -> int:
     args = _parse_args()
     root = _root()
     config = load_config(root / "config.json")
+    if args.install_editor:
+        try:
+            _install_browser_editor(root)
+        except DraftMetadataError as error:
+            print(f"Editor not installed: {error}")
+            return 2
+        if not args.link and not args.interactive:
+            return 0
     if args.interactive:
         try:
             args = _interactive_namespace(args, config)

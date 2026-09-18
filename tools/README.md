@@ -36,6 +36,16 @@ python tools/new_entry.py --interactive
 It asks for the raw provider URL, optional metadata overrides, filters,
 headings, custom headings, P53 membership, and final write confirmation.
 
+For the browser authoring room, install its source assets into the generated
+site with:
+
+```text
+python tools/new_entry.py --install-editor
+```
+
+Then open `/tools/new-entry.html`. It exports a new Markdown file only; it does
+not overwrite entries or write directly into the source catalogue.
+
 If the machine cannot reach Apple's lookup endpoint, supply all three names to
 use the link safely offline; the canonical Apple URL is still preserved:
 

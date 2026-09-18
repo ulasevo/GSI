@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>New signal · GSI</title>
+  <link rel="stylesheet" href="new-entry.css">
+</head>
+<body>
+  <main class="editor-shell">
+    <header class="editor-header">
+      <a class="crumb" href="../index.html">← GSI</a>
+      <p class="eyebrow">AUTHORING ROOM / NEW SIGNAL</p>
+      <h1>Give a song a place to stay.</h1>
+      <p class="intro">Paste a provider link, shape the sections that matter, and export a new source entry. Nothing here overwrites an existing signal.</p>
+    </header>
+
+    <form id="entry-form" novalidate>
+      <section class="panel identity-panel" aria-labelledby="identity-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">01 / IDENTITY</p><h2 id="identity-title">Start with the signal</h2></div>
+          <span class="panel-mark">LINK → SOURCE</span>
+        </div>
+        <label class="wide-field">Apple Music or Spotify link
+          <div class="link-row"><input id="provider-link" type="url" placeholder="https://music.apple.com/..." autocomplete="off"><button id="resolve-link" type="button">RESOLVE ↗</button></div>
+        </label>
+        <p id="resolve-status" class="status" role="status">Apple links can fill the identity automatically. Spotify links can be entered with the names below.</p>
+        <div class="field-grid">
+          <label>Artist<input id="artist" type="text" autocomplete="off"></label>
+          <label>Track<input id="track" type="text" autocomplete="off"></label>
+          <label>Album<input id="album" type="text" autocomplete="off"></label>
+          <label>Filters / tags<input id="tags" type="text" placeholder="dreamy, personal" autocomplete="off"></label>
+        </div>
+      </section>
+
+      <section class="panel sections-panel" aria-labelledby="sections-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">02 / READING ROOMS</p><h2 id="sections-title">Choose what this song can hold</h2></div>
+          <button id="add-section" class="quiet-button" type="button">＋ ADD SECTION</button>
+        </div>
+        <p class="panel-note">The configured headings begin here. Remove the rooms you do not need, add your own, and write directly into each one.</p>
+        <div id="section-list" class="section-list" aria-live="polite"></div>
+      </section>
+
+      <section class="panel export-panel" aria-labelledby="export-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">03 / HANDOFF</p><h2 id="export-title">Review the source before it enters GSI</h2></div>
+          <span id="draft-state" class="draft-state">DRAFT ONLY</span>
+        </div>
+        <div id="validation" class="validation" role="status"></div>
+        <pre id="markdown-preview" class="markdown-preview" aria-label="Markdown preview"></pre>
+        <div class="export-actions">
+          <button id="copy-markdown" type="button">COPY MARKDOWN</button>
+          <button id="download-markdown" class="primary-button" type="button">DOWNLOAD NEW ENTRY ↗</button>
+        </div>
+        <p class="export-footnote">The download is a new file. Review it, place it in <code>entries/</code>, and run the normal build when you are ready.</p>
+      </section>
+    </form>
+  </main>
+  <script src="new-entry.js"></script>
+</body>
+</html>
