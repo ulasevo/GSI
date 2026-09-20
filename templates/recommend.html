@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="description" content="Recommend a signal for GSI.">
+  <title>Time for YOU to take the wheel · GSI</title>
+  <link rel="icon" href="covers/GSI_favicon.svg" type="image/svg+xml">
+  <script src="scripts/theme-mode.js"></script>
+  <link rel="stylesheet" href="styles/gsi-tokens.css">
+  <link rel="stylesheet" href="styles/recommend.css?v=20260920-final7">
+  <link rel="stylesheet" href="styles/theme-mode.css?v=20260920-final8">
+</head>
+<body class="recommend-room">
+  <main class="recommend-shell">
+    <nav class="recommend-path" aria-label="GSI path"><a href="index.html">GSI</a><span>→</span><strong>RECOMMEND A SIGNAL</strong></nav>
+    <div class="recommend-main-grid">
+      <header class="recommend-header">
+        <h1>Time for YOU to take the wheel</h1>
+        <p>Send a song, album or a playlist that carries a piece of you. Note that I will be able to see what you write here, but it won't be public unless you request it to be.</p>
+      </header>
+      <form id="recommend-form" class="recommend-form" novalidate>
+        <label>Link <span>your favorite provider</span><input id="recommend-link" name="link" type="url" required placeholder="https://music.apple.com/..." autocomplete="url"></label>
+        <label>Notes <span>describe the feeling, the reason, any details that come with what you have shared</span><textarea id="recommend-note" name="note" required rows="7" placeholder="I have been listening to this song since the september of '22 and it just..."></textarea></label>
+        <label>Signature <span>username, optional</span><input id="recommend-name" name="name" type="text" maxlength="80" placeholder="ulaş" autocomplete="nickname"></label>
+        <div class="recommend-actions"><button type="submit">SEND THE SIGNAL ↗</button><a href="index.html">RETURN TO GSI</a></div>
+        <p id="recommend-status" class="recommend-status" role="status" aria-live="polite"></p>
+      </form>
+    </div>
+  </main>
+  <script src="scripts/recommend.js"></script>
+</body>
+</html>

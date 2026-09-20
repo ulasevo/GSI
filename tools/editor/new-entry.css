@@ -47,6 +47,10 @@ button:hover { border-color: var(--accent); background: rgba(255,92,173,.13); }
 .primary-button:hover { color: #101015; border-color: transparent; background: linear-gradient(100deg, #ff83be, #b1e5ff); }
 .quiet-button { min-height: 36px; padding: 0 12px; color: var(--accent); background: transparent; }
 .status, .panel-note, .export-footnote { color: var(--muted); font-size: .86rem; line-height: 1.5; }
+.artwork-preview { display:grid; grid-template-columns:112px minmax(0,1fr); gap:14px; align-items:center; width:min(100%,360px); margin:0 0 20px; padding:10px; border:1px solid rgba(255,255,255,.16); border-radius:16px 5px 16px 5px; background:rgba(0,0,0,.2); }
+.artwork-preview img { display:block; width:112px; aspect-ratio:1; object-fit:cover; border-radius:11px 3px 11px 3px; box-shadow:0 12px 28px rgba(0,0,0,.25); }
+.artwork-preview figcaption { display:grid; gap:10px; color:var(--muted); font-size:.67rem; font-weight:850; letter-spacing:.13em; }
+.artwork-preview figcaption span:last-child { width:28px; height:28px; border:1px solid rgba(255,255,255,.3); border-radius:50%; background:var(--accent); }
 .status { min-height: 1.4em; margin: 10px 0 20px; }
 .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .section-list { display: grid; gap: 12px; }

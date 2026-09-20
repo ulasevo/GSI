@@ -149,6 +149,10 @@ venv.bak/
 # Codex-provided reference attachments; preserve locally, never stage as source
 .codex-remote-attachments/
 
+# Local recommendation intake; keep pending submissions out of source control.
+submissions/inbox/*.json
+submissions/drafts/*.md
+
 # mypy
 .mypy_cache/
 .dmypy.json

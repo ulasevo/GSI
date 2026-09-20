@@ -130,10 +130,10 @@ def main() -> None:
     for item in tracks:
         build_entry_page(item, artist_counts, album_pages)
     for item in p53_history:
-        build_p53_page(item, f'{item["slug"]}.html', set(inventory["entry_routes"]))
+        build_p53_page(item, f'{item["slug"]}.html', set(inventory["entry_routes"]), {slugify(artist) for artist in artist_groups})
     p53_item = next((item for item in p53_history if item["slug"] == p53_slug), None)
     if p53_item:
-        build_p53_page(p53_item, "latest.html", set(inventory["entry_routes"]))
+        build_p53_page(p53_item, "latest.html", set(inventory["entry_routes"]), {slugify(artist) for artist in artist_groups})
     if p53_history:
         build_p53_archive(
             p53_history,
@@ -145,6 +145,7 @@ def main() -> None:
     build_album_pages(archive_tracks, artist_groups, inventory["album_routes"])
     build_index_html(archive_tracks, inventory["album_routes"])
     build_404_page(archive_tracks)
+    build_recommend_page()
     if args.validate_links:
         link_errors = validate_generated_links(SITE_DIR)
         if link_errors:
@@ -177,6 +178,7 @@ from builder.entry_pages import (
 )
 from builder.home_page import build_index_html as _build_index_html
 from builder.error_pages import build_404_page as _build_404_page
+from builder.recommend_page import build_recommend_page as _build_recommend_page
 from builder.manifests import (
     reconcile_generated_outputs as _reconcile_generated_outputs,
     reconcile_generated_pages as _reconcile_generated_pages,
@@ -200,6 +202,7 @@ build_entry_page = _build_entry_page
 extract_sections_from_markdown = _extract_sections_from_markdown
 build_index_html = _build_index_html
 build_404_page = _build_404_page
+build_recommend_page = _build_recommend_page
 write_catalog_manifest = _write_catalog_manifest
 write_generation_manifest = _write_generation_manifest
 reconcile_generated_outputs = _reconcile_generated_outputs

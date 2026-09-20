@@ -62,6 +62,7 @@ class CatalogueRendererTests(unittest.TestCase):
         self.assertIn("Empty", page)
         self.assertIn("Too Little Too Late", page)
         self.assertIn("ALBUM / 02 SIGNALS", page)
+        self.assertIn(">Live It Out</strong>", page)
 
     def test_generation_manifest_can_target_an_isolated_output(self):
         inventory = {

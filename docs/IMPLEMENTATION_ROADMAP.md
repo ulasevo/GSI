@@ -122,10 +122,30 @@ as an empty prompted section. `--write` is the explicit catalogue mutation;
 history record. Spotify links are accepted with explicit names, but API-based
 metadata lookup remains deferred.
 
-Next dynamic-entry work should add a dry-run source validator and a review
-report before considering a browser editor or private submission flow. The
-source model must remain one record per song, with generated album, artist, and
-P53 relationships derived from it rather than maintained by separate forms.
+The next dynamic-entry slice is now split deliberately: the private Entry
+Loader remains export-only and now previews resolved Apple artwork, while the
+public `recommend.html` room accepts only a provider link, a note, and an
+optional signature. Its local intake companion writes validated pending JSON
+under `submissions/inbox/`; it never edits `tracks.csv`, entries, or generated
+pages. The browser falls back to downloading that JSON when no intake process
+is available.
+
+Generated rooms now also receive deterministic artwork roles (`primary`,
+`secondary`, `surface`, `soft`, `ink`, `glow`) in `catalog.json`. The shared
+art-room layer uses those roles for a quiet, blurred atmosphere while keeping
+manual `accent` values in control of interactive emphasis. This is a static
+foundation for the expressive pass, not a new animation system.
+
+Future dynamic-entry work can add a richer review report or promotion helper,
+but the current loader/intake boundary is already safe. The source model remains
+one record per song, with generated album, artist, and P53 relationships derived
+from it rather than maintained by separate forms.
+
+The recommendation room now has a deliberately small public contract: a supported
+music-provider link, notes, and an optional signature. It does not collect email,
+cookies, or device metadata yet. After the UI pass is reviewed, the next data-model
+step is to give every entry a stable identity and record P53 appearances as durable
+transmission records; those records should exist before any notification feature.
 
 - Define a small asset budget for P53 art and defer noncritical images.
 - Validate generated links, data attributes, provider URL shape, and manifest cover paths.

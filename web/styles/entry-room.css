@@ -701,4 +701,594 @@
         @media(prefers-reduced-motion:reduce) {
             .section-info-button[aria-expanded="true"]::after { animation:none; }
         }
+
+        /* Expressive reading-room pass: let the artwork carry the atmosphere,
+           while the writing stays on one consistent, readable surface. */
+        body.art-room {
+            color:var(--art-ink,#f8f5ef);
+            overflow-x:hidden;
+            background:
+                radial-gradient(circle at 84% 5%,color-mix(in srgb,var(--art-primary),transparent 78%),transparent 34rem),
+                linear-gradient(135deg,var(--art-surface,#17151b),#0c0c10 68%);
+        }
+        body.art-room::before {
+            background:
+                repeating-linear-gradient(90deg,transparent 0 15px,rgba(255,255,255,.018) 15px 16px),
+                radial-gradient(circle at 12% 90%,color-mix(in srgb,var(--art-secondary),transparent 90%),transparent 38rem);
+            mix-blend-mode:screen;
+            opacity:.62;
+        }
+        .page { max-width:1280px; padding:28px clamp(18px,3vw,42px) 86px; }
+        .entry-nav { background:color-mix(in srgb,var(--art-surface),#08080b 34%); border-color:color-mix(in srgb,var(--art-soft),transparent 62%); }
+        .hero {
+            grid-template-columns:minmax(360px,.92fr) minmax(0,1.08fr);
+            min-height:clamp(520px,44vw,680px);
+            border-color:color-mix(in srgb,var(--art-soft),white 12%);
+            background:linear-gradient(120deg,color-mix(in srgb,var(--art-primary),transparent 86%),color-mix(in srgb,var(--art-surface),#08080b 42%));
+            box-shadow:0 30px 110px color-mix(in srgb,var(--art-glow),transparent 78%),inset 0 1px 0 rgba(255,255,255,.1);
+        }
+        .cover-frame {
+            isolation:isolate;
+            min-height:100%;
+            padding:clamp(18px,3vw,42px);
+            background:color-mix(in srgb,var(--art-surface),#08080b 32%);
+        }
+        .cover-frame::before {
+            content:"";
+            position:absolute;
+            inset:0;
+            z-index:-1;
+            background-image:var(--art-image);
+            background-position:center;
+            background-size:cover;
+            filter:blur(30px) saturate(1.18);
+            opacity:.33;
+            transform:scale(1.14);
+        }
+        .cover-frame::after { border:1px solid rgba(255,255,255,.2); box-shadow:inset -24px 0 58px rgba(0,0,0,.2); }
+        .cover { min-height:0; width:100%; height:100%; object-fit:contain; border-radius:18px; filter:drop-shadow(0 24px 34px rgba(0,0,0,.4)); }
+        .meta { min-height:100%; padding:clamp(30px,5vw,76px); background:linear-gradient(145deg,rgba(255,255,255,.055),color-mix(in srgb,var(--art-surface),#08080b 40%) 64%); }
+        .entry-architecture { opacity:.22; }
+        .entry-architecture span { color:var(--art-soft); -webkit-text-stroke:0; }
+        .meta h1 { color:var(--art-ink); font-size:clamp(44px,5.6vw,92px); line-height:.91; text-wrap:balance; }
+        .meta p { color:color-mix(in srgb,var(--art-ink),transparent 18%); }
+        .meta .album { color:var(--art-soft); }
+        .stream-link {
+            color:var(--art-surface,#17151b);
+            background:linear-gradient(120deg,color-mix(in srgb,var(--art-primary),white 66%),color-mix(in srgb,var(--art-secondary),white 78%));
+            border-color:color-mix(in srgb,var(--art-soft),white 10%);
+            box-shadow:0 12px 28px color-mix(in srgb,var(--art-glow),transparent 78%);
+        }
+        .stream-link:hover { color:var(--art-surface,#17151b); background:linear-gradient(120deg,color-mix(in srgb,var(--art-primary),white 56%),color-mix(in srgb,var(--art-secondary),white 68%)); }
+        .sections { gap:16px; }
+        .section-card,.section-card:nth-child(even) {
+            border-color:color-mix(in srgb,var(--art-soft),transparent 48%);
+            border-top:2px solid color-mix(in srgb,var(--art-primary),white 18%);
+            background:linear-gradient(145deg,color-mix(in srgb,var(--art-primary),transparent 93%),color-mix(in srgb,var(--art-surface),#09090c 28%));
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 18px 48px rgba(0,0,0,.22);
+        }
+        .section-heading { border-bottom-color:color-mix(in srgb,var(--art-soft),transparent 68%); }
+        .section-card h2 { color:var(--art-ink); }
+        .section-card p { color:color-mix(in srgb,var(--art-ink),transparent 16%); }
+        .section-card a { color:var(--art-soft); }
+        @media(max-width:760px) {
+            .page { padding:18px 14px 58px; }
+            .hero { grid-template-columns:1fr; min-height:0; }
+            .cover-frame { min-height:min(82vw,460px); padding:16px; }
+            .cover { height:100%; }
+            .meta { min-height:0; padding:28px 24px 34px; }
+            .entry-architecture { opacity:.1; }
+            .entry-architecture span { font-size:clamp(52px,16vw,84px); }
+            .meta h1 { font-size:clamp(42px,12vw,70px); }
+        }
+        @media(prefers-reduced-motion:reduce) {
+            .stream-link,.p53-counterpart { transition:none; }
+        }
+
+        /* Colour-field pass: the cover supplies the room's atmosphere. The
+           controls borrow Google's pale accent treatment, while the artwork
+           itself remains the visual source instead of a black container. */
+        body.art-room {
+            --art-copy:var(--art-light-ink,#211823);
+            color:var(--art-copy);
+            background:
+                linear-gradient(140deg,
+                    color-mix(in srgb,var(--art-primary),white 72%),
+                    color-mix(in srgb,var(--art-secondary),white 78%));
+        }
+        body.art-room::before {
+            opacity:.4;
+            filter:blur(36px) saturate(1.16);
+        }
+        body.art-room::after {
+            background:
+                linear-gradient(140deg,
+                    color-mix(in srgb,var(--art-primary),transparent 22%),
+                    color-mix(in srgb,var(--art-secondary),transparent 42%));
+            opacity:.52;
+            mix-blend-mode:normal;
+        }
+        .entry-nav {
+            border-color:color-mix(in srgb,var(--art-primary),white 28%);
+            background:color-mix(in srgb,var(--art-surface),white 70%);
+            box-shadow:0 14px 34px color-mix(in srgb,var(--art-primary),transparent 78%);
+        }
+        .signal-trace { color:color-mix(in srgb,var(--art-surface),#17121a 32%); }
+        .signal-trace a { color:color-mix(in srgb,var(--art-primary),#17121a 40%); }
+        .signal-trace .trace-separator { color:color-mix(in srgb,var(--art-surface),transparent 38%); }
+        .hero {
+            border-color:color-mix(in srgb,var(--art-primary),white 24%);
+            background:linear-gradient(132deg,
+                var(--art-light-surface,#ded9df),
+                var(--art-light-surface-2,#ded9df));
+            box-shadow:0 28px 86px color-mix(in srgb,var(--art-primary),transparent 72%),inset 0 1px 0 rgba(255,255,255,.5);
+        }
+        .cover-frame {
+            background:color-mix(in srgb,var(--art-surface),white 38%);
+            box-shadow:inset -20px 0 50px color-mix(in srgb,var(--art-primary),transparent 78%);
+        }
+        .meta {
+            color:var(--art-copy);
+            background:linear-gradient(145deg,rgba(255,255,255,.32),rgba(255,255,255,.08));
+        }
+        .entry-architecture { opacity:.1; }
+        .entry-architecture span { color:color-mix(in srgb,var(--art-primary),#241927 36%); }
+        .meta h1 { color:var(--art-copy); }
+        .meta p { color:color-mix(in srgb,var(--art-surface),#19131c 34%); }
+        .meta .album { color:color-mix(in srgb,var(--art-primary),#19131c 42%); }
+        .stream-label { color:color-mix(in srgb,var(--art-primary),#19131c 34%); }
+        .stream-link {
+            color:var(--art-copy);
+            border-color:color-mix(in srgb,var(--art-primary),white 36%);
+            background:linear-gradient(120deg,
+                color-mix(in srgb,var(--art-primary),white 66%),
+                color-mix(in srgb,var(--art-secondary),white 80%));
+            box-shadow:0 12px 28px color-mix(in srgb,var(--art-primary),transparent 78%);
+        }
+        .stream-link:hover { color:var(--art-copy); }
+        .entry-index {
+            border-color:color-mix(in srgb,var(--art-primary),white 32%);
+            background:rgba(255,255,255,.28);
+        }
+        .entry-index > span { color:color-mix(in srgb,var(--art-primary),#18131b 38%); }
+        .entry-index a {
+            color:var(--art-copy);
+            border-color:color-mix(in srgb,var(--art-primary),white 38%);
+            background:rgba(255,255,255,.24);
+        }
+        .section-card,.section-card:nth-child(even) {
+            color:var(--art-copy);
+            border-color:color-mix(in srgb,var(--art-primary),white 28%);
+            border-top-color:color-mix(in srgb,var(--art-primary),white 12%);
+            background:linear-gradient(145deg,rgba(255,255,255,.34),rgba(255,255,255,.12));
+            box-shadow:inset 0 1px 0 rgba(255,255,255,.5),0 18px 48px color-mix(in srgb,var(--art-primary),transparent 78%);
+        }
+        .section-heading { border-bottom-color:color-mix(in srgb,var(--art-primary),white 36%); }
+        .section-card h2 { color:var(--art-copy); }
+        .section-card p { color:color-mix(in srgb,var(--art-surface),#17121a 45%); }
+        .section-card a { color:color-mix(in srgb,var(--art-primary),#17121a 34%); }
+        .p53-counterpart {
+            color:var(--art-copy);
+            border-color:color-mix(in srgb,var(--art-primary),white 30%);
+            background:color-mix(in srgb,var(--art-primary),white 70%);
+        }
+        .also-appears { border-top-color:color-mix(in srgb,var(--art-primary),white 32%); }
+        .also-appears > span { color:color-mix(in srgb,var(--art-surface),#17121a 40%); }
+        .also-appears a { color:color-mix(in srgb,var(--art-primary),#17121a 34%); }
+        @media(max-width:760px) {
+            .entry-architecture { opacity:.06; }
+        }
+
+        /* Contrast contract: interaction states must stay readable after the
+           artwork has painted the room, not inherit the old dark-room white. */
+        body.art-room :is(a,button):focus-visible {
+            outline:3px solid var(--art-focus,#f8f5ef);
+            outline-offset:3px;
+            box-shadow:0 0 0 5px color-mix(in srgb,var(--art-focus,#f8f5ef),transparent 72%);
+        }
+        body.art-room .album-link:hover,
+        body.art-room .album-link:focus-visible,
+        body.art-room .signal-trace a:hover,
+        body.art-room .signal-trace a:focus-visible,
+        body.art-room .entry-index a:hover,
+        body.art-room .entry-index a:focus-visible,
+        body.art-room .p53-counterpart:hover,
+        body.art-room .p53-counterpart:focus-visible,
+        body.art-room .also-appears a:hover,
+        body.art-room .also-appears a:focus-visible {
+            color:var(--art-control-ink,var(--art-copy,#211823));
+            border-color:var(--art-edge,var(--art-soft,#b7afbc));
+            background:var(--art-control,#c7b0c6);
+        }
+        body.art-room .signal-trace {
+            border-color:var(--art-edge,var(--art-soft,#b7afbc));
+            background:rgba(255,255,255,.34);
+            box-shadow:0 10px 26px color-mix(in srgb,var(--art-primary),transparent 84%);
+            color:var(--art-copy,#211823);
+        }
+        body.art-room .signal-trace .trace-current {
+            color:var(--art-copy,#211823);
+        }
+        body.art-room .stream-link:hover,
+        body.art-room .stream-link:focus-visible {
+            color:var(--art-control-ink,var(--art-copy,#211823));
+            border-color:var(--art-edge,var(--art-soft,#b7afbc));
+            background:var(--art-control-hover,#b897b5);
+        }
+        body.art-room .section-info-button {
+            border-color:var(--art-edge,var(--art-soft,#b7afbc));
+            background:var(--art-control,#c7b0c6);
+            color:var(--art-control-ink,var(--art-copy,#211823));
+        }
+        body.art-room .section-info-button:hover,
+        body.art-room .section-info-button:focus-visible,
+        body.art-room .section-info-button[aria-expanded="true"] {
+            background:var(--art-control-hover,#b897b5);
+            color:var(--art-control-ink,var(--art-copy,#211823));
+        }
+        body.art-room .section-help p {
+            border-color:var(--art-edge,var(--art-soft,#b7afbc));
+            border-left-color:var(--art-primary,#ff65ad);
+            background:color-mix(in srgb,var(--art-control),white 42%);
+            color:var(--art-copy,#211823) !important;
+        }
+
+        /* Apple-like hero field: the cover is the room's anchor, not a dark
+           card surrounded by another dark card. Metadata shares that field. */
+        body.art-room .hero {
+            position:relative;
+            overflow:hidden;
+            background:linear-gradient(132deg,var(--art-light-surface,#ded9df),var(--art-light-surface-2,#ded9df));
+        }
+        body.art-room .cover-frame {
+            background:transparent;
+            box-shadow:none;
+        }
+        body.art-room .cover-frame::before,
+        body.art-room .cover-frame::after {
+            display:none;
+        }
+        body.art-room .cover {
+            filter:none;
+            border-radius:14px;
+        }
+        body.art-room .meta {
+            background:transparent;
+        }
+        body.art-room .entry-architecture { display:none; }
+
+        @media(max-width:760px) {
+            body.art-room .hero {
+                display:block;
+                min-height:min(145vw,760px);
+                background:var(--art-dark-surface,#17151b);
+            }
+            body.art-room .cover-frame {
+                position:absolute;
+                inset:0;
+                min-height:0;
+                padding:0;
+            }
+            body.art-room .cover {
+                width:100%;
+                height:100%;
+                object-fit:cover;
+                border-radius:0;
+            }
+            body.art-room .meta {
+                position:absolute;
+                right:0;
+                bottom:0;
+                left:0;
+                z-index:1;
+                min-height:0;
+                padding:clamp(118px,28vw,220px) 24px 30px;
+                color:var(--art-dark-ink,#f8f5ef);
+                background:linear-gradient(180deg,
+                    transparent 0%,
+                    color-mix(in srgb,var(--art-dark-surface,#17151b),transparent 76%) 20%,
+                    color-mix(in srgb,var(--art-dark-surface,#17151b),transparent 10%) 66%,
+                    var(--art-dark-surface,#17151b) 100%);
+            }
+            body.art-room .meta h1,
+            body.art-room .meta p,
+            body.art-room .meta .album,
+            body.art-room .stream-label {
+                color:var(--art-dark-ink,#f8f5ef);
+            }
+            body.art-room .meta .album { opacity:.78; }
+            body.art-room .stream-link {
+                color:var(--art-control-ink,#211823);
+                background:var(--art-control,#c7b0c6);
+            }
+        }
+
+        /* Artwork-to-room field experiment: keep the cover proportional and
+           let its lower edge dissolve into a sampled room colour.  This is a
+           single composition, not a second blurred copy of the artwork. */
+        body.art-room {
+            --room-field:var(--art-field,var(--art-light-surface,#ded9df));
+            --room-field-soft:var(--art-field-soft,var(--art-light-surface-2,#ded9df));
+            --room-ink:var(--art-field-ink,var(--art-light-ink,#211823));
+            color:var(--room-ink);
+            background:
+                linear-gradient(180deg,
+                    color-mix(in srgb,var(--room-field),white 5%) 0%,
+                    var(--room-field) 46%,
+                    color-mix(in srgb,var(--room-field),var(--room-field-soft) 34%) 100%);
+        }
+        body.art-room::before {
+            background-image:none;
+            filter:none;
+            opacity:0;
+            transform:none;
+        }
+        body.art-room::after {
+            background:
+                linear-gradient(180deg,
+                    color-mix(in srgb,var(--room-field),white 5%),
+                    color-mix(in srgb,var(--room-field),var(--room-field-soft) 34%));
+            opacity:1;
+            mix-blend-mode:normal;
+        }
+        body.art-room .entry-nav {
+            color:var(--room-ink);
+            border-color:color-mix(in srgb,var(--room-ink),var(--room-field) 72%);
+            background:color-mix(in srgb,var(--room-field),white 14%);
+            box-shadow:0 12px 30px color-mix(in srgb,var(--room-field),black 22%);
+        }
+        body.art-room .signal-trace,
+        body.art-room .signal-trace .trace-current,
+        body.art-room .signal-trace a {
+            color:var(--room-ink);
+        }
+        body.art-room .hero {
+            display:block;
+            min-height:0;
+            border:0;
+            border-radius:0;
+            overflow:visible;
+            background:transparent;
+            box-shadow:none;
+        }
+        body.art-room .cover-frame {
+            width:min(100%,760px);
+            aspect-ratio:1;
+            min-height:0;
+            margin:0 auto;
+            padding:0;
+            background:transparent;
+            box-shadow:none;
+        }
+        body.art-room .cover-frame::before,
+        body.art-room .cover-frame::after {
+            display:none;
+        }
+        body.art-room .cover {
+            display:block;
+            width:100%;
+            height:100%;
+            min-height:0;
+            object-fit:cover;
+            border-radius:clamp(18px,3vw,34px);
+            box-shadow:none;
+            -webkit-mask-image:linear-gradient(to bottom,#000 67%,rgba(0,0,0,.82) 82%,transparent 100%);
+            mask-image:linear-gradient(to bottom,#000 67%,rgba(0,0,0,.82) 82%,transparent 100%);
+        }
+        body.art-room .meta {
+            position:relative;
+            z-index:1;
+            max-width:880px;
+            min-height:0;
+            margin:-150px auto 0;
+            padding:154px clamp(24px,5vw,64px) 42px;
+            color:var(--room-ink);
+            background:linear-gradient(180deg,
+                transparent 0%,
+                color-mix(in srgb,var(--room-field),transparent 18%) 28%,
+                color-mix(in srgb,var(--room-field),var(--room-field-soft) 20%) 66%,
+                transparent 100%);
+        }
+        body.art-room .meta h1,
+        body.art-room .meta p,
+        body.art-room .meta .album,
+        body.art-room .stream-label {
+            color:var(--room-ink);
+        }
+        body.art-room .meta h1 { max-width:900px; }
+        body.art-room .meta .album { opacity:.78; }
+        body.art-room .stream-link {
+            color:var(--room-ink);
+            border-color:color-mix(in srgb,var(--room-ink),var(--room-field) 58%);
+            background:color-mix(in srgb,var(--room-field),white 24%);
+            box-shadow:0 10px 28px color-mix(in srgb,var(--room-field),black 28%);
+        }
+        body.art-room .also-appears {
+            border-top-color:color-mix(in srgb,var(--room-ink),var(--room-field) 70%);
+        }
+        body.art-room .also-appears > span,
+        body.art-room .also-appears a {
+            color:var(--room-ink);
+        }
+        body.art-room .sections {
+            max-width:1080px;
+            margin-top:8px;
+        }
+        body.art-room .section-card,
+        body.art-room .section-card:nth-child(even) {
+            color:var(--room-ink);
+            border-color:color-mix(in srgb,var(--room-ink),var(--room-field) 70%);
+            border-top-color:color-mix(in srgb,var(--room-ink),var(--room-field) 48%);
+            background:
+                var(--art-rim-gradient, none),
+                linear-gradient(135deg,
+                    color-mix(in srgb,var(--room-left),var(--room-field) 54%),
+                    color-mix(in srgb,var(--room-field),white 10%) 48%,
+                    color-mix(in srgb,var(--room-right),var(--room-field) 58%));
+            background-blend-mode:soft-light,normal;
+            box-shadow:inset 0 1px 0 color-mix(in srgb,var(--room-ink),transparent 86%),
+                0 18px 44px color-mix(in srgb,var(--room-field),black 24%);
+        }
+        body.art-room .section-card h2,
+        body.art-room .section-card p { color:var(--room-ink); }
+        body.art-room .section-card p { opacity:.86; }
+
+        @media(max-width:760px) {
+            body.art-room .page { padding-top:18px; }
+            body.art-room .cover-frame { width:100%; }
+            body.art-room .cover { border-radius:22px 22px 0 0; }
+            body.art-room .meta {
+                margin-top:-132px;
+                padding:140px 24px 34px;
+            }
+            body.art-room .sections { margin-top:0; }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+            body.art-room .cover { mask-image:none; -webkit-mask-image:none; }
+        }
+
+        /* Flow correction: the artwork must finish before the metadata begins.
+           The earlier hero treatment positioned both layers over one another,
+           which made the mobile path and title appear inside the image. */
+        body.art-room {
+            background:
+                radial-gradient(ellipse at 50% 8%,
+                    color-mix(in srgb,var(--art-primary),transparent 82%),
+                    transparent 58%),
+                linear-gradient(180deg,
+                    color-mix(in srgb,var(--room-field),white 5%) 0%,
+                    var(--room-field) 48%,
+                    color-mix(in srgb,var(--room-field),var(--room-field-soft) 34%) 100%);
+        }
+        body.art-room .entry-nav {
+            min-height:0;
+            margin-bottom:14px;
+            padding:0;
+            border:0;
+            background:transparent;
+            box-shadow:none;
+        }
+        body.art-room .signal-trace {
+            min-height:44px;
+            box-sizing:border-box;
+            border:1px solid color-mix(in srgb,var(--room-ink),var(--room-field) 70%);
+            background:color-mix(in srgb,var(--room-field),white 14%);
+            box-shadow:0 12px 30px color-mix(in srgb,var(--room-field),black 22%);
+        }
+        body.art-room .cover-frame {
+            position:relative;
+            inset:auto;
+        }
+        body.art-room .meta {
+            position:relative;
+            margin:0 auto;
+            padding:28px clamp(24px,5vw,64px) 42px;
+            background:linear-gradient(180deg,
+                color-mix(in srgb,var(--room-field),transparent 4%) 0%,
+                color-mix(in srgb,var(--room-field),var(--room-field-soft) 20%) 54%,
+                transparent 100%);
+        }
+        body.art-room .sections { margin-top:8px; }
+
+        @media(max-width:760px) {
+            body.art-room .entry-nav { margin-bottom:12px; }
+            body.art-room .signal-trace { min-height:44px; }
+            body.art-room .cover-frame {
+                position:relative;
+                inset:auto;
+                aspect-ratio:1;
+            }
+            body.art-room .meta {
+                position:relative;
+                margin:0;
+                padding:24px 24px 34px;
+                background:linear-gradient(180deg,
+                    color-mix(in srgb,var(--room-field),transparent 4%) 0%,
+                    color-mix(in srgb,var(--room-field),var(--room-field-soft) 22%) 62%,
+                    transparent 100%);
+            }
+        }
+
+        /* Room paint pass: each broad cover edge contributes a restrained
+           colour field, so the space around the artwork feels continuous
+           without introducing a visible duplicate or rectangular panel. */
+        body.art-room {
+            --room-top:var(--art-edge-top,var(--room-field));
+            --room-right:var(--art-edge-right,var(--room-field));
+            --room-bottom:var(--art-edge-bottom,var(--room-field));
+            --room-left:var(--art-edge-left,var(--room-field));
+            background:
+                radial-gradient(ellipse at 50% 8%,
+                    color-mix(in srgb,var(--room-top),transparent 18%),
+                    transparent 62%),
+                radial-gradient(ellipse at 0% 46%,
+                    color-mix(in srgb,var(--room-left),transparent 62%),
+                    transparent 70%),
+                radial-gradient(ellipse at 100% 46%,
+                    color-mix(in srgb,var(--room-right),transparent 62%),
+                    transparent 70%),
+                linear-gradient(180deg,
+                    color-mix(in srgb,var(--room-top),var(--room-field) 56%) 0%,
+                    var(--room-field) 48%,
+                    color-mix(in srgb,var(--room-bottom),var(--room-field) 42%) 100%);
+        }
+        body.art-room::after {
+            background:transparent;
+            opacity:1;
+        }
+        body.art-room .meta {
+            max-width:960px;
+            background:transparent;
+            box-shadow:none;
+        }
+        body.art-room .meta::before { display:none; }
+        body.art-room .hero,
+        body.art-room .cover-frame { background:transparent; }
+
+        /* Fine-grain colour field: the 32 sampled rim points keep hard-edged
+           covers from collapsing into one unrelated side colour. */
+        body.art-room {
+            --room-accent:var(--art-control,var(--art-primary));
+            --room-accent-strong:var(--art-control-hover,var(--art-secondary));
+            background:
+                var(--art-rim-gradient,none),
+                radial-gradient(ellipse at 50% 8%,
+                    color-mix(in srgb,var(--room-top),transparent 28%),
+                    transparent 62%),
+                linear-gradient(180deg,
+                    color-mix(in srgb,var(--room-top),var(--room-field) 56%) 0%,
+                    var(--room-field) 48%,
+                    color-mix(in srgb,var(--room-bottom),var(--room-field) 42%) 100%);
+        }
+        body.art-room .signal-trace {
+            border-color:color-mix(in srgb,var(--room-accent),var(--room-field) 34%);
+        }
+        body.art-room .meta .album,
+        body.art-room .stream-label,
+        body.art-room .also-appears > span,
+        body.art-room .also-appears a {
+            color:color-mix(in srgb,var(--room-accent),var(--room-ink) 34%);
+        }
+        body.art-room .meta h1::after {
+            content:"";
+            display:block;
+            width:76px;
+            height:4px;
+            margin-top:18px;
+            border-radius:999px;
+            background:linear-gradient(90deg,var(--room-accent),var(--room-accent-strong));
+            box-shadow:0 0 18px color-mix(in srgb,var(--room-accent),transparent 42%);
+        }
+        body.art-room .section-card,
+        body.art-room .section-card:nth-child(even) {
+            border-top-color:color-mix(in srgb,var(--room-accent),var(--room-field) 28%);
+        }
+
+        @media(min-width:761px) {
+            body.art-room .meta {
+                margin-top:-56px;
+                padding-top:84px;
+            }
+        }
     

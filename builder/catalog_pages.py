@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 
 from gsi_artists import artist_image_markup, resolve_artist_asset
+from gsi_assets import artwork_palette, palette_style
 from gsi_data import load_config
 from gsi_text import simple_markdown_to_html, slugify
 from builder.template_renderer import render_template
@@ -43,6 +44,8 @@ def build_artist_pages(
         artist_slug = slugify(artist)
         artist_asset = resolve_artist_asset(artist, artist_config, assets_dir)
         artist_image_html = artist_image_markup(artist_asset, artist)
+        artist_palette = (artist_tracks[0].get("palette") if artist_tracks else None) or artwork_palette(Path("__missing_artwork__.jpg"), "#49d9ef")
+        artist_image_src = f'../artist-assets/{artist_asset["file"]}' if artist_asset.get("file") else ""
         artist_heading_class = "artist-heading has-artist-image" if artist_image_html else "artist-heading"
         note = str(artist_notes.get(artist, "")).strip()
         note_html = f'<div class="artist-note">{simple_markdown_to_html(note)}</div>' if note else ""
@@ -88,7 +91,7 @@ def build_artist_pages(
                 f'href="{html.escape(album_href, quote=True)}">{html.escape(album)}</a>'
             )
             album_note = str(album_notes.get(artist, {}).get(album, "")).strip()
-            album_note_html = f'<div style="margin:9px 0 0;color:rgba(255,255,255,.64);font-size:13px;line-height:1.4">{simple_markdown_to_html(album_note)}</div>' if album_note else ""
+            album_note_html = f'<div class="album-note-preview">{simple_markdown_to_html(album_note)}</div>' if album_note else ""
             album_sections.append(f'''<section class="album-stack" style="--accent:{items[0]["accent"]}">
                 <header><img src="../covers/{html.escape(items[0]["cover_file"], quote=True)}" alt="{html.escape(album, quote=True)} cover"><div style="min-width:0"><span style="display:block;margin-bottom:6px;color:color-mix(in srgb,var(--accent),white 24%);font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2>{album_title_link}</h2>{album_note_html}</div></header>
                 <div>{''.join(entry_tile(item, compact=True) for item in items)}</div>
@@ -118,7 +121,15 @@ def build_artist_pages(
                 "albums_html": albums_html,
                 "remaining_html": remaining_html,
                 "artist_room_data": artist_room_data,
+                "art_style": html.escape(palette_style(artist_palette, artist_image_src), quote=True),
             },
+        )
+        # Load the colour-field layer after the room's base stylesheet.  Keeping
+        # this explicit avoids relying on CSS @import ordering in mobile browsers.
+        page = page.replace(
+            "</head>",
+            '<link rel="stylesheet" href="../styles/artist-art.css?v=20260919-contrast"></head>',
+            1,
         )
         output_path = artists_dir / f"{artist_slug}.html"
         output_path.write_text(page, encoding="utf-8")
@@ -150,6 +161,10 @@ def build_album_pages(
         if album_routes is not None and not route:
             continue
         accent = items[0]["accent"]
+        art_style = html.escape(
+            palette_style(items[0].get("palette") or artwork_palette(Path("__missing_artwork__.jpg"), accent), f'../covers/{items[0].get("cover_file", "")}'),
+            quote=True,
+        )
         artist_room_exists = artist in (artist_groups or {}) if artist_groups is not None else sum(1 for item in tracks if item.get("artist") == artist) >= 2
         artist_href = f"../artists/{slugify(artist)}.html"
         artist_nav = (
@@ -176,7 +191,9 @@ def build_album_pages(
             "album.html",
             {
                 "album": html.escape(album),
-                "album_upper": html.escape(album.upper()),
+                # The breadcrumb is a title, not an operational label: preserve
+                # the source's exact album casing here as well as in the hero.
+                "album_upper": html.escape(album),
                 "accent": html.escape(str(accent), quote=True),
                 "artist_nav": artist_nav,
                 "cover_html": cover_html,
@@ -185,7 +202,15 @@ def build_album_pages(
                 "note_html": note_html,
                 "song_links_html": "".join(song_links),
                 "album_room_data": album_room_data,
+                "art_style": art_style,
             },
+        )
+        # Load the colour-field layer after the room's base stylesheet.  Keeping
+        # this explicit avoids relying on CSS @import ordering in mobile browsers.
+        page = page.replace(
+            "</head>",
+            '<link rel="stylesheet" href="../styles/album-art.css?v=20260919-contrast"></head>',
+            1,
         )
         path = SITE_DIR / route if route else albums_dir / f"{slug}.html"
         path.parent.mkdir(parents=True, exist_ok=True)

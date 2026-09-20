@@ -12,6 +12,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from gsi_data import load_config
+from gsi_assets import artwork_palette, palette_style
 from gsi_text import make_streaming_links, simple_markdown_to_html, slugify
 from builder.template_renderer import render_template
 
@@ -82,8 +83,10 @@ def build_entry_page(
     """
     cover_html = ""
     bg_style = ""
+    art_image_src = ""
     if item["cover_file"]:
         cover_src = f"../covers/{item['cover_file']}"
+        art_image_src = cover_src
         cover_html = f'<img class = "cover" src = "{cover_src}" alt = "{html.escape(item["album"])} cover">'
         # Keep the cover treatment as a custom property on the page body. This
         # lets the shared stylesheet stay static while the URL remains escaped.
@@ -184,6 +187,10 @@ def build_entry_page(
         also_appears_html = f'<aside class="also-appears" id="also-appears"><span>ALSO APPEARS IN</span><div>{"".join(also_paths)}</div></aside>'
 
     safe_accent = html.escape(str(item["accent"]), quote=True)
+    art_style = html.escape(
+        palette_style(item.get("palette") or artwork_palette(Path("__missing_artwork__.jpg"), item["accent"]), art_image_src),
+        quote=True,
+    )
     html_page = render_template(
         "entry.html",
         {
@@ -192,6 +199,7 @@ def build_entry_page(
             "safe_page_title": safe_page_title,
             "sharing_meta": sharing_meta,
             "bg_style": bg_style,
+            "art_style": art_style,
             "track": html.escape(item["track"]),
             "cover_html": cover_html,
             "artist_display": artist_display,

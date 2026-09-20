@@ -183,6 +183,8 @@ h1 {
 }
 
 .artist { margin: 0; font-size: clamp(20px, 3vw, 32px); }
+.artist-link { color: inherit; text-decoration: none; text-decoration-thickness: .08em; text-underline-offset: .14em; }
+.artist-link:hover, .artist-link:focus-visible { color: color-mix(in srgb, var(--accent), white 36%); }
 .album { margin: 6px 0 0; color: color-mix(in srgb, var(--accent), white 66%); }
 .stream-block { margin-top: 28px; }
 .stream-label { margin-bottom: 9px; color: #ff96c8; font-size: 12px; font-weight: 800; }
@@ -273,4 +275,71 @@ h1 {
 
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}
+
+/* The playlist artwork owns the transmission room as well as the landing
+   page. The individual song cover stays in the hero, while its surroundings
+   use the shared P53 palette and rim field. */
+body.p53-transmission-room {
+    color: var(--art-ink, #f8f5ef);
+    background:
+        var(--art-rim-gradient, none),
+        radial-gradient(ellipse at 84% 12%, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 54%), transparent 38%),
+        linear-gradient(135deg, color-mix(in srgb, var(--art-field, #26331f), black 30%), color-mix(in srgb, var(--art-field-soft, #5a3f55), black 40%));
+}
+
+body.p53-transmission-room::before {
+    background:
+        repeating-linear-gradient(0deg, transparent 0 6px, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 90%) 6px 7px),
+        radial-gradient(circle at 84% 14%, color-mix(in srgb, var(--art-secondary, #777), transparent 68%), transparent 30%);
+    mix-blend-mode: screen;
+    opacity: .64;
+}
+
+body.p53-transmission-room .p53-nav {
+    color: color-mix(in srgb, var(--art-ink, #f8f5ef), transparent 18%);
+    border-color: color-mix(in srgb, var(--art-primary, #ff65ad), white 22%);
+    background: color-mix(in srgb, var(--art-surface, #17151b), transparent 10%);
+}
+
+body.p53-transmission-room .p53-trace a,
+body.p53-transmission-room .share-transmission,
+body.p53-transmission-room .stream-label {
+    color: color-mix(in srgb, var(--art-primary, #ff65ad), white 30%);
+}
+
+body.p53-transmission-room .p53-trace,
+body.p53-transmission-room .p53-trace .trace-separator {
+    color: color-mix(in srgb, var(--art-ink, #f8f5ef), transparent 34%);
+}
+
+body.p53-transmission-room .transmission {
+    border-color: color-mix(in srgb, var(--art-primary, #ff65ad), white 22%);
+    background:
+        var(--art-rim-gradient, none),
+        linear-gradient(135deg, color-mix(in srgb, var(--art-field, #26331f), black 10%), color-mix(in srgb, var(--art-surface, #17151b), black 12%));
+    box-shadow:
+        10px 10px 0 color-mix(in srgb, var(--art-secondary, #35c9e9), transparent 44%),
+        -7px -5px 0 color-mix(in srgb, var(--art-primary, #ff58a6), transparent 52%),
+        0 40px 100px rgba(0, 0, 0, .34);
+}
+
+body.p53-transmission-room .signal-panel {
+    background:
+        linear-gradient(150deg, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 78%), transparent 48%),
+        color-mix(in srgb, var(--art-surface, #17151b), transparent 8%);
+}
+
+body.p53-transmission-room .album,
+body.p53-transmission-room .p53-about h2,
+body.p53-transmission-room .transmission-note h2 {
+    color: color-mix(in srgb, var(--art-primary, #ff65ad), white 44%);
+}
+
+body.p53-transmission-room .p53-about,
+body.p53-transmission-room .transmission-note {
+    border-color: color-mix(in srgb, var(--art-primary, #ff65ad), white 20%);
+    background:
+        var(--art-rim-gradient, none),
+        color-mix(in srgb, var(--art-surface, #17151b), transparent 10%);
 }

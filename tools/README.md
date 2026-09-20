@@ -58,3 +58,32 @@ The command is preview-only by default. Add `--write` only after reviewing the
 resolved metadata; add `--p53` if the song should also become an explicit P53
 history record. Spotify links are accepted with explicit `--artist`, `--track`,
 and `--album` values, but Spotify API metadata lookup is intentionally deferred.
+
+## Recommend a Signal intake
+
+The generated `recommend.html` room is public-facing and intentionally weaker
+than the private Entry Loader: visitors submit a provider link, a short note,
+and an optional signature. It never writes an entry or changes the catalogue.
+
+For a local review loop, build the site and run:
+
+```text
+python tools/submission_server.py 8021
+```
+
+Then open `http://127.0.0.1:8021/recommend.html`. Valid submissions are saved
+as pending JSON under `submissions/inbox/`; invalid or unsupported links are
+rejected. A static deployment without the intake process falls back to a
+downloadable pending JSON file in the browser.
+
+To inspect pending signals without changing GSI:
+
+```text
+python tools/recommendation_to_draft.py
+python tools/recommendation_to_draft.py 20260919-123456-000000.json
+```
+
+The second command previews a Markdown draft. Add `--write-draft` only after
+reviewing it; the file is written to `submissions/drafts/`, never to
+`entries/` or `tracks.csv`. Apple links can resolve their identity; Spotify or
+other provider links need `--artist`, `--track`, and `--album` overrides.

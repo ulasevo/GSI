@@ -1,0 +1,43 @@
+/* Shared artwork room: turn reviewed cover art into atmosphere, not another card. */
+body.art-room {
+  position: relative;
+  isolation: isolate;
+  background: var(--art-surface, #111116);
+}
+
+body.art-room::before {
+  position: fixed;
+  inset: -8%;
+  z-index: -2;
+  content: "";
+  pointer-events: none;
+  background-image: var(--art-image, none);
+  background-position: center;
+  background-size: cover;
+  filter: blur(32px) saturate(1.12);
+  opacity: .24;
+  transform: scale(1.08);
+}
+
+body.art-room::after {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  content: "";
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--art-primary, #555), transparent 72%), transparent 38%),
+    radial-gradient(circle at 88% 78%, color-mix(in srgb, var(--art-secondary, #777), transparent 82%), transparent 42%),
+    linear-gradient(128deg, color-mix(in srgb, var(--art-surface, #111), black 8%), rgba(8, 8, 12, .9));
+}
+
+body.art-room :is(main, .page) { position: relative; z-index: 0; }
+
+body.art-room :is(a, button):focus-visible {
+  outline-color: var(--art-soft, #fff);
+}
+
+@media (max-width: 700px) {
+  body.art-room::before { position: absolute; opacity: .2; filter: blur(24px) saturate(1.08); }
+  body.art-room::after { position: absolute; }
+}

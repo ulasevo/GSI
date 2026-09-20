@@ -44,7 +44,7 @@ except ModuleNotFoundError:  # Keep site-only builds usable in the bundled runti
 
     requests = _CompatRequests()
 
-from gsi_assets import dominant_color
+from gsi_assets import artwork_palette, dominant_color
 from gsi_data import load_config, ordered_tracks, read_tracks
 from gsi_links import normalize_provider_url
 from gsi_text import slugify
@@ -337,6 +337,7 @@ def build_entries(
             "html_file": f"{slug}.html",
             "cover_file": cover_file,
             "accent": accent,
+            "palette": artwork_palette(cover_path, accent) if cover_path.exists() else artwork_palette(Path("__missing_artwork__.jpg"), accent),
             "site_url": site_url,
             "spotify_url": normalized_spotify_url,
             "apple_url": normalized_apple_url,
@@ -385,6 +386,7 @@ def prepare_p53_history(
         if cover_path.exists() and not item.get("accent"):
             item["accent"] = dominant_color(cover_path)
         item["accent"] = item.get("accent") or "#444444"
+        item["palette"] = artwork_palette(cover_path, item["accent"]) if cover_path.exists() else artwork_palette(Path("__missing_artwork__.jpg"), item["accent"])
         prepared.append(item)
     return prepared
 

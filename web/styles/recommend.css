@@ -1,0 +1,118 @@
+* { box-sizing: border-box; }
+body.recommend-room { min-height: 100vh; margin: 0; overflow-x: hidden; color: #f7f3ef; font-family: var(--gsi-reading-font, Arial, sans-serif); background: radial-gradient(circle at 82% 9%, rgba(255, 100, 174, .2), transparent 30rem), radial-gradient(circle at 12% 86%, rgba(72, 206, 237, .15), transparent 28rem), #0c0c11; }
+.recommend-shell { width: min(820px, calc(100% - 36px)); margin: 0 auto; padding: 24px 0 72px; }
+.recommend-path { display: inline-flex; gap: 11px; align-items: center; padding: 12px 15px; border: 1px solid rgba(255,255,255,.18); border-radius: 16px 5px 16px 5px; color: rgba(255,255,255,.62); font: 950 10px/1 var(--gsi-ui-font, Arial, sans-serif); letter-spacing: .15em; }
+.recommend-path a { color: #ff82be; text-decoration: none; }
+.recommend-header { max-width: 680px; padding: clamp(70px, 12vw, 130px) 0 34px; }
+.eyebrow { margin: 0 0 12px; color: #ff82be; font: 950 11px/1 var(--gsi-ui-font, Arial, sans-serif); letter-spacing: .18em; }
+.recommend-header h1 { margin: 0 0 18px; font-size: clamp(48px, 9vw, 104px); line-height: .84; letter-spacing: -.065em; }
+.recommend-header p:not(.eyebrow) { max-width: 620px; margin: 0; color: rgba(255,255,255,.72); font-size: clamp(17px, 2vw, 21px); line-height: 1.55; }
+.recommend-form { display: grid; gap: 20px; padding: clamp(20px, 4vw, 34px); border: 1px solid rgba(255,255,255,.2); border-radius: 30px 8px 30px 8px; background: rgba(20, 18, 27, .82); box-shadow: 0 28px 90px rgba(0,0,0,.28); }
+.recommend-form label { display: grid; gap: 8px; color: #f6f0f0; font: 900 12px/1.2 var(--gsi-ui-font, Arial, sans-serif); letter-spacing: .12em; text-transform: uppercase; }
+.recommend-form label span { color: rgba(255,255,255,.52); font-size: 12px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.recommend-form input, .recommend-form textarea { width: 100%; border: 1px solid rgba(255,255,255,.2); border-radius: 13px 4px 13px 4px; padding: 14px; color: #fff; background: rgba(0,0,0,.28); font: 500 16px/1.45 var(--gsi-reading-font, Arial, sans-serif); outline: none; }
+.recommend-form textarea { resize: vertical; min-height: 150px; }
+.recommend-form :is(input,textarea):focus { border-color: #ff82be; box-shadow: 0 0 0 3px rgba(255,130,190,.12); }
+.recommend-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.recommend-actions button, .recommend-actions a { min-height: 44px; padding: 0 16px; border: 1px solid rgba(255,255,255,.2); border-radius: 14px 4px 14px 4px; color: #fff; background: rgba(255,255,255,.08); font: 950 11px/44px var(--gsi-ui-font, Arial, sans-serif); letter-spacing: .14em; text-decoration: none; }
+.recommend-actions button { border: 0; color: #170f18; background: linear-gradient(100deg, #ff70b6, #79d9ef); cursor: pointer; }
+.recommend-actions :is(button,a):hover { transform: translateY(-2px); }
+.recommend-status { min-height: 1.4em; margin: 0; color: #ffb8d9; font-size: 14px; }
+.recommend-status[data-kind="success"] { color: #a9eddb; }
+.recommend-footnote { margin: 0; color: rgba(255,255,255,.46); font-size: 12px; line-height: 1.5; }
+@media (max-width: 560px) { .recommend-shell { width: min(100% - 22px, 600px); padding-top: 14px; } .recommend-header { padding-top: 54px; } .recommend-actions > * { width: 100%; text-align: center; } }
+
+/* Recommendation room refinement: one calm composition, with the copy and
+   the form treated as two equal surfaces instead of a long stacked intake. */
+body.recommend-room {
+  color: var(--recommend-ink, #f5efe8);
+  background:
+    radial-gradient(circle at 84% 8%, rgba(255, 105, 175, .18), transparent 28rem),
+    radial-gradient(circle at 10% 78%, rgba(104, 211, 231, .14), transparent 26rem),
+    linear-gradient(135deg, #0d0b11 0%, #17121b 52%, #101317 100%);
+}
+.recommend-shell { width: min(1220px, calc(100% - 56px)); padding: 28px 0 72px; }
+.recommend-path { border-color: rgba(255,255,255,.2); background: rgba(12,12,17,.42); }
+.recommend-main-grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(390px, 1.1fr);
+  gap: clamp(34px, 7vw, 96px);
+  align-items: center;
+  min-height: min(680px, calc(100vh - 120px));
+  padding: clamp(48px, 7vw, 92px) 0 48px;
+}
+.recommend-main-grid::before {
+  content: "";
+  position: absolute;
+  inset: 3% -5% 4%;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: 64px 12px 64px 12px;
+  background:
+    radial-gradient(circle at 18% 78%, rgba(255, 112, 182, .14), transparent 38%),
+    linear-gradient(132deg, rgba(255, 255, 255, .05), rgba(112, 207, 235, .07) 52%, rgba(255, 112, 182, .08));
+}
+.recommend-header { max-width: 650px; padding: 0; }
+.recommend-header h1 {
+  margin: 0 0 26px;
+  color: #f7f1e9;
+  font-size: clamp(54px, 7.2vw, 108px);
+  line-height: .88;
+  letter-spacing: -.065em;
+  text-wrap: balance;
+  max-width: 12ch;
+}
+.recommend-header p:not(.eyebrow) { max-width: 560px; color: rgba(247,241,233,.72); font-size: clamp(17px, 1.8vw, 21px); line-height: 1.55; }
+.recommend-form {
+  gap: 22px;
+  padding: clamp(24px, 4vw, 38px);
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 34px 10px 34px 10px;
+  background: linear-gradient(145deg, rgba(255,255,255,.075), rgba(15,13,20,.82) 48%);
+  box-shadow: 0 30px 90px rgba(0,0,0,.36), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.recommend-form label { gap: 9px; color: #f7f1e9; font-size: 11px; letter-spacing: .16em; }
+.recommend-form label span { color: rgba(247,241,233,.56); font-size: 13px; line-height: 1.35; }
+.recommend-form input, .recommend-form textarea {
+  border-color: rgba(255,255,255,.24);
+  border-radius: 16px 5px 16px 5px;
+  padding: 15px 16px;
+  color: #fff;
+  background: rgba(9,9,13,.52);
+}
+.recommend-form textarea { min-height: 164px; }
+.recommend-form :is(input,textarea):focus { border-color: #ff82be; box-shadow: 0 0 0 3px rgba(255,130,190,.16), 0 0 30px rgba(255,130,190,.12); }
+.recommend-actions { justify-content: space-between; gap: 14px; }
+.recommend-actions button, .recommend-actions a { min-height: 48px; padding: 0 18px; border-radius: 16px 5px 16px 5px; line-height: 48px; }
+.recommend-actions button { color: #170f18; background: linear-gradient(105deg, #ff70b6, #83ddec); box-shadow: 0 10px 30px rgba(255,112,182,.2); }
+.recommend-actions a { color: rgba(247,241,233,.75); background: rgba(255,255,255,.055); }
+.recommend-status { color: #ffc0dc; }
+.recommend-status[data-kind="success"] { color: #a9eddb; }
+@media (max-width: 820px) {
+  .recommend-shell { width: min(100% - 28px, 650px); }
+  .recommend-main-grid { grid-template-columns: 1fr; min-height: 0; gap: 34px; padding: 72px 0 34px; }
+  .recommend-header h1 { font-size: clamp(52px, 14vw, 86px); }
+}
+@media (max-width: 560px) {
+  .recommend-main-grid { padding-top: 54px; }
+  .recommend-form { padding: 21px; }
+  .recommend-actions > * { width: 100%; text-align: center; }
+}
+
+/* Keep the editorial headline in the upper half of the landscape room.  The
+   form is intentionally taller than the copy, so a plain grid-centre would
+   make the title drift toward the bottom of a desktop viewport. */
+@media (min-width: 821px) {
+  .recommend-header {
+    align-self: center;
+    transform: translateY(clamp(-112px, -8vh, -42px));
+  }
+}
+
+.recommend-header h1 {
+  font-family: "Trebuchet MS", Arial, sans-serif;
+  font-weight: 900;
+  -webkit-text-stroke: .25px currentColor;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .34), 0 0 1px currentColor;
+}

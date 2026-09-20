@@ -81,7 +81,12 @@ class MigrationParityTests(unittest.TestCase):
         )
 
     def test_semantic_internal_links_match_baseline(self):
-        self.assertEqual(_semantic_links(BASELINE), _semantic_links(CURRENT))
+        baseline_links = _semantic_links(BASELINE)
+        current_links = _semantic_links(CURRENT)
+        # New safe surfaces such as Recommend a Signal may add a page and its
+        # own links; every baseline page must still retain its link contract.
+        for page, links in baseline_links.items():
+            self.assertTrue(links <= current_links.get(page, set()), page)
 
     def test_referenced_assets_are_present_and_image_inventory_is_stable(self):
         baseline_refs = _referenced_assets(BASELINE)
@@ -113,6 +118,7 @@ class MigrationParityTests(unittest.TestCase):
             "artist.html",
             "album.html",
             "404.html",
+            "recommend.html",
         }
         self.assertEqual(
             expected_templates,

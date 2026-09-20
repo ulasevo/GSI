@@ -226,6 +226,8 @@
             white-space: nowrap;
         }
         .layout-format-controls { display:grid; grid-template-columns:auto auto; align-items:stretch; justify-content:start; gap:8px; margin:0 0 20px; min-width:0; }
+        .recommend-link { display:inline-flex; align-items:center; width:max-content; margin:0 0 18px; padding:9px 12px; color:color-mix(in srgb,var(--active-filter-color,#fff),white 18%); border:1px solid color-mix(in srgb,var(--active-filter-color,#fff),transparent 48%); border-radius:12px 4px 12px 4px; font:950 10px/1 var(--gsi-ui-font,Arial,sans-serif); letter-spacing:.14em; text-decoration:none; transition:transform 220ms ease,border-radius 220ms ease,color 180ms ease; }
+        .recommend-link:hover,.recommend-link:focus-visible { color:#fff; transform:translateY(-2px); border-radius:4px 12px 4px 12px; }
         .layout-format-controls > .view-control,
         .layout-format-controls > .format-control { width:clamp(376px,30vw,400px); max-width:100%; min-height:0; margin:0; align-self:stretch; box-sizing:border-box; }
         .layout-format-controls > .view-control { display:grid; grid-template-columns:auto repeat(3,minmax(0,1fr)); gap:4px; }

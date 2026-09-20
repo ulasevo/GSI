@@ -197,6 +197,7 @@ def catalogue_record(item: dict, covers_dir: Path, cover_metadata: dict) -> dict
             "path": f"covers/{cover_file}" if cover_file else "",
             **metadata,
         },
+        "palette": dict(item.get("palette") or {}),
     }
     if item.get("p53_order") is not None and item.get("p53_order") != 999:
         record["p53_order"] = item["p53_order"]

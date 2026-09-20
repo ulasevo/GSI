@@ -8,7 +8,7 @@ import html
 import json
 from pathlib import Path
 
-from gsi_assets import playlist_visuals
+from gsi_assets import artwork_palette, palette_style, playlist_visuals
 from gsi_data import load_config
 from builder.template_renderer import render_template
 
@@ -67,6 +67,18 @@ def build_index_html(
         tags_for_attr = tags.lower().replace(","," ")
         p53_order = int(item.get("p53_order", 999))
         album_route = (album_routes or {}).get((item["artist"], item["album"]), "")
+        # Homepage cards use the same named palette roles as entry rooms.  The
+        # card itself remains a lightweight link, while the inline variables
+        # let CSS paint its metadata surface from the actual cover artwork.
+        card_palette = item.get("palette") or artwork_palette(Path("__missing_artwork__.jpg"), item["accent"])
+        card_art_style = palette_style(
+            card_palette,
+            f'covers/{item["cover_file"]}' if item.get("cover_file") else "",
+        )
+        card_style = html.escape(
+            f'--accent: {item["accent"]}; --p53-order: {p53_order}; {card_art_style}',
+            quote=True,
+        )
         card = f"""
         <a class="card"
             data-tags="{tags_for_attr}"
@@ -76,7 +88,7 @@ def build_index_html(
             data-p53-order="{p53_order}"
             aria-label="{safe_card_label}"
             data-base-href="{html.escape(item["page_url"], quote = True)}"
-            href="{html.escape(item["page_url"], quote = True)}" style="--accent: {item["accent"]}; --p53-order: {p53_order};">
+            href="{html.escape(item["page_url"], quote = True)}" style="{card_style}">
             {cover_html}
             <div class="info">
                 <h2>{safe_track}</h2>
@@ -154,8 +166,17 @@ def build_index_html(
     p53_item = next((item for item in tracks if item["slug"] == p53_slug), None)
     p53_html = ""
     if p53_item:
+        p53_settings = config.get("p53") or {}
+        p53_cover_value = str(p53_settings.get("playlist_cover") or "covers/P53_cover.jpg").strip()
+        p53_cover_path = base / p53_cover_value
+        p53_palette = artwork_palette(p53_cover_path, p53_item.get("accent", "#ff65ad"))
+        p53_style = (
+            f'--signal-accent:{p53_palette.get("primary", p53_item.get("accent", "#ff65ad"))};'
+            f'--p53-accent:{p53_palette.get("primary", p53_item.get("accent", "#ff65ad"))};'
+            f'{palette_style(p53_palette, p53_cover_value)}'
+        )
         p53_html = f"""
-        <a class="p53-broadcast" data-base-href="p53/index.html" href="p53/index.html" aria-label="Open Radio P53: current and previous transmissions" style="--signal-accent:{p53_item['accent']}">
+        <a class="p53-broadcast" data-base-href="p53/index.html" href="p53/index.html" aria-label="Open Radio P53: current and previous transmissions" style="{html.escape(p53_style, quote=True)}">
             <div class="p53-art">
                 <img src="covers/P53_cover.jpg" alt="P53 protein artwork">
             </div>

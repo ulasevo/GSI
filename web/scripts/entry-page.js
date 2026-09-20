@@ -73,7 +73,18 @@
             traceFilter.href = archiveHref;
             traceFilter.classList.remove("hidden");
             document.querySelector("#trace-context-separator")?.classList.remove("hidden");
-            document.querySelector("#trace-filter-separator")?.classList.remove("hidden");
+            // The entry separator already follows the filter when no artist
+            // room is in the path. Show a second separator only for GSI →
+            // filter → artist → entry.
+            const filterSeparator = document.querySelector("#trace-filter-separator");
+            if (filterSeparator) {
+                const hasArtistSegment = hasArtistRoom && artistRoute === expectedArtistRoute;
+                if (hasArtistSegment) {
+                    filterSeparator.classList.remove("hidden");
+                } else {
+                    filterSeparator.classList.add("hidden");
+                }
+            }
         }
     }
 

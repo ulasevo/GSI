@@ -112,6 +112,18 @@
     $("#markdown-preview").textContent = markdown();
   }
 
+  function showArtwork(url, caption = "ARTWORK CHECK") {
+    const preview = $("#artwork-preview");
+    const image = $("#artwork-image");
+    if (!preview || !image || !url) return;
+    image.src = url.replace("100x100bb", "600x600bb");
+    image.onload = () => {
+      preview.hidden = false;
+      $("#artwork-caption").textContent = caption;
+    };
+    image.onerror = () => { preview.hidden = true; };
+  }
+
   async function resolveLink() {
     const raw = getValue("provider-link");
     if (!raw) return setStatus("Paste a raw Apple Music or Spotify URL first.", "error");
@@ -133,6 +145,7 @@
       $("#artist").value = song.artistName || "";
       $("#track").value = song.trackName || "";
       $("#album").value = song.collectionName || "";
+      showArtwork(song.artworkUrl100 || "", `${song.collectionName || "ARTWORK"} / ARTWORK CHECK`);
       setStatus("Metadata resolved. Check the names before exporting.", "success");
       updatePreview();
     } catch (error) {

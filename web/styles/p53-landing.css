@@ -436,3 +436,70 @@ body::before {
     animation-duration: .01ms !important;
   }
 }
+
+/* Playlist room pass: every P53 surface now belongs to the playlist artwork,
+   including the historical cards. The cover remains visible in each card;
+   the surrounding room borrows its sampled field instead of falling back to
+   an unrelated black panel. */
+body.p53-landing-room {
+  color: var(--art-ink, #f8f5ef);
+  background:
+    var(--art-rim-gradient, none),
+    radial-gradient(ellipse at 82% 8%, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 54%), transparent 42%),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-field, #26331f), black 32%), color-mix(in srgb, var(--art-field-soft, #5a3f55), black 42%));
+}
+
+body.p53-landing-room::before {
+  background:
+    linear-gradient(rgba(9, 8, 14, .24), rgba(9, 8, 14, .34)),
+    repeating-linear-gradient(0deg, transparent 0 7px, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 92%) 7px 8px);
+  opacity: .72;
+}
+
+body.p53-landing-room .p53-path {
+  color: color-mix(in srgb, var(--art-ink, #f8f5ef), transparent 20%);
+  border-color: color-mix(in srgb, var(--art-primary, #ff65ad), white 24%);
+  background: color-mix(in srgb, var(--art-surface, #17151b), transparent 12%);
+}
+
+body.p53-landing-room .p53-path a,
+body.p53-landing-room .signal-state,
+body.p53-landing-room .transmission-copy b {
+  color: color-mix(in srgb, var(--art-primary, #ff65ad), white 26%);
+}
+
+body.p53-landing-room .p53-landing > header > span {
+  color: color-mix(in srgb, var(--art-primary, #ff65ad), white 38%);
+}
+
+body.p53-landing-room .p53-intro {
+  border-left-color: color-mix(in srgb, var(--art-primary, #ff65ad), transparent 18%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 86%), transparent 74%);
+}
+
+body.p53-landing-room .transmission-card-link {
+  color: var(--art-ink, #f8f5ef);
+  border-color: color-mix(in srgb, var(--art-primary, #ff65ad), white 22%);
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(118deg, color-mix(in srgb, var(--art-field, #26331f), black 16%), color-mix(in srgb, var(--art-surface, #17151b), black 18%));
+}
+
+body.p53-landing-room .transmission-art { background: color-mix(in srgb, var(--art-primary, #ff65ad), black 74%); }
+
+body.p53-landing-room .transmission-copy {
+  background:
+    linear-gradient(112deg, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 84%), transparent 62%),
+    color-mix(in srgb, var(--art-surface, #17151b), transparent 12%);
+}
+
+body.p53-landing-room .transmission-copy small {
+  color: color-mix(in srgb, var(--art-ink, #f8f5ef), transparent 34%);
+}
+
+body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 66%), transparent 36%),
+    repeating-linear-gradient(90deg, transparent 0 38px, color-mix(in srgb, var(--art-secondary, #777), transparent 90%) 38px 39px),
+    repeating-linear-gradient(0deg, transparent 0 24px, color-mix(in srgb, var(--art-ink, #fff), transparent 94%) 24px 25px);
+}
