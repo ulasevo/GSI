@@ -1,0 +1,275 @@
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    overflow-x: hidden;
+    color: #faf6ee;
+    font-family: var(--gsi-reading-font, Arial, sans-serif);
+    background:
+        linear-gradient(118deg, rgba(8, 10, 9, .88), rgba(31, 15, 36, .92)),
+        url("../covers/P53_cover.jpg") center / cover fixed;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        repeating-linear-gradient(0deg, transparent 0 6px, rgba(255, 255, 255, .035) 6px 7px),
+        radial-gradient(circle at 84% 14%, rgba(255, 88, 166, .23), transparent 30%);
+    mix-blend-mode: screen;
+}
+
+.p53-page {
+    position: relative;
+    width: min(1240px, calc(100% - 36px));
+    margin: 0 auto;
+    padding: 22px 0 80px;
+}
+
+.p53-nav {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+    padding: 13px 16px;
+    border: 1px solid rgba(255, 255, 255, .18);
+    border-radius: 20px 6px 20px 6px;
+    background: rgba(13, 10, 17, .82);
+}
+
+.p53-nav a {
+    color: #ff8bc2;
+    text-decoration: none;
+    font-size: 12px;
+    font-weight: 950;
+    letter-spacing: .14em;
+    transition: transform 360ms cubic-bezier(.2, .8, .2, 1), color 180ms ease;
+}
+
+.p53-nav a:hover,
+.p53-nav a:focus-visible {
+    color: #fff;
+    transform: translateX(-4px);
+}
+
+.share-transmission {
+    padding: 7px 9px;
+    color: #ff8bc2;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 12px 4px 12px 4px;
+    background: transparent;
+    font: 950 10px/1 Arial, sans-serif;
+    letter-spacing: .13em;
+    cursor: pointer;
+    transition: transform 220ms ease, border-radius 280ms ease, color 180ms ease;
+}
+
+.share-transmission:hover,
+.share-transmission:focus-visible {
+    color: #fff;
+    transform: translateY(-2px);
+    border-radius: 4px 12px 4px 12px;
+}
+
+.p53-trace {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    overflow: auto;
+    color: rgba(255, 255, 255, .64);
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: .14em;
+    white-space: nowrap;
+}
+
+.p53-trace a { color: #ff8bc2; font-size: 12px; }
+.p53-trace .hidden { display: none; }
+.p53-trace .trace-separator { color: rgba(255, 255, 255, .28); }
+
+.transmission {
+    display: grid;
+    grid-template-columns: minmax(300px, .9fr) minmax(0, 1.1fr);
+    min-height: 650px;
+    overflow: hidden;
+    border: 2px solid #ff65ad;
+    border-radius: 18px 62px 18px 62px;
+    background: rgba(16, 12, 22, .91);
+    box-shadow: 10px 10px 0 rgba(53, 201, 233, .42), -7px -5px 0 rgba(255, 88, 166, .28), 0 40px 100px rgba(0, 0, 0, .46);
+}
+
+.protein-panel {
+    position: relative;
+    min-height: 100%;
+    overflow: hidden;
+}
+
+.protein-panel > img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Tint the P53 print with the transmission accent without replacing it. */
+.protein-panel::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+    opacity: .18;
+    background:
+        radial-gradient(circle at 72% 28%, color-mix(in srgb, var(--accent), white 10%), transparent 48%),
+        var(--accent);
+    mix-blend-mode: color;
+}
+
+.protein-panel::after {
+    content: "P53";
+    position: absolute;
+    left: 18px;
+    bottom: 10px;
+    z-index: 2;
+    color: rgba(255, 255, 255, .78);
+    font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
+    font-size: clamp(90px, 15vw, 220px);
+    line-height: .8;
+    text-shadow: 7px 0 var(--p53), -6px 0 var(--cyan);
+    animation: protein-pulse 5s ease-in-out infinite;
+}
+
+.signal-panel {
+    position: relative;
+    display: grid;
+    align-content: end;
+    padding: clamp(30px, 6vw, 76px);
+    background:
+        linear-gradient(150deg, color-mix(in srgb, var(--accent), transparent 82%), transparent 44%),
+        rgba(14, 11, 20, .94);
+}
+
+.signal-panel::before {
+    position: absolute;
+    top: 22px;
+    right: 24px;
+    color: #ff82bd;
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: .22em;
+}
+
+.signal-cover {
+    width: min(230px, 54%);
+    margin-bottom: 26px;
+    border: 2px solid color-mix(in srgb, var(--accent), white 30%);
+    border-radius: 30px 8px 30px 8px;
+    box-shadow: 0 22px 54px rgba(0, 0, 0, .4);
+    transform: rotate(-2deg);
+}
+
+h1 {
+    margin: 10px 0 8px;
+    font-size: clamp(58px, 9vw, 126px);
+    line-height: .82;
+    letter-spacing: -.055em;
+    text-wrap: balance;
+}
+
+.artist { margin: 0; font-size: clamp(20px, 3vw, 32px); }
+.album { margin: 6px 0 0; color: color-mix(in srgb, var(--accent), white 66%); }
+.stream-block { margin-top: 28px; }
+.stream-label { margin-bottom: 9px; color: #ff96c8; font-size: 12px; font-weight: 800; }
+.stream-links { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.stream-link {
+    padding: 11px 16px;
+    color: #fff;
+    text-decoration: none;
+    font-weight: 800;
+    border: 1px solid rgba(255, 255, 255, .24);
+    border-radius: 18px 5px 18px 5px;
+    background: rgba(255, 255, 255, .07);
+    transition: transform 360ms cubic-bezier(.2, .8, .2, 1), border-radius 360ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.stream-link:hover,
+.stream-link:focus-visible {
+    transform: translateY(-3px);
+    border-radius: 5px 18px 5px 18px;
+}
+
+.entry-counterpart {
+    display: inline-flex;
+    width: max-content;
+    margin-top: 16px;
+    padding: 8px 10px;
+    color: var(--cyan);
+    border-bottom: 1px solid color-mix(in srgb, var(--cyan), transparent 45%);
+    font-size: 10px;
+    font-weight: 950;
+    letter-spacing: .14em;
+    text-decoration: none;
+    transition: transform 240ms ease, color 180ms ease;
+}
+
+.entry-counterpart:hover,
+.entry-counterpart:focus-visible { color: #fff; transform: translateX(4px); }
+
+.p53-details {
+    display: grid;
+    grid-template-columns: .7fr 1.3fr;
+    align-items: start;
+    gap: 16px;
+    margin-top: 18px;
+}
+
+.p53-details > :only-child { grid-column: 1 / -1; }
+
+.p53-about,
+.transmission-note {
+    padding: clamp(22px, 4vw, 38px);
+    border: 1px solid rgba(255, 255, 255, .16);
+    border-radius: 28px 8px 28px 8px;
+    background: rgba(12, 11, 15, .88);
+}
+
+.p53-about h2,
+.transmission-note h2 { margin: 0 0 14px; color: #ff7fbb; font-size: 24px; }
+
+.p53-about p,
+.transmission-note p { margin: 0; color: rgba(255, 255, 255, .76); line-height: 1.6; }
+
+@keyframes protein-pulse {
+    0%, 82%, 100% { transform: scale(1); filter: none; }
+    88% { transform: scale(1.035); filter: saturate(1.2); }
+    92% { transform: scale(.99); }
+}
+
+@media (max-width: 760px) {
+    .p53-nav { grid-template-columns: minmax(0, 1fr) auto; gap: 8px 10px; }
+    .p53-trace {
+        grid-column: 1 / -1;
+        grid-row: 2;
+        width: 100%;
+        min-width: 0;
+        padding-top: 8px;
+        border-top: 1px solid rgba(255, 255, 255, .09);
+        overscroll-behavior-inline: contain;
+        scrollbar-width: none;
+    }
+    .transmission { grid-template-columns: 1fr; min-height: 0; border-radius: 14px 38px 14px 38px; }
+    .protein-panel { min-height: 360px; }
+    .signal-panel { padding: 30px 22px 34px; }
+    .signal-cover { width: 150px; }
+    .p53-details { grid-template-columns: 1fr; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

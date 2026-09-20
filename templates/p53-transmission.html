@@ -1,0 +1,49 @@
+<!-- Permanent P53 template: one transmission with its real route context. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#25152b">
+    <meta name="description" content="@@P53_DESCRIPTION@@">@@SHARING_META@@
+    <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
+    <script src="../scripts/theme-mode.js"></script>
+    <link rel="stylesheet" href="../styles/gsi-tokens.css">
+    <link rel="stylesheet" href="../styles/art-room.css">
+    <link rel="stylesheet" href="../styles/p53-transmission.css">
+    <link rel="stylesheet" href="../styles/p53-transmission-vars.css">
+    <link rel="stylesheet" href="../styles/theme-mode.css?v=20260920-final8">
+    <title>@@P53_TITLE@@</title>
+</head>
+<body class="art-room p53-transmission-room" style="@@ART_STYLE@@">
+    <main class="p53-page">
+        <header class="p53-nav">
+            <nav class="p53-trace" aria-label="P53 path">
+                <a id="p53-trace-archive" href="../index.html">GSI</a><span class="trace-separator">→</span>
+                <a id="p53-trace-filter" class="hidden" href="../index.html"></a><span id="p53-trace-filter-separator" class="trace-separator hidden">→</span>
+                <a id="p53-trace-artist" class="hidden" href="../index.html"></a><span id="p53-trace-artist-separator" class="trace-separator hidden">→</span>
+                <a id="p53-radio-index" href="index.html">RADIO P53</a><span class="trace-separator">→</span><span class="trace-current" aria-current="page">@@SIGNAL_LABEL@@</span>
+            </nav>
+            <button class="share-transmission" id="share-transmission" type="button">SHARE</button>
+        </header>
+        <section class="transmission">
+            <div class="protein-panel"><img src="../covers/P53_cover.jpg" alt="Expressive P53 protein artwork"></div>
+            <div class="signal-panel">
+                @@COVER_HTML@@
+                <h1>@@TRACK@@</h1>
+                <p class="artist">@@ARTIST@@</p>
+                <p class="album">@@ALBUM@@</p>
+                @@STREAMING_LINKS_HTML@@
+                @@ENTRY_COUNTERPART_HTML@@
+            </div>
+        </section>
+        <div class="p53-details">
+            <aside class="p53-about"><h2>WHY P53?</h2><p>@@ABOUT_TEXT@@</p></aside>
+            @@NOTE_HTML@@
+        </div>
+    </main>
+    <script id="p53-transmission-context" type="application/json">@@P53_CONTEXT_JSON@@</script>
+    <script src="../scripts/gsi-context.js"></script>
+    <script src="../scripts/p53-transmission.js"></script>
+</body>
+</html>

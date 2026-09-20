@@ -1,0 +1,77 @@
+/* Artist room colour field: imagery and albums share one cover-led surface. */
+body.art-room {
+  --art-copy: var(--art-light-ink, #211823);
+  overflow-x: hidden;
+  color: var(--art-copy);
+  background: linear-gradient(140deg,
+    var(--art-light-surface, #ded9df),
+    var(--art-light-surface-2, #ded9df));
+}
+body.art-room::before { opacity: .4; filter: blur(36px) saturate(1.16); }
+body.art-room::after {
+  background: linear-gradient(140deg,
+    color-mix(in srgb, var(--art-primary), transparent 22%),
+    color-mix(in srgb, var(--art-secondary), transparent 42%));
+  opacity: .52;
+  mix-blend-mode: normal;
+}
+body.art-room nav {
+  border-color: var(--art-edge, #c7b0c6);
+  background: color-mix(in srgb, var(--art-light-surface, #ded9df), white 16%);
+  box-shadow: 0 14px 34px color-mix(in srgb, var(--art-primary), transparent 78%);
+}
+body.art-room nav a { color: var(--art-copy, #211823); }
+body.art-room nav strong { color: var(--art-copy, #211823); }
+body.art-room nav span { color: color-mix(in srgb, var(--art-copy, #211823), transparent 42%); }
+body.art-room .artist-heading.has-artist-image {
+  border-color: color-mix(in srgb, var(--art-primary), white 28%);
+  background: linear-gradient(135deg, rgba(255,255,255,.38), rgba(255,255,255,.12));
+  box-shadow: 0 24px 60px color-mix(in srgb, var(--art-primary), transparent 78%);
+}
+body.art-room .artist-heading.has-artist-image::before { border-color: rgba(255,255,255,.38); }
+body.art-room .artist-heading>span { color: color-mix(in srgb, var(--art-primary), #17121a 34%); }
+body.art-room .artist-heading h1 { color: var(--art-copy); }
+body.art-room .artist-note { color: color-mix(in srgb, var(--art-surface), #17121a 42%); }
+body.art-room .album-stack {
+  border-color: color-mix(in srgb, var(--art-primary), white 28%);
+  background: linear-gradient(135deg, rgba(255,255,255,.20), rgba(255,255,255,.06));
+  box-shadow: 0 20px 48px color-mix(in srgb, var(--art-primary), transparent 80%);
+}
+body.art-room .album-stack>header { border-bottom-color: color-mix(in srgb, var(--art-primary), white 36%); }
+body.art-room .album-entry, body.art-room .artist-signal {
+  color: var(--art-copy);
+  border-color: color-mix(in srgb, var(--art-primary), white 30%);
+  background: rgba(255,255,255,.16);
+}
+body.art-room .album-entry b, body.art-room .artist-signal b { color: color-mix(in srgb, var(--art-primary), #17121a 34%); }
+body.art-room .artist-signal p { color: color-mix(in srgb, var(--art-surface), #17121a 44%); }
+body.art-room .album-note-preview {
+  margin: 9px 0 0;
+  color: color-mix(in srgb, var(--art-copy, #211823), transparent 28%);
+  font-size: 13px;
+  line-height: 1.4;
+}
+body.art-room :is(a,button):focus-visible {
+  outline: 3px solid var(--art-focus, #f8f5ef);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 5px color-mix(in srgb, var(--art-focus, #f8f5ef), transparent 72%);
+}
+body.art-room nav a:hover,
+body.art-room nav a:focus-visible,
+body.art-room .album-title-link:hover,
+body.art-room .album-title-link:focus-visible {
+  color: var(--art-control-ink, var(--art-copy, #211823));
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+body.art-room .album-entry:hover,
+body.art-room .album-entry:focus-visible,
+body.art-room .artist-signal:hover,
+body.art-room .artist-signal:focus-visible {
+  color: var(--art-control-ink, var(--art-copy, #211823));
+  border-color: var(--art-edge, var(--art-soft, #b7afbc));
+  background: var(--art-control-hover, #b897b5);
+}
+body.art-room .album-entry b,
+body.art-room .artist-signal b { color: var(--art-control-ink, var(--art-copy, #211823)); }

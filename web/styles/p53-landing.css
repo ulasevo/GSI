@@ -1,0 +1,505 @@
+/*
+ * Radio P53 landing page: a contained field and chronological transmission list.
+ * Layout owns density and focus styling; JavaScript never forces scroll position.
+ */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+  margin: 0;
+  background: #130e18;
+}
+
+body {
+  min-height: 100vh;
+  color: #faf6ee;
+  font-family: var(--gsi-reading-font, Arial, sans-serif);
+  background:
+    linear-gradient(118deg, rgba(8, 10, 9, .91), rgba(31, 15, 36, .95)),
+    url("../covers/P53_cover.jpg") center / cover fixed;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  content: "";
+  background: repeating-linear-gradient(0deg, transparent 0 7px, rgba(255, 255, 255, .025) 7px 8px);
+}
+
+.p53-landing {
+  position: relative;
+  z-index: 1;
+  width: min(var(--gsi-content-max), calc(100% - 48px));
+  margin: 0 auto;
+  padding: 20px 0 clamp(48px, 8vw, 108px);
+}
+
+.p53-path {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 42px;
+  padding: 0 15px;
+  color: rgba(255, 255, 255, .64);
+  font-family: var(--gsi-ui-font, Arial, sans-serif);
+  font-size: 10px;
+  font-weight: 900;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, .18);
+  border-radius: var(--gsi-control-radius);
+  background: rgba(10, 10, 13, .58);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .16);
+}
+
+.p53-path a {
+  color: #ff86bd;
+  text-decoration: none;
+}
+
+.p53-path span {
+  display: inline;
+}
+
+.p53-path a:focus-visible,
+.transmission-card-link:focus-visible {
+  outline: 3px solid #fff;
+  outline-offset: 3px;
+}
+
+.p53-landing > header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, .44fr);
+  column-gap: clamp(26px, 5vw, 72px);
+  align-items: end;
+  padding: clamp(48px, 7vw, 88px) 0 clamp(30px, 4vw, 54px);
+}
+
+.p53-landing > header > span {
+  grid-column: 1 / -1;
+  margin-bottom: 13px;
+  color: #ff7fbb;
+  font-family: var(--gsi-ui-font, Arial, sans-serif);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .2em;
+}
+
+.p53-landing h1 {
+  margin: 0;
+  font-family: var(--gsi-reading-font, Arial, sans-serif);
+  font-size: clamp(62px, 10.5vw, 146px);
+  font-weight: 950;
+  line-height: .78;
+  letter-spacing: -.07em;
+}
+
+.p53-landing > header p,
+.p53-intro p {
+  max-width: 430px;
+  margin: 0 0 3px;
+  color: rgba(255, 255, 255, .72);
+  font-size: clamp(16px, 1.35vw, 19px);
+  line-height: 1.5;
+}
+
+.p53-intro {
+  align-self: end;
+  max-width: 430px;
+  margin: 0 0 3px;
+  padding: 12px 0 12px 18px;
+  border-left: 2px solid color-mix(in srgb, #ff7fbb, transparent 18%);
+  background: linear-gradient(90deg, color-mix(in srgb, #ff7fbb, transparent 91%), transparent 74%);
+}
+
+@media (min-width: 851px) {
+  .p53-intro {
+    justify-self: end;
+    width: min(100%, 430px);
+  }
+}
+
+.transmission-list {
+  display: grid;
+  gap: clamp(14px, 1.7vw, 20px);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.transmission-card {
+  width: min(100%, 1120px);
+  margin: 0 auto;
+  scroll-margin-top: 28px;
+  transition: transform 320ms var(--gsi-motion), filter 260ms ease;
+}
+
+.transmission-card-link {
+  position: relative;
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  min-height: 170px;
+  overflow: hidden;
+  color: #fff;
+  text-decoration: none;
+  border: 1px solid color-mix(in srgb, var(--accent), white 20%);
+  border-radius: 22px 8px 22px 8px;
+  background: linear-gradient(118deg, color-mix(in srgb, var(--accent), transparent 86%), rgba(10, 9, 13, .95));
+  box-shadow: 0 18px 42px rgba(0, 0, 0, .28);
+  transition: border-radius 320ms var(--gsi-motion), box-shadow 260ms ease, border-color 220ms ease;
+}
+
+.transmission-card.is-current .transmission-card-link {
+  grid-template-columns: minmax(320px, .8fr) minmax(0, 1.2fr);
+  min-height: clamp(430px, 43vw, 510px);
+  border-width: 2px;
+  border-radius: 28px 72px 28px 72px;
+}
+
+.transmission-card.is-focused {
+  transform: translateY(-3px);
+}
+
+.transmission-card.is-focused .transmission-card-link {
+  box-shadow:
+    0 22px 52px color-mix(in srgb, var(--accent), transparent 72%),
+    0 0 0 1px color-mix(in srgb, var(--accent), white 20%);
+}
+
+.transmission-art {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  min-height: 100%;
+  background: rgba(0, 0, 0, .26);
+}
+
+.transmission-art img,
+.cover-missing {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cover-missing {
+  display: grid;
+  place-items: center;
+  background: #17131b;
+  color: #ff69ad;
+  font-size: 42px;
+  font-weight: 950;
+}
+
+.transmission-copy {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  padding: 24px 30px;
+  background: linear-gradient(112deg, rgba(12, 11, 15, .72), rgba(12, 11, 15, .9));
+}
+
+.copy-content {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
+.signal-state {
+  display: block;
+  margin-bottom: 13px;
+  color: color-mix(in srgb, var(--accent), white 42%);
+  font-family: var(--gsi-ui-font, Arial, sans-serif);
+  font-size: 10px;
+  font-weight: 950;
+  letter-spacing: .2em;
+}
+
+.transmission-copy h2 {
+  max-width: 100%;
+  margin: 0 0 7px;
+  overflow-wrap: anywhere;
+  font-family: var(--gsi-reading-font, Arial, sans-serif);
+  font-size: clamp(30px, 4vw, 58px);
+  font-weight: 900;
+  line-height: .9;
+  letter-spacing: -.055em;
+}
+
+.transmission-copy p {
+  margin: 0;
+  font-size: clamp(17px, 2vw, 25px);
+}
+
+.transmission-copy small {
+  display: block;
+  margin-top: 7px;
+  overflow: hidden;
+  color: rgba(255, 255, 255, .58);
+  font-size: 14px;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.transmission-copy b {
+  display: inline-block;
+  margin-top: 28px;
+  color: color-mix(in srgb, var(--accent), white 38%);
+  font-family: var(--gsi-ui-font, Arial, sans-serif);
+  font-size: 11px;
+  letter-spacing: .17em;
+}
+
+.transmission-card.is-current .transmission-copy {
+  align-items: end;
+  padding: clamp(28px, 5vw, 62px);
+}
+
+.transmission-card.is-current .transmission-copy::before {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  opacity: .62;
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--accent), transparent 76%), transparent 36%),
+    repeating-linear-gradient(90deg, transparent 0 38px, color-mix(in srgb, var(--accent), transparent 94%) 38px 39px),
+    repeating-linear-gradient(0deg, transparent 0 24px, rgba(255,255,255,.025) 24px 25px);
+}
+
+.transmission-card.is-current .transmission-copy h2 {
+  font-size: clamp(46px, 5.8vw, 86px);
+  line-height: .82;
+}
+
+.transmission-card.is-current .transmission-copy p {
+  font-size: clamp(20px, 2.3vw, 30px);
+}
+
+.transmission-card.is-current .transmission-copy small {
+  font-size: 16px;
+}
+
+@media (max-width: 850px) {
+  .p53-landing > header {
+    grid-template-columns: 1fr;
+    row-gap: 18px;
+  }
+
+  .p53-landing > header > span {
+    grid-column: auto;
+    margin-bottom: 0;
+  }
+
+  .p53-intro {
+    max-width: none;
+    margin: 0;
+    padding: 14px 0 0;
+    border-top: 2px solid color-mix(in srgb, #ff7fbb, transparent 25%);
+    border-left: 0;
+    background: none;
+  }
+}
+
+@media (max-width: 760px) {
+  body {
+    background-attachment: scroll;
+  }
+
+  .p53-landing {
+    width: min(calc(100% - 24px), 620px);
+    padding-top: 12px;
+  }
+
+  .p53-path {
+    width: 100%;
+    justify-content: center;
+    min-height: 44px;
+    padding-inline: 12px;
+    font-size: 9px;
+  }
+
+  .p53-landing > header {
+    padding: 44px 0 26px;
+    row-gap: 15px;
+  }
+
+  .p53-landing h1 {
+    font-size: clamp(58px, 16vw, 92px);
+  }
+
+  .p53-landing > header p,
+  .p53-intro p {
+    max-width: 36rem;
+    font-size: 16px;
+  }
+
+  .transmission-list {
+    gap: 14px;
+  }
+
+  .transmission-card-link,
+  .transmission-card.is-current .transmission-card-link {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    border-radius: 18px 42px 18px 42px;
+  }
+
+  .transmission-card.is-current .transmission-card-link {
+    border-radius: 20px 52px 20px 52px;
+  }
+
+  .transmission-card:not(.is-current) .transmission-card-link {
+    grid-template-columns: 82px minmax(0, 1fr);
+    min-height: 142px;
+    border-radius: 16px 6px 16px 6px;
+  }
+
+  .transmission-art,
+  .transmission-card.is-current .transmission-art {
+    height: clamp(235px, 68vw, 360px);
+    min-height: 0;
+  }
+
+  .transmission-card:not(.is-current) .transmission-art {
+    height: auto;
+    min-height: 142px;
+  }
+
+  .transmission-copy,
+  .transmission-card.is-current .transmission-copy {
+    align-items: flex-start;
+    padding: 22px 20px 26px;
+  }
+
+  .transmission-card:not(.is-current) .transmission-copy {
+    align-items: center;
+    padding: 14px 14px 16px;
+  }
+
+  .transmission-copy h2,
+  .transmission-card.is-current .transmission-copy h2 {
+    font-size: clamp(32px, 10vw, 58px);
+    line-height: .86;
+  }
+
+  .transmission-card:not(.is-current) .transmission-copy h2 {
+    font-size: clamp(22px, 6.4vw, 32px);
+    line-height: .9;
+  }
+
+  .transmission-copy p,
+  .transmission-card.is-current .transmission-copy p {
+    font-size: 20px;
+  }
+
+  .transmission-card:not(.is-current) .transmission-copy p {
+    font-size: 15px;
+  }
+
+  .transmission-copy small,
+  .transmission-card.is-current .transmission-copy small {
+    font-size: 14px;
+  }
+
+  .transmission-card:not(.is-current) .transmission-copy small {
+    margin-top: 4px;
+    font-size: 12px;
+  }
+
+  .transmission-copy b {
+    margin-top: 22px;
+  }
+
+  .transmission-card:not(.is-current) .transmission-copy b {
+    margin-top: 12px;
+    font-size: 9px;
+  }
+
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}
+
+/* Playlist room pass: every P53 surface now belongs to the playlist artwork,
+   including the historical cards. The cover remains visible in each card;
+   the surrounding room borrows its sampled field instead of falling back to
+   an unrelated black panel. */
+body.p53-landing-room {
+  color: var(--art-ink, #f8f5ef);
+  background:
+    var(--art-rim-gradient, none),
+    radial-gradient(ellipse at 82% 8%, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 54%), transparent 42%),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-field, #26331f), black 32%), color-mix(in srgb, var(--art-field-soft, #5a3f55), black 42%));
+}
+
+body.p53-landing-room::before {
+  background:
+    linear-gradient(rgba(9, 8, 14, .24), rgba(9, 8, 14, .34)),
+    repeating-linear-gradient(0deg, transparent 0 7px, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 92%) 7px 8px);
+  opacity: .72;
+}
+
+body.p53-landing-room .p53-path {
+  color: color-mix(in srgb, var(--art-ink, #f8f5ef), transparent 20%);
+  border-color: color-mix(in srgb, var(--art-primary, #ff65ad), white 24%);
+  background: color-mix(in srgb, var(--art-surface, #17151b), transparent 12%);
+}
+
+body.p53-landing-room .p53-path a,
+body.p53-landing-room .signal-state,
+body.p53-landing-room .transmission-copy b {
+  color: color-mix(in srgb, var(--art-primary, #ff65ad), white 26%);
+}
+
+body.p53-landing-room .p53-landing > header > span {
+  color: color-mix(in srgb, var(--art-primary, #ff65ad), white 38%);
+}
+
+body.p53-landing-room .p53-intro {
+  border-left-color: color-mix(in srgb, var(--art-primary, #ff65ad), transparent 18%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 86%), transparent 74%);
+}
+
+body.p53-landing-room .transmission-card-link {
+  color: var(--art-ink, #f8f5ef);
+  border-color: color-mix(in srgb, var(--art-primary, #ff65ad), white 22%);
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(118deg, color-mix(in srgb, var(--art-field, #26331f), black 16%), color-mix(in srgb, var(--art-surface, #17151b), black 18%));
+}
+
+body.p53-landing-room .transmission-art { background: color-mix(in srgb, var(--art-primary, #ff65ad), black 74%); }
+
+body.p53-landing-room .transmission-copy {
+  background:
+    linear-gradient(112deg, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 84%), transparent 62%),
+    color-mix(in srgb, var(--art-surface, #17151b), transparent 12%);
+}
+
+body.p53-landing-room .transmission-copy small {
+  color: color-mix(in srgb, var(--art-ink, #f8f5ef), transparent 34%);
+}
+
+body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
+  background:
+    radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 66%), transparent 36%),
+    repeating-linear-gradient(90deg, transparent 0 38px, color-mix(in srgb, var(--art-secondary, #777), transparent 90%) 38px 39px),
+    repeating-linear-gradient(0deg, transparent 0 24px, color-mix(in srgb, var(--art-ink, #fff), transparent 94%) 24px 25px);
+}

@@ -1,0 +1,311 @@
+/* Final card states, responsive compositions, and reduced-motion guardrails. */
+        .card {
+            border-radius: 24px 8px 24px 8px;
+            transition:
+                transform 420ms cubic-bezier(.2,.8,.2,1),
+                border-radius 420ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 220ms ease,
+                border-color 180ms ease;
+        }
+        .card:hover,
+        .card:focus-visible {
+            border-radius: 8px 24px 8px 24px;
+            transform: translateY(-8px) scale(1.02) rotate(-.35deg);
+        }
+        body.view-rearranging .card {
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+        body[data-view="gallery"] .card {
+            border-radius: 12px 4px 12px 4px;
+        }
+        @media (max-width: 820px) {
+            .site-hero {
+                grid-template-columns: 1fr;
+            }
+            .hero-copy {
+                min-height: 0;
+            }
+            .p53-broadcast {
+                min-height: 280px; /* leave room for Radio P53 and the album transmission */
+                border-radius: 12px 34px 12px 34px;
+            }
+            .p53-art img { min-height: 100%; }
+            .filter-btn { flex-basis: calc(33.333% - 5px); }
+            .filter-btn.active { flex-grow: 1.8; }
+            .filter-description { grid-template-columns: 1fr; }
+            body.filter-active .filter-description { min-height: 0; }
+            .playlist-card {
+                width: min(100%, 300px);
+                justify-self: start;
+            }
+        }
+        @media (max-width: 520px) {
+            .wordmark {
+                font-size: clamp(72px, 25vw, 108px);
+                padding: 9px 20px 13px 15px;
+            }
+            .hero-copy .intro p { font-size: 14px; }
+            .p53-overlay { padding: 15px; gap: 10px; }
+            .p53-album { width: 68px; }
+            .p53-signal-copy { max-width: 78%; }
+            .p53-radio { font-size: 38px; }
+            .filter-btn {
+                flex-basis: calc(50% - 5px);
+                min-height: 48px;
+            }
+            .filter-btn.active { flex-basis: 100%; }
+            body.filter-active .filter-description {
+                max-height:none;
+                padding:24px 18px;
+            }
+            .filter-description h2 { font-size: clamp(38px, 15vw, 68px); }
+            .playlist-card { width:min(100%,260px); }
+            .view-control { width: auto; }
+            .view-btn { flex: 1; }
+        }
+
+        /* Mobile is its own signal-room composition, not a compressed desktop flex row. */
+        @media (max-width: 760px) {
+            .layout-format-controls { grid-template-columns:repeat(2,minmax(0,1fr)); gap:7px; }
+            .layout-format-controls.has-playlist { grid-template-columns:repeat(2,minmax(0,1fr)); }
+            .layout-format-controls > .view-control { grid-template-columns:auto repeat(3,minmax(0,1fr)); width:100%; max-width:100%; gap:2px; white-space:nowrap; }
+            .layout-format-controls > .view-control .view-control-label { margin-right:0; font-size:10px; letter-spacing:.14em; }
+            .layout-format-controls > .view-control .view-btn { padding-inline:8px; font-size:10px; letter-spacing:.06em; }
+            .layout-format-controls > .mini-playlist-card { grid-column:1/-1; grid-row:auto; min-height:50px; }
+            .layout-format-controls .mini-playlist-card .playlist-card-text { font-size:clamp(11px,3.1vw,14px); letter-spacing:.06em; }
+            /* Android may substitute unavailable desktop display faces; make the mobile weight intentional. */
+            .filter-panel,
+            .filter-description,
+            .view-control {
+                font-family:Roboto,Arial,sans-serif;
+                font-synthesis:weight;
+                text-size-adjust:100%;
+                -webkit-text-size-adjust:100%;
+            }
+            .filter-row {
+                display:grid;
+                grid-template-columns:repeat(2,minmax(0,1fr));
+                gap:7px;
+            }
+            .filter-btn {
+                min-width:0;
+                min-height:54px;
+                padding:11px 8px;
+                flex:initial;
+            }
+            .filter-btn span {
+                max-width:100%;
+                overflow:hidden;
+                font-size:clamp(11px,3.35vw,14px);
+                font-weight:900;
+                -webkit-text-stroke:.22px currentColor;
+                text-overflow:ellipsis;
+                white-space:nowrap;
+            }
+            .filter-btn.filter-ulas,
+            .filter-btn.filter-p53 {
+                grid-column:1/-1;
+                flex-basis:auto;
+            }
+            .filter-btn.active {
+                grid-column:auto;
+                flex-grow:initial;
+                transform:none;
+            }
+            .filter-btn.filter-ulas.active,
+            .filter-btn.filter-p53.active { grid-column:1/-1; }
+            .filter-description {
+                grid-template-columns:minmax(0,1fr);
+                gap:24px;
+            }
+            body.filter-active .filter-description {
+                min-height:0;
+                max-height:none;
+                padding:26px 20px 22px;
+            }
+            .filter-copy {
+                min-height:220px;
+                padding-top:16px;
+                justify-content:flex-start;
+            }
+            .filter-description h2 {
+                font-size:clamp(42px,14vw,68px);
+                font-weight:900;
+                -webkit-text-stroke:.35px currentColor;
+                text-wrap:pretty;
+            }
+            .filter-count,
+            .playlist-card-text,
+            .view-btn { font-weight:900; -webkit-text-stroke:.18px currentColor; }
+            .filter-room-label {
+                left:-4%;
+                bottom:14%;
+                color:color-mix(in srgb,var(--page-tint),transparent 63%);
+                font-family:"Arial Black",Roboto,Arial,sans-serif;
+                font-weight:900;
+                -webkit-text-stroke:.55px currentColor;
+                font-size:clamp(84px,24vw,132px);
+            }
+            .filter-description[data-filter="bassline"] .filter-room-label {
+                left:-5%;
+                bottom:3%;
+                font-size:clamp(82px,23vw,132px);
+            }
+            .filter-description[data-filter="bite"] .filter-room-label { bottom:8%; }
+            .filter-description[data-filter="ulas"] .filter-room-label { color:color-mix(in srgb,var(--page-tint),transparent 86%); }
+            .filter-description[data-filter="dreamy"] .filter-room-label {
+                right:-16%;
+                bottom:-6%;
+            }
+            .playlist-card {
+                width:min(100%,290px);
+                justify-self:center;
+                align-self:auto;
+                margin-inline:auto;
+                transform:rotate(.7deg);
+            }
+            .filter-description[data-filter="distortion"] .playlist-card img { animation:none; }
+            .filter-description[data-filter="pop"] .filter-decor span {
+                color:color-mix(in srgb,var(--page-tint),transparent 66%);
+                -webkit-text-stroke:.3px currentColor;
+            }
+            @media (max-width:400px) {
+                .layout-format-controls { grid-template-columns:1fr; column-gap:8px; }
+                .layout-format-controls.has-playlist { grid-template-columns:1fr; }
+                .layout-format-controls > .view-control .view-control-label { font-size:9px; letter-spacing:.08em; }
+                .layout-format-controls > .view-control .view-btn { padding-inline:5px; font-size:9px; letter-spacing:.04em; }
+                .layout-format-controls .mini-playlist-card { width:100%; min-width:0; }
+            }
+
+            /* Mobile rooms are independent, content-sized signal cards — not a narrowed desktop stage. */
+            .hero-copy {
+                min-height:0;
+                padding:22px 20px 26px;
+                justify-content:flex-start;
+            }
+            .wordmark {
+                padding:9px 18px 12px 14px;
+                font-size:clamp(56px,18vw,78px);
+            }
+            .hero-copy .intro { margin-top:20px; }
+            .hero-architecture span:nth-child(2) { -webkit-text-stroke:0; }
+
+            body.filter-active .filter-description {
+                grid-template-columns:minmax(0,1fr);
+                grid-template-rows:auto auto;
+                gap:20px;
+                min-height:0;
+                padding:22px 20px;
+            }
+            .filter-copy {
+                min-height:0;
+                padding-top:0;
+            }
+            .filter-description h2 {
+                margin-bottom:12px;
+                font-size:clamp(42px,13vw,62px);
+                line-height:.88;
+                letter-spacing:-.05em;
+                font-synthesis:none;
+            }
+            .filter-description p {
+                position:relative;
+                z-index:1;
+                font-size:16px;
+                line-height:1.52;
+            }
+            /* Decorative type is powerful on desktop but makes the small room feel like it is malfunctioning. */
+            .filter-room-label { display:none; }
+            .filter-decor { opacity:1; }
+            .playlist-card {
+                grid-row:2;
+                width:min(100%,250px);
+                justify-self:center;
+                margin:0 auto;
+                transform:none;
+            }
+            .layout-format-controls .mini-playlist-card { width:100%; max-width:none; min-width:0; justify-self:stretch; margin:0; transform:none; }
+            .filter-description[data-has-playlist-cover="false"] .playlist-card {
+                width:100%;
+                max-width:none;
+                min-height:64px;
+                justify-content:center;
+                border-radius:18px 8px 18px 8px;
+            }
+            .filter-description[data-has-playlist-cover="false"] .playlist-card-text {
+                padding:18px;
+                text-align:center;
+            }
+
+            /* Each small room gets one reliable, legible environmental cue instead of a fragile animation stack. */
+            .filter-description[data-filter="personal"] .filter-decor,
+            .filter-description[data-filter="p53"] .filter-decor,
+            .filter-description[data-filter="ulas"] .filter-decor { background:none; }
+            .filter-description[data-filter="ulas"] .filter-decor::before,
+            .filter-description[data-filter="ulas"] .filter-decor::after { display:none; }
+            .filter-description[data-filter="dreamy"] .filter-decor {
+                background:radial-gradient(ellipse 54% 46% at 76% 74%,color-mix(in srgb,var(--page-tint),transparent 83%),transparent 100%);
+                animation:dreamy-room-breathe 12s ease-in-out infinite;
+            }
+            @keyframes dreamy-room-breathe {
+                0%,100% { opacity:.44; transform:scale(.96); }
+                50% { opacity:.82; transform:scale(1.04); }
+            }
+            .filter-description[data-filter="bassline"] .filter-decor {
+                background:linear-gradient(90deg,transparent 0 10%,color-mix(in srgb,var(--page-tint),transparent 91%) 10% 11%,transparent 11% 100%),radial-gradient(ellipse 68% 32% at 16% 94%,color-mix(in srgb,var(--page-tint),transparent 85%),transparent 100%);
+                animation:none;
+            }
+            .filter-description[data-filter="bite"] .filter-decor::before {
+                content:"BITE";
+                left:18px;
+                bottom:12px;
+                color:color-mix(in srgb,var(--page-tint),transparent 86%);
+                font:900 clamp(62px,20vw,96px)/.75 Roboto,Arial,sans-serif;
+                letter-spacing:-.08em;
+            }
+            .filter-description[data-filter="pop"] .filter-decor span {
+                /* POP is the one room that earns a persistent mobile loop. */
+                animation:pop-signal-mobile var(--pop-speed) cubic-bezier(.18,.85,.25,1.12) var(--pop-delay) infinite;
+                color:color-mix(in srgb,var(--page-tint),transparent 68%);
+                -webkit-text-stroke:0;
+                will-change:transform,opacity;
+            }
+            @keyframes pop-signal-mobile {
+                0%,20% { opacity:0; transform:scale(.25) rotate(-7deg); }
+                34% { opacity:.86; transform:scale(1.1) rotate(3deg); }
+                56% { opacity:.64; transform:scale(1); }
+                78%,100% { opacity:0; transform:scale(.84) translateY(-9px); }
+            }
+            .filter-description[data-filter="distortion"] .filter-decor {
+                opacity:.64;
+                animation:none;
+                background:repeating-linear-gradient(0deg,transparent 0 15px,color-mix(in srgb,var(--page-tint),transparent 86%) 16px 18px,transparent 19px 36px);
+            }
+            .filter-description[data-filter="distortion"] .filter-decor::before {
+                animation:none;
+                opacity:.34;
+                -webkit-text-stroke:2px color-mix(in srgb,var(--page-tint),transparent 74%);
+            }
+        }
+        /* Final containment guard: controls must size to the room, even when no
+           filter is selected and the playlist rail is hidden. */
+        @media (max-width:760px) {
+            .layout-format-controls,
+            .layout-format-controls > .view-control,
+            .layout-format-controls > .format-control {
+                width:100%;
+                max-width:100%;
+                min-width:0;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: .01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: .01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
+

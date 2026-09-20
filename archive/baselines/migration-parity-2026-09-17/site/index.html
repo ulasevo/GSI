@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Music is the one non-negotiable no matter how I am to feel, to cherish that and the songs that play the miniscule role in shaping who I am, I am creating this authentic web-page, you&#x27;re welcome to linger. Note that neither me nor should you take this space too seriously. Nothing is critically acclaimed, everything is personal.">
+    <meta name="theme-color" content="#0d0d0f">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="GSI">
+    <meta property="og:title" content="GSI: Ulaş&#x27;s Genomic Stability Inducers">
+    <meta property="og:description" content="Music is the one non-negotiable no matter how I am to feel, to cherish that and the songs that play the miniscule role in shaping who I am, I am creating this authentic web-page, you&#x27;re welcome to linger. Note that neither me nor should you take this space too seriously. Nothing is critically acclaimed, everything is personal.">
+    <link rel="canonical" href="https://ulasevo.github.io/GSI/">
+    <meta property="og:url" content="https://ulasevo.github.io/GSI/">
+    
+    <meta property="og:image" content="https://ulasevo.github.io/GSI/covers/GSI_share.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    
+    <link rel="icon" href="covers/GSI_favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="styles/gsi-tokens.css">
+    <link rel="stylesheet" href="styles/gsi-home.css">
+    <title>GSI</title>
+</head>
+<body data-view="wall">
+    <div class="signal-transform" aria-hidden="true"></div>
+    <header class="site-hero">
+        <div class="hero-copy">
+            <div class="hero-architecture" aria-hidden="true">
+                <span>GENOME</span><span>STABILITY</span><span>INDUCERS</span>
+            </div>
+            <div class="wordmark">GSI</div>
+            
+        <section class = "intro">
+            <p>Music is the one non-negotiable no matter how I am to feel, to cherish that and the songs that play the miniscule role in shaping who I am, I am creating this authentic web-page, you&#x27;re welcome to linger. Note that neither me nor should you take this space too seriously. Nothing is critically acclaimed, everything is personal.</p>
+        </section>
+        
+        </div>
+        
+        <a class="p53-broadcast" data-base-href="p53/index.html" href="p53/index.html" aria-label="Open Radio P53: current and previous transmissions" style="--signal-accent:#bb907a">
+            <div class="p53-art">
+                <img src="covers/P53_cover.jpg" alt="P53 protein artwork">
+            </div>
+            <div class="p53-overlay">
+                <img class="p53-album" src="covers/miki-matsubara-mayonaka-no-door-stay-with-me.jpg" alt="Pocket Park cover">
+                <div class="p53-signal-copy">
+                    <span>CURRENT TRANSMISSION</span>
+                    <strong>Mayonaka No Door ~Stay with Me</strong>
+                    <small>Miki Matsubara</small>
+                    <b aria-hidden="true">↗</b>
+                </div>
+                <div class="p53-radio">RADIO P53</div>
+            </div>
+        </a>
+        
+    </header>
+    
+    <section class="filter-panel">
+        <div class="filter-row">
+            <button class="filter-btn filter-personal" data-filter="personal" aria-pressed="false"><span>Personal</span></button><button class="filter-btn filter-bassline" data-filter="bassline" aria-pressed="false"><span>Bassline</span></button><button class="filter-btn filter-ulas" data-filter="ulas" aria-pressed="false"><span>Ulaş&#x27;s Selection</span></button><button class="filter-btn filter-dreamy" data-filter="dreamy" aria-pressed="false"><span>Dreamy</span></button><button class="filter-btn filter-bite" data-filter="bite" aria-pressed="false"><span>Bite</span></button><button class="filter-btn filter-pop" data-filter="pop" aria-pressed="false"><span>POP</span></button><button class="filter-btn filter-distortion" data-filter="distortion" aria-pressed="false"><span>Distortion</span></button><button class="filter-btn filter-p53" data-filter="p53" aria-pressed="false"><span>P53</span></button>
+        </div>
+        <div class="filter-description hidden" id="filter-description-box">
+            <div class="filter-room-label" id="filter-room-label" aria-hidden="true"></div>
+            <div class="filter-decor" id="filter-decor" aria-hidden="true"></div>
+            <div class="filter-copy">
+                <div class="filter-count" id="filter-count"></div>
+                <h2 id="filter-title"></h2>
+                <p id="filter-description"></p>
+            </div>
+        </div>
+    </section>
+    
+    <div class="layout-format-controls">
+      <div class="view-control" role="group" aria-label="Layout">
+        <span class="view-control-label">LAYOUT</span>
+
+        <button class="view-btn" data-view="poster" aria-pressed="false">
+            Poster
+        </button>
+
+        <button class="view-btn active" data-view="wall" aria-pressed="true">
+            Wall
+        </button>
+
+        <button class="view-btn" data-view="gallery" aria-pressed="false">
+            Gallery
+        </button>
+      </div>
+      <div class="format-control" role="group" aria-label="Format">
+        <button class="format-option" data-format-option="songs" type="button" aria-pressed="true">SONGS</button>
+        <button class="format-option" data-format-option="albums" type="button" aria-pressed="false">ALBUMS</button>
+        <button class="format-option" data-format-option="artists" type="button" aria-pressed="false" disabled aria-disabled="true">ARTISTS</button>
+      </div>
+      <a class="playlist-card mini-playlist-card hidden" id="playlist-card" href="#" target="_blank" rel="noopener noreferrer">
+        <img id="playlist-cover" alt="Playlist cover">
+        <span class="playlist-card-text" id="playlist-cta"></span>
+      </a>
+    </div>
+    <div class="grid">
+        
+        <a class="card"
+            data-tags="personal"
+            data-artist="Metric"
+            data-album="Live It Out"
+            data-album-href="albums/metric-live-it-out.html"
+            data-p53-order="999"
+            aria-label="Empty — Metric"
+            data-base-href="entries/metric-empty.html"
+            href="entries/metric-empty.html" style="--accent: #ff2f92; --p53-order: 999;">
+            <img src="covers/metric-empty.jpg" alt="Live It Out cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Empty</h2>
+                <p>Metric</p>
+                <span>Live It Out</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="dreamy"
+            data-artist="Beach House"
+            data-album="Bloom"
+            data-album-href="albums/beach-house-bloom.html"
+            data-p53-order="999"
+            aria-label="Wishes — Beach House"
+            data-base-href="entries/beach-house-wishes.html"
+            href="entries/beach-house-wishes.html" style="--accent: #000000; --p53-order: 999;">
+            <img src="covers/beach-house-wishes.jpg" alt="Bloom cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Wishes</h2>
+                <p>Beach House</p>
+                <span>Bloom</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="personal"
+            data-artist="Matt Maeson"
+            data-album="A Quiet And Harmless Living"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Year After Year — Matt Maeson"
+            data-base-href="entries/matt-maeson-year-after-year.html"
+            href="entries/matt-maeson-year-after-year.html" style="--accent: #0c87a9; --p53-order: 999;">
+            <img src="covers/matt-maeson-year-after-year.jpg" alt="A Quiet And Harmless Living cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Year After Year</h2>
+                <p>Matt Maeson</p>
+                <span>A Quiet And Harmless Living</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="dreamy"
+            data-artist="Tame Impala"
+            data-album="Currents"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Let It Happen — Tame Impala"
+            data-base-href="entries/tame-impala-let-it-happen.html"
+            href="entries/tame-impala-let-it-happen.html" style="--accent: #503e57; --p53-order: 999;">
+            <img src="covers/tame-impala-let-it-happen.jpg" alt="Currents cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Let It Happen</h2>
+                <p>Tame Impala</p>
+                <span>Currents</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="personal bassline"
+            data-artist="Travis Scott"
+            data-album="ASTROWORLD"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Coffee Bean — Travis Scott"
+            data-base-href="entries/travis-scott-coffee-bean.html"
+            href="entries/travis-scott-coffee-bean.html" style="--accent: #d9a441; --p53-order: 999;">
+            <img src="covers/travis-scott-coffee-bean.jpg" alt="ASTROWORLD cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Coffee Bean</h2>
+                <p>Travis Scott</p>
+                <span>ASTROWORLD</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="personal"
+            data-artist="Metric"
+            data-album="Old World Underground, Where Are You Now?"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Combat Baby — Metric"
+            data-base-href="entries/metric-combat-baby.html"
+            href="entries/metric-combat-baby.html" style="--accent: #eaff26; --p53-order: 999;">
+            <img src="covers/metric-combat-baby.jpg" alt="Old World Underground, Where Are You Now? cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Combat Baby</h2>
+                <p>Metric</p>
+                <span>Old World Underground, Where Are You Now?</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="personal p53"
+            data-artist="Metric"
+            data-album="Live It Out"
+            data-album-href="albums/metric-live-it-out.html"
+            data-p53-order="7"
+            aria-label="Too Little Too Late — Metric"
+            data-base-href="entries/metric-too-little-too-late.html"
+            href="entries/metric-too-little-too-late.html" style="--accent: #ff2f92; --p53-order: 7;">
+            <img src="covers/metric-too-little-too-late.jpg" alt="Live It Out cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Too Little Too Late</h2>
+                <p>Metric</p>
+                <span>Live It Out</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="personal"
+            data-artist="Metric"
+            data-album="Live It Out"
+            data-album-href="albums/metric-live-it-out.html"
+            data-p53-order="999"
+            aria-label="Poster of a Girl — Metric"
+            data-base-href="entries/metric-poster-of-a-girl.html"
+            href="entries/metric-poster-of-a-girl.html" style="--accent: #ff2f92; --p53-order: 999;">
+            <img src="covers/metric-poster-of-a-girl.jpg" alt="Live It Out cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Poster of a Girl</h2>
+                <p>Metric</p>
+                <span>Live It Out</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="personal ulas"
+            data-artist="K.Flay"
+            data-album="Life as a Dog"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Time For You — K.Flay"
+            data-base-href="entries/k-flay-time-for-you.html"
+            href="entries/k-flay-time-for-you.html" style="--accent: #f38963; --p53-order: 999;">
+            <img src="covers/k-flay-time-for-you.jpg" alt="Life as a Dog cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Time For You</h2>
+                <p>K.Flay</p>
+                <span>Life as a Dog</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="bassline"
+            data-artist="Kendrick Lamar"
+            data-album="GNX"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="TV Off — Kendrick Lamar"
+            data-base-href="entries/kendrick-lamar-tv-off.html"
+            href="entries/kendrick-lamar-tv-off.html" style="--accent: #c7c7c7; --p53-order: 999;">
+            <img src="covers/kendrick-lamar-tv-off.jpg" alt="GNX cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>TV Off</h2>
+                <p>Kendrick Lamar</p>
+                <span>GNX</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="bassline"
+            data-artist="Travis Scott"
+            data-album="Birds In The Trap McKnight"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Through the Late Night — Travis Scott"
+            data-base-href="entries/travis-scott-through-the-late-night.html"
+            href="entries/travis-scott-through-the-late-night.html" style="--accent: #925b56; --p53-order: 999;">
+            <img src="covers/travis-scott-through-the-late-night.jpg" alt="Birds In The Trap McKnight cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Through the Late Night</h2>
+                <p>Travis Scott</p>
+                <span>Birds In The Trap McKnight</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="bassline"
+            data-artist="James Blake"
+            data-album="Assume Form (Deluxe)"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Barefoot in the Park (feat. ROSALÍA) — James Blake"
+            data-base-href="entries/james-blake-barefoot-in-the-park-feat-rosal-a.html"
+            href="entries/james-blake-barefoot-in-the-park-feat-rosal-a.html" style="--accent: #bc927d; --p53-order: 999;">
+            <img src="covers/james-blake-barefoot-in-the-park-feat-rosal-a.jpg" alt="Assume Form (Deluxe) cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Barefoot in the Park (feat. ROSALÍA)</h2>
+                <p>James Blake</p>
+                <span>Assume Form (Deluxe)</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="bassline"
+            data-artist="Tyler, The Creator"
+            data-album="Flower Boy"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="November — Tyler, The Creator"
+            data-base-href="entries/tyler-the-creator-november.html"
+            href="entries/tyler-the-creator-november.html" style="--accent: #feaa26; --p53-order: 999;">
+            <img src="covers/tyler-the-creator-november.jpg" alt="Flower Boy cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>November</h2>
+                <p>Tyler, The Creator</p>
+                <span>Flower Boy</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="bassline"
+            data-artist="Kanye West"
+            data-album="Graduation"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Champion — Kanye West"
+            data-base-href="entries/kanye-west-champion.html"
+            href="entries/kanye-west-champion.html" style="--accent: #b05583; --p53-order: 999;">
+            <img src="covers/kanye-west-champion.jpg" alt="Graduation cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Champion</h2>
+                <p>Kanye West</p>
+                <span>Graduation</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="dreamy"
+            data-artist="Slowdive"
+            data-album="Slowdive"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Sugar for the Pill — Slowdive"
+            data-base-href="entries/slowdive-sugar-for-the-pill.html"
+            href="entries/slowdive-sugar-for-the-pill.html" style="--accent: #000000; --p53-order: 999;">
+            <img src="covers/slowdive-sugar-for-the-pill.jpg" alt="Slowdive cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Sugar for the Pill</h2>
+                <p>Slowdive</p>
+                <span>Slowdive</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="dreamy"
+            data-artist="Broken Social Scene"
+            data-album="Remember The Humans"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="This Briefest Kiss — Broken Social Scene"
+            data-base-href="entries/broken-social-scene-this-briefest-kiss.html"
+            href="entries/broken-social-scene-this-briefest-kiss.html" style="--accent: #2b679f; --p53-order: 999;">
+            <img src="covers/broken-social-scene-this-briefest-kiss.jpg" alt="Remember The Humans cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>This Briefest Kiss</h2>
+                <p>Broken Social Scene</p>
+                <span>Remember The Humans</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="distortion"
+            data-artist="Muse"
+            data-album="Absolution"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Sing For Absolution — Muse"
+            data-base-href="entries/muse-sing-for-absolution.html"
+            href="entries/muse-sing-for-absolution.html" style="--accent: #475c7a; --p53-order: 999;">
+            <img src="covers/muse-sing-for-absolution.jpg" alt="Absolution cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Sing For Absolution</h2>
+                <p>Muse</p>
+                <span>Absolution</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="distortion"
+            data-artist="Mitski"
+            data-album="Bury Me At Makeout Creek"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="First Love/Late Spring — Mitski"
+            data-base-href="entries/mitski-first-love-late-spring.html"
+            href="entries/mitski-first-love-late-spring.html" style="--accent: #303843; --p53-order: 999;">
+            <img src="covers/mitski-first-love-late-spring.jpg" alt="Bury Me At Makeout Creek cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>First Love/Late Spring</h2>
+                <p>Mitski</p>
+                <span>Bury Me At Makeout Creek</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="distortion"
+            data-artist="Silversun Pickups"
+            data-album="Neck of the Woods"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Skin Graph — Silversun Pickups"
+            data-base-href="entries/silversun-pickups-skin-graph.html"
+            href="entries/silversun-pickups-skin-graph.html" style="--accent: #bcaa81; --p53-order: 999;">
+            <img src="covers/silversun-pickups-skin-graph.jpg" alt="Neck of the Woods cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Skin Graph</h2>
+                <p>Silversun Pickups</p>
+                <span>Neck of the Woods</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="pop"
+            data-artist="Michael Jackson"
+            data-album="Thriller"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Thriller — Michael Jackson"
+            data-base-href="entries/michael-jackson-thriller.html"
+            href="entries/michael-jackson-thriller.html" style="--accent: #82624c; --p53-order: 999;">
+            <img src="covers/michael-jackson-thriller.jpg" alt="Thriller cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Thriller</h2>
+                <p>Michael Jackson</p>
+                <span>Thriller</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="bite"
+            data-artist="Arctic Monkeys"
+            data-album="Whatever People Say I Am, That&#x27;s What I&#x27;m Not"
+            data-album-href=""
+            data-p53-order="999"
+            aria-label="Perhaps Vampires Is a Bit Strong But... — Arctic Monkeys"
+            data-base-href="entries/arctic-monkeys-perhaps-vampires-is-a-bit-strong-but.html"
+            href="entries/arctic-monkeys-perhaps-vampires-is-a-bit-strong-but.html" style="--accent: #1d3233; --p53-order: 999;">
+            <img src="covers/arctic-monkeys-perhaps-vampires-is-a-bit-strong-but.jpg" alt="Whatever People Say I Am, That&#x27;s What I&#x27;m Not cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Perhaps Vampires Is a Bit Strong But...</h2>
+                <p>Arctic Monkeys</p>
+                <span>Whatever People Say I Am, That&#x27;s What I&#x27;m Not</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="personal p53"
+            data-artist="Wet Leg"
+            data-album="Moisturizer"
+            data-album-href=""
+            data-p53-order="3"
+            aria-label="mangetout — Wet Leg"
+            data-base-href="entries/wet-leg-mangetout.html"
+            href="entries/wet-leg-mangetout.html" style="--accent: #6f4730; --p53-order: 3;">
+            <img src="covers/wet-leg-mangetout.jpg" alt="Moisturizer cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>mangetout</h2>
+                <p>Wet Leg</p>
+                <span>Moisturizer</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="bite p53"
+            data-artist="Arctic Monkeys"
+            data-album="Humbug (Bonus Track Version)"
+            data-album-href=""
+            data-p53-order="1"
+            aria-label="Secret Door — Arctic Monkeys"
+            data-base-href="entries/arctic-monkeys-secret-door.html"
+            href="entries/arctic-monkeys-secret-door.html" style="--accent: #510942; --p53-order: 1;">
+            <img src="covers/arctic-monkeys-secret-door.jpg" alt="Humbug (Bonus Track Version) cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Secret Door</h2>
+                <p>Arctic Monkeys</p>
+                <span>Humbug (Bonus Track Version)</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="dreamy p53"
+            data-artist="Miki Matsubara"
+            data-album="Pocket Park"
+            data-album-href=""
+            data-p53-order="0"
+            aria-label="Mayonaka No Door ~Stay with Me — Miki Matsubara"
+            data-base-href="entries/miki-matsubara-mayonaka-no-door-stay-with-me.html"
+            href="entries/miki-matsubara-mayonaka-no-door-stay-with-me.html" style="--accent: #bb907a; --p53-order: 0;">
+            <img src="covers/miki-matsubara-mayonaka-no-door-stay-with-me.jpg" alt="Pocket Park cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Mayonaka No Door ~Stay with Me</h2>
+                <p>Miki Matsubara</p>
+                <span>Pocket Park</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Yeah Yeah Yeahs"
+            data-album="Mosquito (Deluxe Edition)"
+            data-album-href=""
+            data-p53-order="2"
+            aria-label="Slave — Yeah Yeah Yeahs"
+            data-base-href="p53/yeah-yeah-yeahs-slave.html"
+            href="p53/yeah-yeah-yeahs-slave.html" style="--accent: #d10b11; --p53-order: 2;">
+            <img src="covers/yeah-yeah-yeahs-slave.jpg" alt="Mosquito (Deluxe Edition) cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Slave</h2>
+                <p>Yeah Yeah Yeahs</p>
+                <span>Mosquito (Deluxe Edition)</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Beach House"
+            data-album="Bloom"
+            data-album-href="albums/beach-house-bloom.html"
+            data-p53-order="4"
+            aria-label="New Year — Beach House"
+            data-base-href="p53/beach-house-new-year.html"
+            href="p53/beach-house-new-year.html" style="--accent: #000000; --p53-order: 4;">
+            <img src="covers/beach-house-new-year.jpg" alt="Bloom cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>New Year</h2>
+                <p>Beach House</p>
+                <span>Bloom</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="David Bowie"
+            data-album="Blackstar"
+            data-album-href=""
+            data-p53-order="5"
+            aria-label="Lazarus — David Bowie"
+            data-base-href="p53/david-bowie-lazarus.html"
+            href="p53/david-bowie-lazarus.html" style="--accent: #ffffff; --p53-order: 5;">
+            <img src="covers/david-bowie-lazarus.jpg" alt="Blackstar cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Lazarus</h2>
+                <p>David Bowie</p>
+                <span>Blackstar</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Depeche Mode"
+            data-album="Violator (Deluxe)"
+            data-album-href=""
+            data-p53-order="6"
+            aria-label="Personal Jesus — Depeche Mode"
+            data-base-href="p53/depeche-mode-personal-jesus.html"
+            href="p53/depeche-mode-personal-jesus.html" style="--accent: #8d0d0f; --p53-order: 6;">
+            <img src="covers/depeche-mode-personal-jesus.jpg" alt="Violator (Deluxe) cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Personal Jesus</h2>
+                <p>Depeche Mode</p>
+                <span>Violator (Deluxe)</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Peter Murphy"
+            data-album="Ninth"
+            data-album-href=""
+            data-p53-order="8"
+            aria-label="The Prince &amp; Old Lady Shade — Peter Murphy"
+            data-base-href="p53/peter-murphy-the-prince-old-lady-shade.html"
+            href="p53/peter-murphy-the-prince-old-lady-shade.html" style="--accent: #5f554c; --p53-order: 8;">
+            <img src="covers/peter-murphy-the-prince-old-lady-shade.jpg" alt="Ninth cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>The Prince &amp; Old Lady Shade</h2>
+                <p>Peter Murphy</p>
+                <span>Ninth</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Kendrick Lamar"
+            data-album="DAMN."
+            data-album-href=""
+            data-p53-order="9"
+            aria-label="GOD. — Kendrick Lamar"
+            data-base-href="p53/kendrick-lamar-god.html"
+            href="p53/kendrick-lamar-god.html" style="--accent: #e80f11; --p53-order: 9;">
+            <img src="covers/kendrick-lamar-god.jpg" alt="DAMN. cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>GOD.</h2>
+                <p>Kendrick Lamar</p>
+                <span>DAMN.</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Massive Attack"
+            data-album="Heligoland (Deluxe Edition)"
+            data-album-href=""
+            data-p53-order="10"
+            aria-label="Psyche — Massive Attack"
+            data-base-href="p53/massive-attack-psyche.html"
+            href="p53/massive-attack-psyche.html" style="--accent: #f3961d; --p53-order: 10;">
+            <img src="covers/massive-attack-psyche.jpg" alt="Heligoland (Deluxe Edition) cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Psyche</h2>
+                <p>Massive Attack</p>
+                <span>Heligoland (Deluxe Edition)</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Metric"
+            data-album="Grow Up and Blow Away"
+            data-album-href=""
+            data-p53-order="11"
+            aria-label="The Twist — Metric"
+            data-base-href="p53/metric-the-twist.html"
+            href="p53/metric-the-twist.html" style="--accent: #19b2e2; --p53-order: 11;">
+            <img src="covers/metric-the-twist.jpg" alt="Grow Up and Blow Away cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>The Twist</h2>
+                <p>Metric</p>
+                <span>Grow Up and Blow Away</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Mitski"
+            data-album="Laurel Hell"
+            data-album-href=""
+            data-p53-order="12"
+            aria-label="Should&#x27;ve Been Me — Mitski"
+            data-base-href="p53/mitski-shouldve-been-me.html"
+            href="p53/mitski-shouldve-been-me.html" style="--accent: #a32429; --p53-order: 12;">
+            <img src="covers/mitski-shouldve-been-me.jpg" alt="Laurel Hell cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Should&#x27;ve Been Me</h2>
+                <p>Mitski</p>
+                <span>Laurel Hell</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="A$AP Rocky"
+            data-album="AT.LONG.LAST.A$AP"
+            data-album-href=""
+            data-p53-order="13"
+            aria-label="Holy Ghost (feat. Joe Fox) — A$AP Rocky"
+            data-base-href="p53/asap-rocky-holy-ghost-feat-joe-fox.html"
+            href="p53/asap-rocky-holy-ghost-feat-joe-fox.html" style="--accent: #090809; --p53-order: 13;">
+            <img src="covers/asap-rocky-holy-ghost-feat-joe-fox.jpg" alt="AT.LONG.LAST.A$AP cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Holy Ghost (feat. Joe Fox)</h2>
+                <p>A$AP Rocky</p>
+                <span>AT.LONG.LAST.A$AP</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Emily Haines &amp; The Soft Skeleton"
+            data-album="Knives Don&#x27;t Have Your Back"
+            data-album-href=""
+            data-p53-order="14"
+            aria-label="Doctor Blind — Emily Haines &amp; The Soft Skeleton"
+            data-base-href="p53/emily-haines-the-soft-skeleton-doctor-blind.html"
+            href="p53/emily-haines-the-soft-skeleton-doctor-blind.html" style="--accent: #bb9b6a; --p53-order: 14;">
+            <img src="covers/emily-haines-the-soft-skeleton-doctor-blind.jpg" alt="Knives Don&#x27;t Have Your Back cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Doctor Blind</h2>
+                <p>Emily Haines &amp; The Soft Skeleton</p>
+                <span>Knives Don&#x27;t Have Your Back</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Phantogram"
+            data-album="Memory Of A Day (Deluxe)"
+            data-album-href=""
+            data-p53-order="15"
+            aria-label="Running Through Colors — Phantogram"
+            data-base-href="p53/phantogram-running-through-colors.html"
+            href="p53/phantogram-running-through-colors.html" style="--accent: #db2416; --p53-order: 15;">
+            <img src="covers/phantogram-running-through-colors.jpg" alt="Memory Of A Day (Deluxe) cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Running Through Colors</h2>
+                <p>Phantogram</p>
+                <span>Memory Of A Day (Deluxe)</span>
+            </div>
+        </a>
+        
+        <a class="card"
+            data-tags="p53"
+            data-artist="Emily Haines &amp; The Soft Skeleton"
+            data-album="Choir of the Mind"
+            data-album-href=""
+            data-p53-order="16"
+            aria-label="Minefield of Memory — Emily Haines &amp; The Soft Skeleton"
+            data-base-href="p53/emily-haines-the-soft-skeleton-minefield-of-memory.html"
+            href="p53/emily-haines-the-soft-skeleton-minefield-of-memory.html" style="--accent: #093196; --p53-order: 16;">
+            <img src="covers/emily-haines-the-soft-skeleton-minefield-of-memory.jpg" alt="Choir of the Mind cover" loading="lazy" decoding="async">
+            <div class="info">
+                <h2>Minefield of Memory</h2>
+                <p>Emily Haines &amp; The Soft Skeleton</p>
+                <span>Choir of the Mind</span>
+            </div>
+        </a>
+        
+    </div>
+<script src="scripts/gsi-context.js"></script>
+<script id="gsi-filter-data" type="application/json">{"personal": {"label": "Personal", "description": "Songs that got tangled with memory, body, recovery, desire or some version of me.", "color": "#d64b6a", "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls", "playlist_cover": "", "playlist_color": "#d64b6a", "playlist_cta": "Want more of the same?", "count": 8, "room_label_lines": ["PERSONAL"]}, "bassline": {"label": "Bassline", "description": "the type'a bass that makes you zone out and vibe in. Click and figure out what makes each song special", "color": "#7b5cff", "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls", "playlist_cover": "covers/bassline-playlist.png", "playlist_color": "#1e003e", "playlist_cta": "Want more of the same?", "count": 6, "room_label_lines": ["BASSLINE"]}, "ulas": {"label": "Ula\u015f's Selection", "description": "the ever changing list of songs that I hand-picked for you to delve into", "color": "#ff6b35", "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls", "playlist_cover": "", "playlist_color": "#ff6b35", "playlist_cta": "Want more of the same?", "count": 1, "room_label_lines": ["ULA\u015e'S", "SELECTION"]}, "dreamy": {"label": "Dreamy", "description": "A song carries the potential to make you feel like you're not breathing the same air for its duration, these songs make full use of that potential and promise to be packed with their own atmosphere.", "color": "#c5c9d6", "playlist_url": "https://music.apple.com/tr/playlist/dup/pl.u-mJy8gPDFN50d0Go", "playlist_cover": "covers/dup_playlist_cover.webp", "playlist_color": "#eeeeee", "playlist_cta": "Want more of the same?", "count": 5, "room_label_lines": ["DREAMY"]}, "bite": {"label": "Bite", "description": "Careful, these songs have teeth! But they're quite fun to listen to if you keep your distance. Please do not feed them, though.", "color": "#d8d34a", "playlist_url": "https://music.apple.com/tr/playlist/bite/pl.u-76oNl2mTvXYjY4g", "playlist_cover": "covers/bite_playlist_cover.webp", "playlist_color": "#ada748", "playlist_cta": "Want more of the same?", "count": 2, "room_label_lines": ["BITE", "BITE", "BITE"]}, "pop": {"label": "POP", "description": "Uplifting, beautifully mixed, stupid but with identity", "color": "#49d9ef", "playlist_url": "https://music.apple.com/tr/playlist/pl.u-aZb0k79F1Mr5r9W?a=join&it=vpMwQBYSvA1x1GjfgN1DG&l=tr", "playlist_cover": "covers/POP_playlist_cover.webp", "playlist_color": "#3fd0ff", "playlist_cta": "Want more of the same?", "count": 1, "room_label_lines": ["POP"]}, "distortion": {"label": "Distortion", "description": "Tracks that let the riffs breathe, sometimes so much so that you won't hear the lyrics. But that's part of the fun, right?", "color": "#665cf0", "playlist_url": "https://music.apple.com/tr/playlist/bop/pl.u-DdAN8AdC0VX2XyW", "playlist_cover": "covers/bop_playlist_cover.webp", "playlist_color": "#00003f", "playlist_cta": "Want more of the same?", "count": 3, "room_label_lines": ["DISTORTION"]}, "p53": {"label": "P53", "description": "Songs that have made an apparence at the radio, all in one place. Read more about them, or check out their transmissions.", "color": "#ff4fa3", "playlist_url": "https://music.apple.com/tr/playlist/radio-p53/pl.u-DdAN8P6t0VX2XyW", "playlist_cover": "covers/P53_cover.jpg", "playlist_color": "#3b1c4a", "playlist_cta": "CHECK OUT THE PLAYLIST", "count": 17, "room_label_lines": ["P53"]}}</script>
+<script src="scripts/home-page.js"></script>
+</body>
+</html>

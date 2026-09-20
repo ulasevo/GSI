@@ -1,0 +1,174 @@
+{
+  "schema": 1,
+  "description": "Generated artist inventory; review prose is never included.",
+  "artists": [
+    {
+      "artist": "Arctic Monkeys",
+      "slug": "arctic-monkeys",
+      "page_url": "artists/arctic-monkeys.html",
+      "signal_count": 2,
+      "albums": [
+        "Humbug (Bonus Track Version)",
+        "Whatever People Say I Am, That's What I'm Not"
+      ],
+      "image": {
+        "file": "",
+        "alt": "Arctic Monkeys artist image",
+        "source": "manual",
+        "source_url": "",
+        "metadata": {
+          "exists": false,
+          "valid": false,
+          "width": null,
+          "height": null,
+          "bytes": null
+        },
+        "status": "fallback"
+      }
+    },
+    {
+      "artist": "Beach House",
+      "slug": "beach-house",
+      "page_url": "artists/beach-house.html",
+      "signal_count": 2,
+      "albums": [
+        "Bloom"
+      ],
+      "image": {
+        "file": "",
+        "alt": "Beach House artist image",
+        "source": "manual",
+        "source_url": "",
+        "metadata": {
+          "exists": false,
+          "valid": false,
+          "width": null,
+          "height": null,
+          "bytes": null
+        },
+        "status": "fallback"
+      }
+    },
+    {
+      "artist": "Emily Haines & The Soft Skeleton",
+      "slug": "emily-haines-the-soft-skeleton",
+      "page_url": "artists/emily-haines-the-soft-skeleton.html",
+      "signal_count": 2,
+      "albums": [
+        "Choir of the Mind",
+        "Knives Don't Have Your Back"
+      ],
+      "image": {
+        "file": "",
+        "alt": "Emily Haines & The Soft Skeleton artist image",
+        "source": "manual",
+        "source_url": "",
+        "metadata": {
+          "exists": false,
+          "valid": false,
+          "width": null,
+          "height": null,
+          "bytes": null
+        },
+        "status": "fallback"
+      }
+    },
+    {
+      "artist": "Kendrick Lamar",
+      "slug": "kendrick-lamar",
+      "page_url": "artists/kendrick-lamar.html",
+      "signal_count": 2,
+      "albums": [
+        "DAMN.",
+        "GNX"
+      ],
+      "image": {
+        "file": "",
+        "alt": "Kendrick Lamar artist image",
+        "source": "manual",
+        "source_url": "",
+        "metadata": {
+          "exists": false,
+          "valid": false,
+          "width": null,
+          "height": null,
+          "bytes": null
+        },
+        "status": "fallback"
+      }
+    },
+    {
+      "artist": "Metric",
+      "slug": "metric",
+      "page_url": "artists/metric.html",
+      "signal_count": 5,
+      "albums": [
+        "Grow Up and Blow Away",
+        "Live It Out",
+        "Old World Underground, Where Are You Now?"
+      ],
+      "image": {
+        "file": "metric.webp",
+        "alt": "Metric artist image",
+        "source": "manual",
+        "source_url": "",
+        "metadata": {
+          "exists": true,
+          "valid": true,
+          "width": 708,
+          "height": 838,
+          "bytes": 670514
+        },
+        "status": "local"
+      }
+    },
+    {
+      "artist": "Mitski",
+      "slug": "mitski",
+      "page_url": "artists/mitski.html",
+      "signal_count": 2,
+      "albums": [
+        "Bury Me At Makeout Creek",
+        "Laurel Hell"
+      ],
+      "image": {
+        "file": "",
+        "alt": "Mitski artist image",
+        "source": "manual",
+        "source_url": "",
+        "metadata": {
+          "exists": false,
+          "valid": false,
+          "width": null,
+          "height": null,
+          "bytes": null
+        },
+        "status": "fallback"
+      }
+    },
+    {
+      "artist": "Travis Scott",
+      "slug": "travis-scott",
+      "page_url": "artists/travis-scott.html",
+      "signal_count": 2,
+      "albums": [
+        "ASTROWORLD",
+        "Birds In The Trap McKnight"
+      ],
+      "image": {
+        "file": "",
+        "alt": "Travis Scott artist image",
+        "source": "manual",
+        "source_url": "",
+        "metadata": {
+          "exists": false,
+          "valid": false,
+          "width": null,
+          "height": null,
+          "bytes": null
+        },
+        "status": "fallback"
+      }
+    }
+  ]
+}

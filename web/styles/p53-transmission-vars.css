@@ -1,0 +1,11 @@
+/* Per-transmission values are set by the page context script at runtime. */
+:root {
+    --accent: #ff65ad;
+    --p53: #ff58a6;
+    --cyan: #35c9e9;
+    --signal-label: "TRANSMISSION";
+}
+
+.signal-panel::before {
+    content: var(--signal-label);
+}

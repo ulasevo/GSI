@@ -1,0 +1,1040 @@
+/*
+ * Site-wide mode control.
+ * Light is the first-visit default; an existing saved choice still wins.
+ * Page-specific rooms may still use their artwork palette, but these tokens
+ * keep the chrome, path bars, and controls legible in both modes.
+ */
+:root {
+  color-scheme: light;
+  --gsi-mode-bg: #eee9e6;
+  --gsi-mode-surface: rgba(255, 252, 248, .72);
+  --gsi-mode-surface-strong: rgba(255, 252, 248, .9);
+  --gsi-mode-ink: #251a27;
+  --gsi-mode-muted: rgba(37, 26, 39, .68);
+  --gsi-mode-line: rgba(37, 26, 39, .2);
+  --gsi-mode-control: #8c5de8;
+  --gsi-mode-control-ink: #fffafc;
+}
+
+:root[data-gsi-theme="light"] {
+  color-scheme: light;
+  --gsi-mode-bg: #eee9e6;
+  --gsi-mode-surface: rgba(255, 252, 248, .72);
+  --gsi-mode-surface-strong: rgba(255, 252, 248, .9);
+  --gsi-mode-ink: #251a27;
+  --gsi-mode-muted: rgba(37, 26, 39, .68);
+  --gsi-mode-line: rgba(37, 26, 39, .2);
+  --gsi-mode-control: #8c5de8;
+  --gsi-mode-control-ink: #fffafc;
+}
+
+:root[data-gsi-theme="dark"] {
+  color-scheme: dark;
+  --gsi-mode-bg: #0d0d0f;
+  --gsi-mode-surface: rgba(18, 16, 23, .84);
+  --gsi-mode-surface-strong: rgba(15, 13, 19, .94);
+  --gsi-mode-ink: #f6f1ea;
+  --gsi-mode-muted: rgba(246, 241, 234, .74);
+  --gsi-mode-line: rgba(246, 241, 234, .28);
+  --gsi-mode-control: #e7c4ff;
+  --gsi-mode-control-ink: #211326;
+}
+
+.theme-toggle {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 4px 8px 4px 5px;
+  color: var(--gsi-mode-muted);
+  border: 1px solid var(--gsi-mode-line);
+  border-radius: 999px;
+  background: var(--gsi-mode-surface);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, .16), inset 0 1px 0 rgba(255, 255, 255, .08);
+  font: 950 9px/1 var(--gsi-ui-font, Arial, sans-serif);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  cursor: pointer;
+  backdrop-filter: blur(14px);
+  transition: color 220ms ease, border-color 220ms ease, background 220ms ease, transform 220ms ease;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+  color: var(--gsi-mode-control-ink);
+  border-color: var(--gsi-mode-control);
+  background: var(--gsi-mode-control);
+  transform: translateY(-2px);
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--gsi-mode-control);
+  outline-offset: 3px;
+}
+
+.theme-toggle__icon {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  color: var(--gsi-mode-control-ink);
+  background: var(--gsi-mode-control);
+  font-size: 13px;
+  letter-spacing: 0;
+}
+
+.theme-toggle__label { white-space: nowrap; }
+
+/* Artwork rooms use palette-derived surfaces but still receive a controlled
+   light/dark bias.  The cover itself remains untouched. */
+:root[data-gsi-theme="light"] body.art-room {
+  --room-field: var(--art-light-surface, #ded9df);
+  --room-field-soft: var(--art-light-surface-2, #ded9df);
+  --room-ink: var(--art-light-ink, #211823);
+  --room-accent: var(--art-control, #8c5de8);
+  --room-accent-strong: var(--art-control-hover, #a87af0);
+}
+
+:root[data-gsi-theme="dark"] body.art-room {
+  --room-field: color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-primary, #777) 12%);
+  --room-field-soft: color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-secondary, #777) 36%);
+  --room-ink: var(--art-dark-ink, #f8f5ef);
+  --room-accent: var(--art-control-hover, #e7c4ff);
+  --room-accent-strong: var(--art-control, #f3d8ff);
+  background:
+    linear-gradient(rgba(7, 7, 10, .18), rgba(7, 7, 10, .24)),
+    var(--art-rim-gradient, none),
+    radial-gradient(ellipse at 50% 8%, color-mix(in srgb, var(--room-top), transparent 27%), transparent 62%),
+    linear-gradient(180deg, color-mix(in srgb, var(--room-top), var(--room-field) 52%), var(--room-field) 48%, color-mix(in srgb, var(--room-bottom), var(--room-field) 38%));
+}
+
+:root[data-gsi-theme="dark"] body.art-room .section-card,
+:root[data-gsi-theme="dark"] body.art-room .section-card:nth-child(even) {
+  background:
+    linear-gradient(rgba(7, 7, 10, .16), rgba(7, 7, 10, .22)),
+    var(--art-rim-gradient, none),
+    linear-gradient(135deg, color-mix(in srgb, var(--room-left), var(--room-field) 50%), color-mix(in srgb, var(--room-field), var(--room-field-soft) 38%) 52%, color-mix(in srgb, var(--room-right), var(--room-field) 52%));
+}
+
+/* The homepage and P53 surfaces have explicit mode recipes rather than a
+   global filter, so album art and authored colors remain natural. */
+:root[data-gsi-theme="light"] body[data-view],
+:root[data-gsi-theme="light"] body.p53-landing-room,
+:root[data-gsi-theme="light"] body.p53-transmission-room {
+  color: var(--gsi-mode-ink);
+  background-color: var(--gsi-mode-bg);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-panel,
+:root[data-gsi-theme="light"] body[data-view] .hero-copy,
+:root[data-gsi-theme="light"] body[data-view] .layout-format-controls,
+:root[data-gsi-theme="light"] body[data-view] .format-control,
+:root[data-gsi-theme="light"] body[data-view] .view-control {
+  border-color: var(--gsi-mode-line);
+  background-color: var(--gsi-mode-surface);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-btn,
+:root[data-gsi-theme="light"] body[data-view] .view-btn,
+:root[data-gsi-theme="light"] body[data-view] .format-option {
+  color: var(--gsi-mode-ink);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .format-option[aria-pressed="true"],
+:root[data-gsi-theme="light"] body[data-view] .view-btn.active {
+  color: var(--gsi-mode-control-ink);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .recommend-link {
+  color: color-mix(in srgb, var(--page-tint, #6d4fd1), var(--gsi-mode-ink) 24%);
+  border-color: color-mix(in srgb, var(--page-tint, #6d4fd1), var(--gsi-mode-ink) 58%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .hero-copy .intro p,
+:root[data-gsi-theme="light"] body[data-view] .subtitle,
+:root[data-gsi-theme="light"] body[data-view] .filter-description p {
+  color: var(--gsi-mode-muted);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room,
+:root[data-gsi-theme="light"] body.p53-transmission-room {
+  background-image:
+    radial-gradient(circle at 84% 8%, color-mix(in srgb, var(--p53-accent, #ff7fbb), transparent 78%), transparent 34rem),
+    linear-gradient(135deg, #eee9e6, #ded8e1 68%, #e8dedf);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .p53-path,
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-nav,
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-about,
+:root[data-gsi-theme="light"] body.p53-transmission-room .transmission-note {
+  color: var(--gsi-mode-ink);
+  border-color: var(--gsi-mode-line);
+  background: var(--gsi-mode-surface);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .p53-landing > header > span,
+:root[data-gsi-theme="light"] body.p53-landing-room .p53-intro p,
+:root[data-gsi-theme="light"] body.p53-landing-room .p53-landing > header p {
+  color: var(--gsi-mode-muted);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .p53-intro {
+  border-left-color: color-mix(in srgb, var(--p53-accent, #d85a9d), transparent 18%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--p53-accent, #d85a9d), transparent 90%), transparent 74%);
+}
+
+:root[data-gsi-theme="light"] body.p53-transmission-room .signal-panel {
+  color: var(--gsi-mode-ink);
+  background: linear-gradient(145deg, rgba(255,255,255,.35), rgba(255,255,255,.72));
+}
+
+@media (max-width: 760px) {
+  .theme-toggle { bottom: 12px; right: 10px; min-height: 32px; }
+  .theme-toggle__label { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .theme-toggle { transition: none; }
+}
+
+/* Room-specific contrast pass. These selectors sit after each page family so
+   the mode switch can change surfaces without changing layout or artwork. */
+:root[data-gsi-theme="light"] body[data-view] {
+  color: var(--gsi-mode-ink);
+  background:
+    radial-gradient(circle at 84% 8%, color-mix(in srgb, var(--page-tint, #c7b6f4), transparent 78%), transparent 34rem),
+    linear-gradient(135deg, #eee9e6, #e2dbe5 66%, #efe2e5);
+}
+
+:root[data-gsi-theme="light"] body[data-view]::before {
+  opacity: .12;
+  mix-blend-mode: multiply;
+}
+
+:root[data-gsi-theme="light"] body[data-view]::after {
+  opacity: .42;
+  filter: blur(12px) saturate(1.05);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .hero-copy {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 38%);
+  background:
+    linear-gradient(140deg, rgba(255, 255, 255, .52), transparent 42%),
+    color-mix(in srgb, var(--page-tint, #c7b6f4), white 82%);
+  box-shadow: 0 28px 80px rgba(63, 32, 80, .14);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .hero-copy .intro p,
+:root[data-gsi-theme="light"] body[data-view] .filter-description p {
+  color: color-mix(in srgb, var(--gsi-mode-ink), transparent 18%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-panel {
+  border-color: var(--gsi-mode-line);
+  background: rgba(255, 252, 248, .66);
+  box-shadow: 0 18px 42px rgba(63, 32, 80, .08);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-btn {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--gsi-mode-ink), white 56%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .54), transparent),
+    color-mix(in srgb, var(--page-tint, #c7b6f4), white 84%);
+  box-shadow: 0 10px 22px rgba(63, 32, 80, .10);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-btn.active {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 30%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .42), transparent),
+    color-mix(in srgb, var(--page-tint, #c7b6f4), white 56%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-description {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 36%);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, .4), transparent 48%),
+    color-mix(in srgb, var(--page-tint, #c7b6f4), white 78%);
+  box-shadow: 0 0 44px color-mix(in srgb, var(--page-tint, #8c5de8), transparent 82%), 0 20px 46px rgba(63, 32, 80, .12);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-description h2,
+:root[data-gsi-theme="light"] body[data-view] .filter-count {
+  color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 44%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-room-label {
+  color: color-mix(in srgb, var(--page-tint, #8c5de8), transparent 74%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .playlist-card {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--playlist-accent, #8c5de8), var(--gsi-mode-ink) 24%);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, .44), rgba(255, 255, 255, .08)),
+    color-mix(in srgb, var(--playlist-accent, #8c5de8), white 76%);
+  box-shadow: 0 0 26px color-mix(in srgb, var(--playlist-accent, #8c5de8), transparent 72%), 0 18px 34px rgba(63, 32, 80, .14);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .playlist-card-text,
+:root[data-gsi-theme="light"] body[data-view] .mini-playlist-card .playlist-card-text {
+  color: var(--gsi-mode-ink);
+  text-shadow: none;
+}
+
+:root[data-gsi-theme="light"] body[data-view] .view-control,
+:root[data-gsi-theme="light"] body[data-view] .format-control {
+  border-color: var(--gsi-mode-line);
+  background: rgba(255, 252, 248, .72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .7), 0 12px 26px rgba(63, 32, 80, .08);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .view-control-label,
+:root[data-gsi-theme="light"] body[data-view] .view-btn,
+:root[data-gsi-theme="light"] body[data-view] .format-option {
+  color: var(--gsi-mode-ink);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .view-btn.active,
+:root[data-gsi-theme="light"] body[data-view] .format-option[aria-pressed="true"] {
+  color: var(--gsi-mode-ink);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .format-control::before {
+  background: color-mix(in srgb, var(--page-tint, #8c5de8), white 56%);
+  box-shadow: 0 2px 7px rgba(63, 32, 80, .18), 0 0 0 1px color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 26%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .card {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--accent, #8c5de8), var(--gsi-mode-ink) 32%);
+  background: color-mix(in srgb, var(--accent, #8c5de8), white 78%);
+  box-shadow: 0 18px 42px rgba(63, 32, 80, .12);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .card .info {
+  color: var(--gsi-mode-ink);
+  background: linear-gradient(180deg, rgba(255, 255, 255, .28), rgba(255, 255, 255, .08)), color-mix(in srgb, var(--accent, #8c5de8), white 82%);
+  text-shadow: none;
+}
+
+:root[data-gsi-theme="light"] body[data-view] .card .info h2,
+:root[data-gsi-theme="light"] body[data-view] .card .info p,
+:root[data-gsi-theme="light"] body[data-view] .card .info span {
+  color: var(--gsi-mode-ink);
+  text-shadow: none;
+}
+
+:root[data-gsi-theme="light"] body[data-view] .p53-broadcast {
+  border-color: color-mix(in srgb, var(--art-primary, #ff65ad), var(--gsi-mode-ink) 20%);
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-field, #26331f), white 12%), color-mix(in srgb, var(--art-secondary, #777), black 24%));
+}
+
+:root[data-gsi-theme="light"] body[data-view] .p53-overlay {
+  background: linear-gradient(180deg, transparent 30%, rgba(26, 18, 34, .26) 54%, rgba(26, 18, 34, .92) 100%);
+}
+
+/* P53 landing: light is tinted and palette-led, not a blank white canvas. */
+:root[data-gsi-theme="light"] body.p53-landing-room {
+  color: var(--art-light-ink, #211823);
+  background:
+    linear-gradient(rgba(255, 255, 255, .18), rgba(255, 255, 255, .08)),
+    var(--art-rim-gradient, none),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-primary, #b84093), white 82%), color-mix(in srgb, var(--art-secondary, #455c98), white 82%));
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room::before {
+  opacity: .26;
+  mix-blend-mode: multiply;
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .p53-path,
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link {
+  color: var(--art-light-ink, #211823);
+  border-color: color-mix(in srgb, var(--art-primary, #8c5de8), var(--art-light-ink, #211823) 28%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .p53-path {
+  background: color-mix(in srgb, var(--art-primary, #b84093), white 78%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .p53-path a,
+:root[data-gsi-theme="light"] body.p53-landing-room .signal-state,
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-copy b {
+  color: color-mix(in srgb, var(--art-primary, #8c5de8), var(--art-light-ink, #211823) 34%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .p53-intro {
+  border-left-color: color-mix(in srgb, var(--art-primary, #8c5de8), transparent 14%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--art-primary, #8c5de8), transparent 86%), transparent 74%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link {
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(118deg, color-mix(in srgb, var(--art-primary, #b84093), white 78%), color-mix(in srgb, var(--art-secondary, #455c98), white 80%));
+  box-shadow: 0 18px 42px color-mix(in srgb, var(--art-primary, #8c5de8), transparent 82%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-copy {
+  background:
+    linear-gradient(112deg, color-mix(in srgb, var(--art-primary, #8c5de8), transparent 86%), transparent 62%),
+    color-mix(in srgb, var(--art-light-surface, #ded9df), white 18%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-copy h2,
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-copy p,
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-copy small {
+  color: var(--art-light-ink, #211823);
+}
+
+/* P53 transmissions share the same palette but use a stronger ink contract
+   around the path and metadata so no light-mode bar turns into a flash. */
+:root[data-gsi-theme="light"] body.p53-transmission-room {
+  color: var(--art-light-ink, #211823);
+  background:
+    linear-gradient(rgba(255, 255, 255, .12), rgba(255, 255, 255, .04)),
+    var(--art-rim-gradient, none),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-primary, #b84093), white 80%), color-mix(in srgb, var(--art-secondary, #455c98), white 82%));
+}
+
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-nav,
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-about,
+:root[data-gsi-theme="light"] body.p53-transmission-room .transmission-note {
+  color: var(--art-light-ink, #211823);
+  border-color: color-mix(in srgb, var(--art-primary, #8c5de8), var(--art-light-ink, #211823) 26%);
+  background: color-mix(in srgb, var(--art-primary, #b84093), white 78%);
+}
+
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-trace,
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-trace .trace-separator,
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-trace .trace-current {
+  color: color-mix(in srgb, var(--art-light-ink, #211823), transparent 20%);
+}
+
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-trace a,
+:root[data-gsi-theme="light"] body.p53-transmission-room .share-transmission,
+:root[data-gsi-theme="light"] body.p53-transmission-room .stream-label,
+:root[data-gsi-theme="light"] body.p53-transmission-room .album {
+  color: color-mix(in srgb, var(--art-primary, #8c5de8), var(--art-light-ink, #211823) 36%);
+}
+
+:root[data-gsi-theme="light"] body.p53-transmission-room .transmission {
+  border-color: color-mix(in srgb, var(--art-primary, #8c5de8), var(--art-light-ink, #211823) 22%);
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-primary, #b84093), white 80%), color-mix(in srgb, var(--art-secondary, #455c98), white 82%));
+  box-shadow: 10px 10px 0 color-mix(in srgb, var(--art-secondary, #35c9e9), transparent 48%), -7px -5px 0 color-mix(in srgb, var(--art-primary, #ff58a6), transparent 58%), 0 40px 100px rgba(63, 32, 80, .16);
+}
+
+:root[data-gsi-theme="light"] body.p53-transmission-room .signal-panel {
+  color: var(--art-light-ink, #211823);
+  background:
+    linear-gradient(150deg, color-mix(in srgb, var(--art-primary, #8c5de8), transparent 82%), transparent 48%),
+    color-mix(in srgb, var(--art-primary, #b84093), white 82%);
+}
+
+:root[data-gsi-theme="light"] body.p53-transmission-room .artist,
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-about p,
+:root[data-gsi-theme="light"] body.p53-transmission-room .transmission-note p {
+  color: color-mix(in srgb, var(--art-light-ink, #211823), transparent 18%);
+}
+
+:root[data-gsi-theme="light"] body.p53-transmission-room .stream-link {
+  color: var(--art-light-ink, #211823);
+  border-color: color-mix(in srgb, var(--art-primary, #8c5de8), var(--art-light-ink, #211823) 24%);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--art-primary, #8c5de8), white 70%), color-mix(in srgb, var(--art-secondary, #35c9e9), white 74%));
+}
+
+/* Entry light-mode readability: keep the artwork field, but do not let a
+   pale cover make metadata, paths, or section copy disappear. */
+:root[data-gsi-theme="light"] body.entry-room .signal-trace {
+  color: var(--room-ink, #211823);
+  border-color: color-mix(in srgb, var(--room-accent, #8c5de8), var(--room-ink, #211823) 28%);
+  background: color-mix(in srgb, var(--room-field, #ded9df), white 12%);
+}
+
+:root[data-gsi-theme="light"] body.entry-room .meta h1,
+:root[data-gsi-theme="light"] body.entry-room .meta p,
+:root[data-gsi-theme="light"] body.entry-room .meta .album,
+:root[data-gsi-theme="light"] body.entry-room .stream-label,
+:root[data-gsi-theme="light"] body.entry-room .also-appears > span,
+:root[data-gsi-theme="light"] body.entry-room .also-appears a {
+  color: var(--room-ink, #211823);
+}
+
+:root[data-gsi-theme="light"] body.entry-room .stream-link {
+  color: var(--room-ink, #211823);
+  border-color: color-mix(in srgb, var(--room-accent, #8c5de8), var(--room-ink, #211823) 24%);
+  background: linear-gradient(120deg, color-mix(in srgb, var(--room-accent, #8c5de8), white 66%), color-mix(in srgb, var(--room-accent-strong, #b897b5), white 72%));
+}
+
+:root[data-gsi-theme="light"] body.entry-room .section-card,
+:root[data-gsi-theme="light"] body.entry-room .section-card:nth-child(even) {
+  color: var(--room-ink, #211823);
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(135deg, color-mix(in srgb, var(--room-left, #ded9df), white 6%), color-mix(in srgb, var(--room-field-soft, #ded9df), white 16%) 52%, color-mix(in srgb, var(--room-right, #ded9df), white 6%));
+}
+
+/* Catalog dark mode: artist and album rooms need an explicit ink/surface
+   contract because their older room sheets set their own gray-black fills. */
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) {
+  color: var(--art-dark-ink, #f8f5ef);
+  background:
+    var(--art-rim-gradient, none),
+    radial-gradient(circle at 78% 8%, color-mix(in srgb, var(--art-primary, #777), transparent 72%), transparent 34rem),
+    linear-gradient(160deg, color-mix(in srgb, var(--art-field, #25222b), var(--art-dark-surface, #17151b) 42%), var(--art-dark-surface, #17151b));
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) nav {
+  color: var(--art-dark-ink, #f8f5ef);
+  border-color: color-mix(in srgb, var(--art-control, #e7c4ff), transparent 34%);
+  background: color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-primary, #777) 20%);
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) nav a,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .kicker,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading > span,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-song b,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-entry b {
+  color: var(--art-control, #e7c4ff);
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) nav span,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-note,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-note {
+  color: color-mix(in srgb, var(--art-dark-ink, #f8f5ef), transparent 24%);
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading h1,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) h1,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-stack > header h2,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-entry,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-signal,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-song {
+  color: var(--art-dark-ink, #f8f5ef);
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-stack,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading.has-artist-image {
+  border-color: color-mix(in srgb, var(--art-control, #e7c4ff), transparent 24%);
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-primary, #777), var(--art-dark-surface, #17151b) 64%), color-mix(in srgb, var(--art-secondary, #777), var(--art-dark-surface, #17151b) 72%));
+  box-shadow: 0 22px 58px color-mix(in srgb, var(--art-primary, #777), transparent 76%);
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-stack > header,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-entry,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-signal,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-song {
+  border-color: color-mix(in srgb, var(--art-control, #e7c4ff), transparent 42%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--art-primary, #777), transparent 78%), color-mix(in srgb, var(--art-dark-surface, #17151b), transparent 6%));
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-stack > header span,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-entry-mark {
+  color: var(--art-control, #e7c4ff);
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-entry-mark {
+  background-color: var(--art-control, #e7c4ff);
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-note {
+  border-left-color: var(--art-control, #e7c4ff);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--art-primary, #777), transparent 78%), color-mix(in srgb, var(--art-dark-surface, #17151b), transparent 8%));
+}
+
+/* Annotation pass: light-mode controls, catalogue cards, and rooms.  These
+   rules intentionally sit last so legacy dark-first component sheets cannot
+   reintroduce black-on-black controls after the mode is selected. */
+:root[data-gsi-theme="light"] body[data-view] .view-btn {
+  color: var(--gsi-mode-ink);
+  border-color: var(--gsi-mode-line);
+  background: color-mix(in srgb, var(--page-tint, #c7b6f4), white 78%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .view-btn.active {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 32%);
+  background: color-mix(in srgb, var(--page-tint, #8c5de8), white 58%);
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--page-tint, #8c5de8), transparent 76%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .view-btn:hover,
+:root[data-gsi-theme="light"] body[data-view] .view-btn:focus-visible {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 20%);
+  background: color-mix(in srgb, var(--page-tint, #8c5de8), white 66%);
+}
+
+/* The homepage card now carries the same 32-point rim gradient as its entry
+   room.  This keeps the metadata attached to the cover instead of falling
+   back to a generic black or white slab in light mode. */
+:root[data-gsi-theme="light"] body[data-view] .card {
+  color: var(--art-light-ink, var(--gsi-mode-ink));
+  border-color: color-mix(in srgb, var(--art-control, var(--accent, #8c5de8)), var(--art-light-ink, var(--gsi-mode-ink)) 22%);
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-light-surface, #ded9df), white 4%), color-mix(in srgb, var(--art-light-surface-2, #ded9df), white 8%));
+  box-shadow: 0 0 28px color-mix(in srgb, var(--art-primary, var(--accent, #8c5de8)), transparent 80%), 0 18px 42px rgba(48, 30, 54, .16);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .card .info {
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(145deg, color-mix(in srgb, var(--art-primary, var(--accent, #8c5de8)), white 72%), color-mix(in srgb, var(--art-secondary, var(--accent, #8c5de8)), white 78%));
+}
+
+:root[data-gsi-theme="light"] body[data-view] .card .info h2,
+:root[data-gsi-theme="light"] body[data-view] .card .info p,
+:root[data-gsi-theme="light"] body[data-view] .card .info span {
+  color: var(--art-light-ink, var(--gsi-mode-ink));
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .3);
+}
+
+/* Keep the homepage hero tinted rather than paper-white, while retaining
+   enough separation for the authored introduction. */
+:root[data-gsi-theme="light"] body[data-view] .hero-copy {
+  color: var(--gsi-mode-ink);
+  background:
+    linear-gradient(140deg, color-mix(in srgb, var(--page-tint, #c7b6f4), white 58%), color-mix(in srgb, var(--page-tint, #c7b6f4), white 76%));
+  box-shadow: 0 28px 80px color-mix(in srgb, var(--page-tint, #8c5de8), transparent 80%);
+}
+
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .hero-copy {
+  background: linear-gradient(140deg, #d9c9df, #eee3ea 78%);
+  box-shadow: 0 28px 80px rgba(118, 74, 132, .14);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .hero-copy .intro p,
+:root[data-gsi-theme="light"] body[data-view] .hero-copy .subtitle {
+  color: color-mix(in srgb, var(--gsi-mode-ink), var(--page-tint, #8c5de8) 18%);
+}
+
+/* Entry metadata and the cross-reference line sit directly on the artwork
+   field.  Give them a stable ink contract and a faint local wash. */
+:root[data-gsi-theme="light"] body.entry-room .meta .album {
+  color: var(--room-ink, #211823);
+  font-weight: 650;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .34);
+}
+
+:root[data-gsi-theme="light"] body.entry-room .also-appears {
+  border-top-color: color-mix(in srgb, var(--room-accent, #8c5de8), var(--room-ink, #211823) 44%);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--room-accent, #8c5de8), transparent 84%), transparent 72%);
+}
+
+:root[data-gsi-theme="light"] body.entry-room .also-appears > span,
+:root[data-gsi-theme="light"] body.entry-room .also-appears a {
+  color: var(--room-ink, #211823);
+  opacity: 1;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .28);
+}
+
+/* The P53 artwork is the room in light mode too.  Replace the shared dark
+   overlay with a restrained palette veil and use the same gradient in cards. */
+:root[data-gsi-theme="light"] body.p53-landing-room::before,
+:root[data-gsi-theme="light"] body.p53-transmission-room::before {
+  background-image:
+    var(--art-image, none),
+    repeating-linear-gradient(100deg, color-mix(in srgb, var(--art-primary, #b84093), transparent 93%) 0 1px, transparent 1px 13px);
+  opacity: .16;
+  mix-blend-mode: multiply;
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room::after,
+:root[data-gsi-theme="light"] body.p53-transmission-room::after {
+  background:
+    radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--art-primary, #b84093), transparent 60%), transparent 40%),
+    radial-gradient(circle at 88% 78%, color-mix(in srgb, var(--art-secondary, #455c98), transparent 66%), transparent 44%),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-field, #ded9df), white 42%), color-mix(in srgb, var(--art-field-soft, #ded9df), white 48%));
+  opacity: .9;
+  mix-blend-mode: normal;
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link,
+:root[data-gsi-theme="light"] body.p53-transmission-room .signal-panel,
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-about,
+:root[data-gsi-theme="light"] body.p53-transmission-room .transmission-note {
+  background:
+    linear-gradient(125deg, color-mix(in srgb, var(--art-primary, #b84093), white 60%), color-mix(in srgb, var(--art-secondary, #455c98), white 68%)),
+    var(--art-rim-gradient, none);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-copy {
+  background:
+    linear-gradient(112deg, color-mix(in srgb, var(--art-primary, #b84093), white 66%), color-mix(in srgb, var(--art-secondary, #455c98), white 72%)),
+    var(--art-rim-gradient, none);
+}
+
+/* Recommendation room follows the same light-mode vocabulary as the site,
+   instead of remaining a separate dark application. */
+:root[data-gsi-theme="light"] body.recommend-room {
+  --recommend-ink: #251a27;
+  color: var(--recommend-ink);
+  background:
+    radial-gradient(circle at 84% 8%, rgba(255, 112, 182, .22), transparent 30rem),
+    radial-gradient(circle at 10% 82%, rgba(86, 205, 232, .2), transparent 28rem),
+    linear-gradient(135deg, #eee9e6 0%, #e5dce6 56%, #e8dedf 100%);
+}
+
+:root[data-gsi-theme="light"] body.recommend-room .recommend-path {
+  color: var(--recommend-ink);
+  border-color: rgba(37, 26, 39, .22);
+  background: rgba(255, 252, 248, .68);
+}
+
+:root[data-gsi-theme="light"] body.recommend-room .recommend-path a,
+:root[data-gsi-theme="light"] body.recommend-room .eyebrow {
+  color: #ad2f72;
+}
+
+:root[data-gsi-theme="light"] body.recommend-room .recommend-header h1,
+:root[data-gsi-theme="light"] body.recommend-room .recommend-form label {
+  color: var(--recommend-ink);
+}
+
+:root[data-gsi-theme="light"] body.recommend-room .recommend-header p:not(.eyebrow),
+:root[data-gsi-theme="light"] body.recommend-room .recommend-form label span,
+:root[data-gsi-theme="light"] body.recommend-room .recommend-footnote {
+  color: rgba(37, 26, 39, .7);
+}
+
+:root[data-gsi-theme="light"] body.recommend-room .recommend-form {
+  border-color: rgba(37, 26, 39, .2);
+  background: linear-gradient(145deg, rgba(255, 252, 248, .76), rgba(232, 220, 232, .8));
+  box-shadow: 0 30px 90px rgba(74, 42, 73, .16), inset 0 1px 0 rgba(255, 255, 255, .75);
+}
+
+:root[data-gsi-theme="light"] body.recommend-room .recommend-form input,
+:root[data-gsi-theme="light"] body.recommend-room .recommend-form textarea {
+  color: var(--recommend-ink);
+  border-color: rgba(37, 26, 39, .24);
+  background: rgba(255, 252, 248, .72);
+}
+
+:root[data-gsi-theme="light"] body.recommend-room .recommend-actions a {
+  color: var(--recommend-ink);
+  border-color: rgba(37, 26, 39, .24);
+  background: rgba(255, 252, 248, .5);
+}
+
+:root[data-gsi-theme="light"] body.recommend-room .recommend-status { color: #8e285f; }
+:root[data-gsi-theme="light"] body.recommend-room .recommend-status[data-kind="success"] { color: #176b62; }
+
+/* Final shared homepage contract: both modes keep the same layered room
+   structure, while the mode changes contrast rather than composition. */
+:root[data-gsi-theme="light"] body[data-view],
+:root[data-gsi-theme="dark"] body[data-view] {
+  background-image:
+    radial-gradient(circle at 12% 8%, color-mix(in srgb, var(--page-tint, #8c5de8), transparent 84%), transparent 30rem),
+    radial-gradient(circle at 88% 78%, color-mix(in srgb, var(--page-tint, #8c5de8), transparent 90%), transparent 34rem),
+    repeating-linear-gradient(90deg, color-mix(in srgb, var(--page-tint, #8c5de8), transparent 94%) 0 1px, transparent 1px 14px),
+    linear-gradient(135deg, color-mix(in srgb, var(--gsi-mode-bg), var(--page-tint, #8c5de8) 4%), var(--gsi-mode-bg));
+}
+
+:root[data-gsi-theme="light"] body[data-view].filter-active .filter-panel {
+  border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 18%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--page-tint, #8c5de8), white 76%), color-mix(in srgb, var(--page-tint, #8c5de8), white 88%));
+  box-shadow: 0 18px 45px color-mix(in srgb, var(--page-tint, #8c5de8), transparent 84%);
+}
+
+:root[data-gsi-theme="light"] body[data-view].filter-active .filter-btn {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 24%);
+  background: color-mix(in srgb, var(--page-tint, #8c5de8), white 72%);
+}
+
+:root[data-gsi-theme="light"] body[data-view].filter-active .filter-btn.active {
+  color: var(--gsi-mode-ink);
+  background: color-mix(in srgb, var(--page-tint, #8c5de8), white 46%);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--page-tint, #8c5de8), transparent 72%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-description {
+  border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 22%);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--page-tint, #8c5de8), white 70%), color-mix(in srgb, var(--page-tint, #8c5de8), white 84%));
+}
+
+:root[data-gsi-theme="light"] body[data-view] .hero-architecture span {
+  color: color-mix(in srgb, #7d4d8d, transparent 72%);
+}
+
+:root[data-gsi-theme="light"] body[data-view].filter-active .hero-architecture span {
+  color: color-mix(in srgb, var(--page-tint, #8c5de8), transparent 74%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .hero-architecture span:nth-child(2) {
+  -webkit-text-stroke-color: color-mix(in srgb, var(--page-tint, #8c5de8), transparent 74%);
+}
+
+/* Force a readable minimum surface for dark-cover cards in light mode, while
+   retaining the artwork rim as a visible texture. */
+:root[data-gsi-theme="light"] body[data-view] .card .info {
+  background:
+    linear-gradient(rgba(255, 255, 255, .44), rgba(255, 255, 255, .36)),
+    var(--art-rim-gradient, none),
+    linear-gradient(145deg, color-mix(in srgb, var(--art-primary, var(--accent, #8c5de8)), white 76%), color-mix(in srgb, var(--art-secondary, var(--accent, #8c5de8)), white 82%));
+}
+
+:root[data-gsi-theme="dark"] body[data-view] .card {
+  color: var(--art-dark-ink, var(--gsi-mode-ink));
+  border-color: color-mix(in srgb, var(--art-control, var(--accent, #8c5de8)), white 18%);
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(145deg, color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-primary, #777) 24%), color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-secondary, #777) 18%));
+  box-shadow: 0 0 28px color-mix(in srgb, var(--art-primary, var(--accent, #8c5de8)), transparent 72%), 0 18px 42px rgba(0, 0, 0, .26);
+}
+
+:root[data-gsi-theme="dark"] body[data-view] .card .info {
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(145deg, color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-primary, #777) 30%), color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-secondary, #777) 22%));
+}
+
+:root[data-gsi-theme="dark"] body[data-view] .card .info h2,
+:root[data-gsi-theme="dark"] body[data-view] .card .info p,
+:root[data-gsi-theme="dark"] body[data-view] .card .info span {
+  color: var(--art-dark-ink, var(--gsi-mode-ink));
+  text-shadow: 0 2px 12px rgba(0, 0, 0, .76);
+}
+
+/* P53 details need the same ink discipline as the hero, and both modes keep
+   the artwork gradient rather than falling back to a flat panel. */
+:root[data-gsi-theme="light"] body.p53-transmission-room .signal-panel::before,
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-about h2,
+:root[data-gsi-theme="light"] body.p53-transmission-room .transmission-note h2 {
+  color: color-mix(in srgb, var(--art-primary, #b84093), var(--art-light-ink, #211823) 38%);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .36);
+}
+
+:root[data-gsi-theme="light"] body.p53-transmission-room .p53-about p,
+:root[data-gsi-theme="light"] body.p53-transmission-room .transmission-note p {
+  color: color-mix(in srgb, var(--art-light-ink, #211823), transparent 8%);
+}
+
+:root[data-gsi-theme="dark"] body.p53-transmission-room {
+  background:
+    var(--art-rim-gradient, none),
+    radial-gradient(ellipse at 84% 12%, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 48%), transparent 38%),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-primary, #777) 30%), color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-secondary, #777) 22%));
+}
+
+:root[data-gsi-theme="dark"] body.p53-transmission-room::after {
+  background:
+    var(--art-rim-gradient, none),
+    radial-gradient(circle at 12% 12%, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 64%), transparent 38%),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-dark-surface, #17151b), black 14%), color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-secondary, #777) 18%));
+  opacity: .72;
+}
+
+:root[data-gsi-theme="dark"] body.p53-transmission-room .p53-about,
+:root[data-gsi-theme="dark"] body.p53-transmission-room .transmission-note {
+  background:
+    var(--art-rim-gradient, none),
+    linear-gradient(135deg, color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-primary, #777) 26%), color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-secondary, #777) 18%));
+}
+
+:root[data-gsi-theme="dark"] body.p53-transmission-room .signal-panel::before,
+:root[data-gsi-theme="dark"] body.p53-transmission-room .p53-about h2,
+:root[data-gsi-theme="dark"] body.p53-transmission-room .transmission-note h2 {
+  color: var(--art-control, #e7c4ff);
+}
+
+/* Keep light entry metadata in the same continuous artwork field as the
+   cover. A transparent field wash preserves readable ink without creating a
+   rectangular pale slab beneath every album. */
+:root[data-gsi-theme="light"] body.entry-room .meta {
+  color: var(--room-ink, #211823);
+  background: transparent;
+}
+
+:root[data-gsi-theme="light"] body.entry-room {
+  background:
+    linear-gradient(rgba(255, 255, 255, .24), rgba(255, 255, 255, .24)),
+    var(--art-rim-gradient, none),
+    linear-gradient(140deg, var(--art-light-surface, #ded9df), var(--art-light-surface-2, #ded9df));
+}
+
+/* The room owns one artwork field. Do not add a second hero or metadata
+   rectangle on top of it; the cover fade and body field provide the complete
+   composition in both modes. */
+body.entry-room .hero,
+body.entry-room .meta {
+  background: transparent;
+}
+
+:root[data-gsi-theme="light"] body.entry-room .meta h1,
+:root[data-gsi-theme="light"] body.entry-room .meta p,
+:root[data-gsi-theme="light"] body.entry-room .meta .album,
+:root[data-gsi-theme="light"] body.entry-room .stream-label,
+:root[data-gsi-theme="light"] body.entry-room .also-appears > span,
+:root[data-gsi-theme="light"] body.entry-room .also-appears a {
+  color: var(--room-ink, #211823);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, .78), 0 0 10px rgba(255, 255, 255, .42);
+}
+
+:root[data-gsi-theme="light"] body.entry-room .also-appears {
+  background: transparent;
+  border-top-color: color-mix(in srgb, var(--room-ink, #211823), transparent 72%);
+}
+
+body.entry-room .also-appears {
+  background: transparent;
+  border-top-color: color-mix(in srgb, var(--room-ink, #211823), transparent 72%);
+}
+
+body.entry-room .stream-link:hover,
+body.entry-room .stream-link:focus-visible {
+  box-shadow:
+    0 0 0 1px var(--art-edge, var(--art-soft, #b7afbc)),
+    0 12px 30px color-mix(in srgb, var(--art-primary, #8c5de8), transparent 56%),
+    0 0 22px color-mix(in srgb, var(--art-secondary, #35c9e9), transparent 66%);
+}
+
+/* Dark P53 uses the same artwork field as light mode, with a heavier veil and
+   the cover image returned to the room through the fixed texture layer. */
+:root[data-gsi-theme="dark"] body.p53-landing-room {
+  background:
+    linear-gradient(rgba(10, 8, 15, .46), rgba(10, 8, 15, .58)),
+    var(--art-rim-gradient, none),
+    radial-gradient(ellipse at 82% 8%, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 38%), transparent 42%),
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-primary, #777) 30%),
+      color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-secondary, #777) 24%));
+}
+
+:root[data-gsi-theme="dark"] body.p53-landing-room::before {
+  background-image:
+    linear-gradient(rgba(10, 8, 15, .36), rgba(10, 8, 15, .52)),
+    var(--art-image, none),
+    repeating-linear-gradient(0deg, transparent 0 7px, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 90%) 7px 8px);
+  background-position: center, center top, center;
+  background-size: cover, cover, auto;
+  opacity: .42;
+  mix-blend-mode: normal;
+}
+
+:root[data-gsi-theme="dark"] body.p53-transmission-room .p53-about,
+:root[data-gsi-theme="dark"] body.p53-transmission-room .transmission-note {
+  color: var(--art-dark-ink, #f8f5ef);
+  border-color: color-mix(in srgb, var(--art-control, #e7c4ff), white 16%);
+  background:
+    linear-gradient(150deg, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 78%), transparent 48%),
+    color-mix(in srgb, var(--art-surface, #17151b), transparent 8%);
+  box-shadow: 0 20px 54px rgba(0, 0, 0, .24), inset 0 1px 0 rgba(255, 255, 255, .08);
+}
+
+:root[data-gsi-theme="dark"] body.p53-transmission-room .p53-about p,
+:root[data-gsi-theme="dark"] body.p53-transmission-room .transmission-note p {
+  color: color-mix(in srgb, var(--art-dark-ink, #f8f5ef), transparent 8%);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .recommend-link {
+  color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 48%);
+  border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 32%);
+  background: color-mix(in srgb, var(--page-tint, #8c5de8), white 76%);
+}
+
+/* Light entry copy uses one deep ink colour instead of a highlight/shadow
+   treatment.  This keeps small labels and cross-links crisp over darker
+   artwork fields without changing the dark-room typography. */
+:root[data-gsi-theme="light"] body.entry-room .meta,
+:root[data-gsi-theme="light"] body.entry-room .meta h1,
+:root[data-gsi-theme="light"] body.entry-room .meta p,
+:root[data-gsi-theme="light"] body.entry-room .meta .album,
+:root[data-gsi-theme="light"] body.entry-room .stream-label,
+:root[data-gsi-theme="light"] body.entry-room .also-appears > span,
+:root[data-gsi-theme="light"] body.entry-room .also-appears a {
+  color: #17111d;
+  text-shadow: none;
+}
+
+:root[data-gsi-theme="light"] body.entry-room .meta p:not(.album),
+:root[data-gsi-theme="light"] body.entry-room .stream-label {
+  color: #251a2a;
+}
+
+:root[data-gsi-theme="light"] body.entry-room .meta .album {
+  color: #39223e;
+}
+
+:root[data-gsi-theme="light"] body.entry-room .also-appears {
+  border-top-color: #4b3454;
+  background: transparent;
+}
+
+:root[data-gsi-theme="light"] body.entry-room .also-appears > span,
+:root[data-gsi-theme="light"] body.entry-room .also-appears a {
+  color: #251a2a;
+}
+
+:root[data-gsi-theme="light"] body.entry-room .stream-link:hover,
+:root[data-gsi-theme="light"] body.entry-room .stream-link:focus-visible {
+  color: #17111d;
+  border-color: color-mix(in srgb, var(--art-primary, #8c5de8), #17111d 24%);
+  background: linear-gradient(120deg,
+    color-mix(in srgb, var(--art-primary, #8c5de8), white 48%),
+    color-mix(in srgb, var(--art-secondary, #35c9e9), white 58%));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--art-primary, #8c5de8), transparent 26%),
+    0 10px 24px color-mix(in srgb, var(--art-primary, #8c5de8), transparent 74%);
+}
+
+/* With no filter selected, white-on-white made the active layout tab almost
+   impossible to distinguish.  Use the shared purple control colour only for
+   the light-mode neutral state; filtered rooms retain their own accents. */
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn {
+  color: var(--gsi-mode-ink);
+  border-color: #c9bfd4;
+  background: #fffafc;
+}
+
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn:not(.active):hover,
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn:not(.active):focus-visible {
+  color: var(--gsi-mode-ink);
+  border-color: color-mix(in srgb, var(--gsi-mode-ink), white 56%);
+  background: color-mix(in srgb, var(--gsi-mode-ink), white 92%);
+}
+
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn.active,
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn.active:hover,
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn.active:focus-visible {
+  color: #251a27;
+  border-color: color-mix(in srgb, var(--gsi-mode-ink), white 42%);
+  background: color-mix(in srgb, var(--gsi-mode-ink), white 84%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72),
+    0 8px 18px rgba(37, 26, 39, .16);
+}
+
+/* Radio P53 keeps its signal colours in the neutral light room too. */
+:root[data-gsi-theme="light"] body[data-view] .filter-btn.filter-p53,
+:root[data-gsi-theme="light"] body[data-view] .filter-btn.filter-p53:hover,
+:root[data-gsi-theme="light"] body[data-view] .filter-btn.filter-p53:focus-visible,
+:root[data-gsi-theme="light"] body[data-view].filter-active .filter-btn.filter-p53.active {
+  color: #24101f;
+  border-color: #c44588;
+  background: linear-gradient(110deg, #f486bd, #8bdceb);
+  box-shadow: 0 8px 20px rgba(187, 71, 139, .18);
+}
+
+:root[data-gsi-theme="light"] body[data-view] .filter-btn.filter-p53:hover,
+:root[data-gsi-theme="light"] body[data-view] .filter-btn.filter-p53:focus-visible {
+  border-color: #a83273;
+  background: linear-gradient(110deg, #f06da9, #69cddd);
+}

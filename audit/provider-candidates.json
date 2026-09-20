@@ -1,0 +1,1154 @@
+{
+  "schema": 1,
+  "generated_at": "2026-09-18T14:25:14.821397+00:00",
+  "description": "Review-only provider URL candidates. Nothing here is written back automatically.",
+  "signals": [
+    {
+      "slug": "",
+      "artist": "Metric",
+      "track": "Empty",
+      "album": "Live It Out",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/empty/1108029976?i=1108031306&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/empty/1108029976?i=1108031306&uo=4",
+              "artist": "Metric",
+              "track": "Empty",
+              "album": "Live It Out",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/figuring-it-out/1868089479?i=1868089908&uo=4",
+              "artist": "Async Wave",
+              "track": "Figuring It Out",
+              "album": "Strange Stories",
+              "confidence": 0.131
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Metric",
+      "track": "Too Little Too Late",
+      "album": "Live It Out",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/too-little-too-late/1108029976?i=1108031310&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/too-little-too-late/1108029976?i=1108031310&uo=4",
+              "artist": "Metric",
+              "track": "Too Little Too Late",
+              "album": "Live It Out",
+              "confidence": 1.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Metric",
+      "track": "Poster of a Girl",
+      "album": "Live It Out",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/poster-of-a-girl/1108029976?i=1108031311&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/poster-of-a-girl/1108029976?i=1108031311&uo=4",
+              "artist": "Metric",
+              "track": "Poster of a Girl",
+              "album": "Live It Out",
+              "confidence": 1.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Matt Maeson",
+      "track": "Year After Year",
+      "album": "A Quiet And Harmless Living",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/year-after-year/1823989247?i=1823989517&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/year-after-year/1823989247?i=1823989517&uo=4",
+              "artist": "Matt Maeson",
+              "track": "Year After Year",
+              "album": "A Quiet and Harmless Living",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/cursive-feat-manchester-orchestra/1823989247?i=1823989252&uo=4",
+              "artist": "Matt Maeson",
+              "track": "Cursive (feat. Manchester Orchestra)",
+              "album": "A Quiet and Harmless Living",
+              "confidence": 0.767
+            },
+            {
+              "url": "https://music.apple.com/us/album/everlasting/1823989247?i=1823989502&uo=4",
+              "artist": "Matt Maeson",
+              "track": "Everlasting",
+              "album": "A Quiet and Harmless Living",
+              "confidence": 0.723
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "K.Flay",
+      "track": "Time For You",
+      "album": "Life as a Dog",
+      "providers": {
+        "apple": {
+          "status": "weak-candidate",
+          "url": "https://music.apple.com/us/album/single-and-famous/328126452?i=328126679&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/single-and-famous/328126452?i=328126679&uo=4",
+              "artist": "K.Flay & MC Lars",
+              "track": "Single and Famous",
+              "album": "Single and Famous",
+              "confidence": 0.486
+            },
+            {
+              "url": "https://music.apple.com/us/album/how-to-save-a-life-new-version/385629502?i=385629752&uo=4",
+              "artist": "The Fray",
+              "track": "How to Save a Life (New Version)",
+              "album": "How to Save a Life",
+              "confidence": 0.391
+            },
+            {
+              "url": "https://music.apple.com/us/album/thunder-official-remix/1445014880?i=1445014887&uo=4",
+              "artist": "Imagine Dragons & K.Flay",
+              "track": "Thunder (Official Remix)",
+              "album": "Thunder (Official Remix) - Single",
+              "confidence": 0.332
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Kendrick Lamar",
+      "track": "TV Off",
+      "album": "GNX",
+      "providers": {
+        "apple": {
+          "status": "review-candidate",
+          "url": "https://music.apple.com/us/album/tv-off-feat-lefty-gunplay/1781316864?i=1781316952&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/tv-off-feat-lefty-gunplay/1781316864?i=1781316952&uo=4",
+              "artist": "Kendrick Lamar",
+              "track": "tv off (feat. Lefty Gunplay)",
+              "album": "GNX",
+              "confidence": 0.755
+            },
+            {
+              "url": "https://music.apple.com/us/album/luther/1781316864?i=1781316886&uo=4",
+              "artist": "Kendrick Lamar",
+              "track": "luther",
+              "album": "GNX",
+              "confidence": 0.667
+            },
+            {
+              "url": "https://music.apple.com/us/album/luther/1781270319?i=1781270323&uo=4",
+              "artist": "Kendrick Lamar",
+              "track": "luther",
+              "album": "GNX",
+              "confidence": 0.667
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Travis Scott",
+      "track": "Coffee Bean",
+      "album": "ASTROWORLD",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/coffee-bean/1421658111?i=1421658667&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/coffee-bean/1421658111?i=1421658667&uo=4",
+              "artist": "Travis Scott",
+              "track": "COFFEE BEAN",
+              "album": "ASTROWORLD",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/butterfly-effect/1421658111?i=1421658665&uo=4",
+              "artist": "Travis Scott",
+              "track": "BUTTERFLY EFFECT",
+              "album": "ASTROWORLD",
+              "confidence": 0.689
+            },
+            {
+              "url": "https://music.apple.com/us/album/goosebumps/1151481435?i=1151481750&uo=4",
+              "artist": "Travis Scott",
+              "track": "goosebumps",
+              "album": "Birds In The Trap Sing McKnight",
+              "confidence": 0.586
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Travis Scott",
+      "track": "Through the Late Night",
+      "album": "Birds In The Trap McKnight",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/through-the-late-night/1151481435?i=1151481741&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/through-the-late-night/1151481435?i=1151481741&uo=4",
+              "artist": "Travis Scott",
+              "track": "through the late night",
+              "album": "Birds In The Trap Sing McKnight",
+              "confidence": 0.987
+            },
+            {
+              "url": "https://music.apple.com/us/album/the-ends/1151481435?i=1151481661&uo=4",
+              "artist": "Travis Scott",
+              "track": "the ends",
+              "album": "Birds In The Trap Sing McKnight",
+              "confidence": 0.747
+            },
+            {
+              "url": "https://music.apple.com/us/album/beibs-in-the-trap/1151481435?i=1151481746&uo=4",
+              "artist": "Travis Scott",
+              "track": "beibs in the trap",
+              "album": "Birds In The Trap Sing McKnight",
+              "confidence": 0.71
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "James Blake",
+      "track": "Barefoot in the Park (feat. ROSALÍA)",
+      "album": "Assume Form (Deluxe)",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/barefoot-in-the-park-feat-rosal%C3%ADa/1459584222?i=1459584650&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/barefoot-in-the-park-feat-rosal%C3%ADa/1459584222?i=1459584650&uo=4",
+              "artist": "James Blake",
+              "track": "Barefoot in the Park (feat. ROSALÍA)",
+              "album": "Assume Form (Deluxe)",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/barefoot-in-the-park-feat-rosal%C3%ADa/1447513857?i=1447514713&uo=4",
+              "artist": "James Blake",
+              "track": "Barefoot in the Park (feat. ROSALÍA)",
+              "album": "Assume Form",
+              "confidence": 0.964
+            },
+            {
+              "url": "https://music.apple.com/us/album/barefoot-in-the-park-16-bit-james-blake-rosal%C3%ADa-emulation/1462263241?i=1462263248&uo=4",
+              "artist": "Arcade Player",
+              "track": "Barefoot in the Park (16-Bit James Blake & Rosalía Emulation)",
+              "album": "The Impossible Game Soundtrack, Vol. 10",
+              "confidence": 0.55
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Tyler, The Creator",
+      "track": "November",
+      "album": "Flower Boy",
+      "providers": {
+        "apple": {
+          "status": "weak-candidate",
+          "url": "https://music.apple.com/us/album/enjoy-right-now-today/1254572564?i=1254572586&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/enjoy-right-now-today/1254572564?i=1254572586&uo=4",
+              "artist": "Tyler, The Creator",
+              "track": "Enjoy Right Now, Today",
+              "album": "Flower Boy",
+              "confidence": 0.655
+            },
+            {
+              "url": "https://music.apple.com/us/album/igors-theme/1463409338?i=1463409349&uo=4",
+              "artist": "Tyler, The Creator",
+              "track": "IGOR'S THEME",
+              "album": "IGOR",
+              "confidence": 0.653
+            },
+            {
+              "url": "https://music.apple.com/us/album/tell-me-what-it-is/1827715784?i=1827715801&uo=4",
+              "artist": "Tyler, The Creator",
+              "track": "Tell Me What It Is",
+              "album": "DON'T TAP THE GLASS",
+              "confidence": 0.553
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Kanye West",
+      "track": "Champion",
+      "album": "Graduation",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/champion/1442845779?i=1442846321&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/champion/1442845779?i=1442846321&uo=4",
+              "artist": "Kanye West",
+              "track": "Champion",
+              "album": "Graduation",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/i-wonder/1442845779?i=1442846336&uo=4",
+              "artist": "Kanye West",
+              "track": "I Wonder",
+              "album": "Graduation",
+              "confidence": 0.75
+            },
+            {
+              "url": "https://music.apple.com/us/album/homecoming-feat-chris-martin/1442845779?i=1442846735&uo=4",
+              "artist": "Kanye West",
+              "track": "Homecoming (feat. Chris Martin)",
+              "album": "Graduation",
+              "confidence": 0.711
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Metric",
+      "track": "Combat Baby",
+      "album": "Old World Underground, Where Are You Now?",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/combat-baby/906877401?i=906877416&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/combat-baby/906877401?i=906877416&uo=4",
+              "artist": "Metric",
+              "track": "Combat Baby",
+              "album": "Old World Underground, Where Are You Now?",
+              "confidence": 1.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Beach House",
+      "track": "Wishes",
+      "album": "Bloom",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/wishes/509665145?i=509665549&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/wishes/509665145?i=509665549&uo=4",
+              "artist": "Beach House",
+              "track": "Wishes",
+              "album": "Bloom",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/myth/509665145?i=509665325&uo=4",
+              "artist": "Beach House",
+              "track": "Myth",
+              "album": "Bloom",
+              "confidence": 0.68
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Tame Impala",
+      "track": "Let It Happen",
+      "album": "Currents",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/let-it-happen/1440838039?i=1440838060&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/let-it-happen/1440838039?i=1440838060&uo=4",
+              "artist": "Tame Impala",
+              "track": "Let It Happen",
+              "album": "Currents",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/let-it-happen-soulwax-remix/1440875696?i=1440876460&uo=4",
+              "artist": "Tame Impala",
+              "track": "Let it Happen (Soulwax Remix)",
+              "album": "Currents B-Sides & Remixes - EP",
+              "confidence": 0.779
+            },
+            {
+              "url": "https://music.apple.com/us/album/the-moment/1440838039?i=1440838288&uo=4",
+              "artist": "Tame Impala",
+              "track": "The Moment",
+              "album": "Currents",
+              "confidence": 0.739
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Slowdive",
+      "track": "Sugar for the Pill",
+      "album": "Slowdive",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/sugar-for-the-pill/1210172617?i=1210172774&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/sugar-for-the-pill/1210172617?i=1210172774&uo=4",
+              "artist": "Slowdive",
+              "track": "Sugar for the Pill",
+              "album": "Slowdive",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/sugar-for-the-pill-radio-edit/1640029085?i=1640030267&uo=4",
+              "artist": "Slowdive",
+              "track": "Sugar For The Pill (Radio Edit)",
+              "album": "Back To Mine: Tycho",
+              "confidence": 0.791
+            },
+            {
+              "url": "https://music.apple.com/us/album/sugar-for-the-pill-simon-scott-eurorack-remix/1233256967?i=1233256971&uo=4",
+              "artist": "Slowdive",
+              "track": "Sugar for the Pill (Simon Scott “Eurorack” Remix)",
+              "album": "Sugar for the Pill (Simon Scott “Eurorack” Remix) - Single",
+              "confidence": 0.704
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Broken Social Scene",
+      "track": "This Briefest Kiss",
+      "album": "Remember The Humans",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/this-briefest-kiss/1871484971?i=1871485311&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/this-briefest-kiss/1871484971?i=1871485311&uo=4",
+              "artist": "Broken Social Scene",
+              "track": "This Briefest Kiss",
+              "album": "Remember The Humans",
+              "confidence": 1.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Muse",
+      "track": "Sing For Absolution",
+      "album": "Absolution",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/sing-for-absolution/1716096819?i=1716096824&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/sing-for-absolution/1716096819?i=1716096824&uo=4",
+              "artist": "Muse",
+              "track": "Sing for Absolution",
+              "album": "Absolution",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/sing-for-absolution/992626782?i=992627740&uo=4",
+              "artist": "Muse",
+              "track": "Sing For Absolution",
+              "album": "Absolution",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/sing-for-absolution/1716100488?i=1716100505&uo=4",
+              "artist": "Muse",
+              "track": "Sing for Absolution",
+              "album": "Absolution XX Anniversary",
+              "confidence": 0.936
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Mitski",
+      "track": "First Love/Late Spring",
+      "album": "Bury Me At Makeout Creek",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/first-love-late-spring/1070245429?i=1070245510&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/first-love-late-spring/1070245429?i=1070245510&uo=4",
+              "artist": "Mitski",
+              "track": "First Love/Late Spring",
+              "album": "Bury Me At Makeout Creek",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/last-words-of-a-shooting-star/1070245429?i=1070245527&uo=4",
+              "artist": "Mitski",
+              "track": "Last Words of a Shooting Star",
+              "album": "Bury Me At Makeout Creek",
+              "confidence": 0.773
+            },
+            {
+              "url": "https://music.apple.com/us/album/francis-forever/1070245429?i=1070245511&uo=4",
+              "artist": "Mitski",
+              "track": "Francis Forever",
+              "album": "Bury Me At Makeout Creek",
+              "confidence": 0.73
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Silversun Pickups",
+      "track": "Skin Graph",
+      "album": "Neck of the Woods",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/skin-graph/1862926396?i=1862926399&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/skin-graph/1862926396?i=1862926399&uo=4",
+              "artist": "Silversun Pickups",
+              "track": "Skin Graph",
+              "album": "Neck of the Woods",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/im-the-man/1692787619?i=1692787620&uo=4",
+              "artist": "Silversun Pickups",
+              "track": "I'm the Man",
+              "album": "I'm the Man - Single",
+              "confidence": 0.586
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Michael Jackson",
+      "track": "Thriller",
+      "album": "Thriller",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/thriller/655260476?i=655262182&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/thriller/655260476?i=655262182&uo=4",
+              "artist": "Michael Jackson",
+              "track": "Thriller",
+              "album": "Thriller",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/thriller/269572838?i=269573303&uo=4",
+              "artist": "Michael Jackson",
+              "track": "Thriller",
+              "album": "Thriller",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/thriller/1641780996?i=1641781002&uo=4",
+              "artist": "Michael Jackson",
+              "track": "Thriller",
+              "album": "Thriller 40",
+              "confidence": 0.976
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Arctic Monkeys",
+      "track": "Perhaps Vampires Is a Bit Strong But...",
+      "album": "Whatever People Say I Am, That's What I'm Not",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/perhaps-vampires-is-a-bit-strong-but/111153953?i=111153677&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/perhaps-vampires-is-a-bit-strong-but/111153953?i=111153677&uo=4",
+              "artist": "Arctic Monkeys",
+              "track": "Perhaps Vampires Is a Bit Strong But…",
+              "album": "Whatever People Say I Am, That's What I'm Not",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/red-light-indicates-doors-are-secured/111153953?i=111153609&uo=4",
+              "artist": "Arctic Monkeys",
+              "track": "Red Light Indicates Doors Are Secured",
+              "album": "Whatever People Say I Am, That's What I'm Not",
+              "confidence": 0.732
+            },
+            {
+              "url": "https://music.apple.com/us/album/a-certain-romance/111153953?i=111153858&uo=4",
+              "artist": "Arctic Monkeys",
+              "track": "A Certain Romance",
+              "album": "Whatever People Say I Am, That's What I'm Not",
+              "confidence": 0.706
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Wet Leg",
+      "track": "mangetout",
+      "album": "Moisturizer",
+      "providers": {
+        "apple": {
+          "status": "weak-candidate",
+          "url": "https://music.apple.com/us/album/pokemon/1802918329?i=1802918496&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/pokemon/1802918329?i=1802918496&uo=4",
+              "artist": "Wet Leg",
+              "track": "pokemon",
+              "album": "moisturizer",
+              "confidence": 0.7
+            },
+            {
+              "url": "https://music.apple.com/us/album/catch-these-fists/1802918329?i=1802918484&uo=4",
+              "artist": "Wet Leg",
+              "track": "catch these fists",
+              "album": "moisturizer",
+              "confidence": 0.692
+            },
+            {
+              "url": "https://music.apple.com/us/album/pokemon/1896040298?i=6765695254&uo=4",
+              "artist": "Wet Leg",
+              "track": "pokemon",
+              "album": "moisturizer (deluxe)",
+              "confidence": 0.664
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Arctic Monkeys",
+      "track": "Secret Door",
+      "album": "Humbug (Bonus Track Version)",
+      "providers": {
+        "apple": {
+          "status": "weak-candidate",
+          "url": "https://music.apple.com/us/album/cornerstone/330283015?i=330283361&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/cornerstone/330283015?i=330283361&uo=4",
+              "artist": "Arctic Monkeys",
+              "track": "Cornerstone",
+              "album": "Humbug (Bonus Track Version)",
+              "confidence": 0.709
+            },
+            {
+              "url": "https://music.apple.com/us/album/crying-lightning/330283015?i=330283278&uo=4",
+              "artist": "Arctic Monkeys",
+              "track": "Crying Lightning",
+              "album": "Humbug (Bonus Track Version)",
+              "confidence": 0.689
+            },
+            {
+              "url": "https://music.apple.com/us/album/my-propeller/330283015?i=330283247&uo=4",
+              "artist": "Arctic Monkeys",
+              "track": "My Propeller",
+              "album": "Humbug (Bonus Track Version)",
+              "confidence": 0.67
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "",
+      "artist": "Miki Matsubara",
+      "track": "Mayonaka No Door ~Stay with Me",
+      "album": "Pocket Park",
+      "providers": {
+        "apple": {
+          "status": "review-candidate",
+          "url": "https://music.apple.com/us/album/mayonaka-no-door-stay-with-me-2023-mix/1858833806?i=1858834177&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/mayonaka-no-door-stay-with-me-2023-mix/1858833806?i=1858834177&uo=4",
+              "artist": "Miki Matsubara",
+              "track": "Mayonaka No Door~Stay with Me (2023 Mix)",
+              "album": "Pocket Park (2023 Mix)",
+              "confidence": 0.903
+            },
+            {
+              "url": "https://music.apple.com/us/album/mayonaka-no-door-stay-with-me/1858846278?i=1858846444&uo=4",
+              "artist": "Miki Matsubara",
+              "track": "Mayonaka No Door ~Stay with Me",
+              "album": "Miki Matsubara Best Collection",
+              "confidence": 0.879
+            },
+            {
+              "url": "https://music.apple.com/us/album/mayonaka-no-door-stay-with-me-2023-mix-karaoke/1858833806?i=1858834677&uo=4",
+              "artist": "Miki Matsubara",
+              "track": "Mayonaka No Door~Stay with Me (2023 Mix) [Karaoke]",
+              "album": "Pocket Park (2023 Mix)",
+              "confidence": 0.866
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "yeah-yeah-yeahs-slave",
+      "artist": "Yeah Yeah Yeahs",
+      "track": "Slave",
+      "album": "Mosquito (Deluxe Edition)",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/slave/1440818498?i=1440818705&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/slave/1440818498?i=1440818705&uo=4",
+              "artist": "Yeah Yeah Yeahs",
+              "track": "Slave",
+              "album": "Mosquito (Deluxe Edition)",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/slave/1442833088?i=1442833735&uo=4",
+              "artist": "Yeah Yeah Yeahs",
+              "track": "Slave",
+              "album": "Mosquito",
+              "confidence": 0.927
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "beach-house-new-year",
+      "artist": "Beach House",
+      "track": "New Year",
+      "album": "Bloom",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/new-year/509665145?i=509665493&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/new-year/509665145?i=509665493&uo=4",
+              "artist": "Beach House",
+              "track": "New Year",
+              "album": "Bloom",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/on-the-sea/509665145?i=509665551&uo=4",
+              "artist": "Beach House",
+              "track": "On the Sea",
+              "album": "Bloom",
+              "confidence": 0.822
+            },
+            {
+              "url": "https://music.apple.com/us/album/the-hours/509665145?i=509665469&uo=4",
+              "artist": "Beach House",
+              "track": "The Hours",
+              "album": "Bloom",
+              "confidence": 0.741
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "david-bowie-lazarus",
+      "artist": "David Bowie",
+      "track": "Lazarus",
+      "album": "Blackstar",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/lazarus/1676286487?i=1676286742&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/lazarus/1676286487?i=1676286742&uo=4",
+              "artist": "David Bowie",
+              "track": "Lazarus",
+              "album": "Blackstar",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/life-on-mars/1039798000?i=1039798013&uo=4",
+              "artist": "David Bowie",
+              "track": "Life On Mars?",
+              "album": "Hunky Dory (2015 Remaster)",
+              "confidence": 0.655
+            },
+            {
+              "url": "https://music.apple.com/us/album/lazarus/1490602448?i=1490602453&uo=4",
+              "artist": "Maya Beiser, Ambient Orchestra & Evan Ziporyn",
+              "track": "Lazarus",
+              "album": "Bowie Cello Symphonic: Blackstar",
+              "confidence": 0.552
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "depeche-mode-personal-jesus",
+      "artist": "Depeche Mode",
+      "track": "Personal Jesus",
+      "album": "Violator (Deluxe)",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/personal-jesus/1174246686?i=1174246806&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/personal-jesus/1174246686?i=1174246806&uo=4",
+              "artist": "Depeche Mode",
+              "track": "Personal Jesus",
+              "album": "Violator (Deluxe)",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/enjoy-the-silence/1174246686?i=1174246889&uo=4",
+              "artist": "Depeche Mode",
+              "track": "Enjoy the Silence",
+              "album": "Violator (Deluxe)",
+              "confidence": 0.703
+            },
+            {
+              "url": "https://music.apple.com/us/album/halo/1174246686?i=1174246827&uo=4",
+              "artist": "Depeche Mode",
+              "track": "Halo",
+              "album": "Violator (Deluxe)",
+              "confidence": 0.689
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "peter-murphy-the-prince-old-lady-shade",
+      "artist": "Peter Murphy",
+      "track": "The Prince & Old Lady Shade",
+      "album": "Ninth",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/the-prince-old-lady-shade/426296580?i=426296597&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/the-prince-old-lady-shade/426296580?i=426296597&uo=4",
+              "artist": "Peter Murphy",
+              "track": "The Prince & Old Lady Shade",
+              "album": "Ninth",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/peace-to-each/426296580?i=426296592&uo=4",
+              "artist": "Peter Murphy",
+              "track": "Peace to Each",
+              "album": "Ninth",
+              "confidence": 0.768
+            },
+            {
+              "url": "https://music.apple.com/us/album/seesaw-sway/426296580?i=426296591&uo=4",
+              "artist": "Peter Murphy",
+              "track": "Seesaw Sway",
+              "album": "Ninth",
+              "confidence": 0.733
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "kendrick-lamar-god",
+      "artist": "Kendrick Lamar",
+      "track": "GOD.",
+      "album": "DAMN.",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/god/1440881722?i=1440882179&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/god/1440881722?i=1440882179&uo=4",
+              "artist": "Kendrick Lamar",
+              "track": "GOD.",
+              "album": "DAMN.",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/god/1440907513?i=1440907533&uo=4",
+              "artist": "Kendrick Lamar",
+              "track": "GOD.",
+              "album": "DAMN. COLLECTORS EDITION.",
+              "confidence": 0.894
+            },
+            {
+              "url": "https://music.apple.com/us/album/love-feat-zacari/1440881047?i=1440881708&uo=4",
+              "artist": "Kendrick Lamar",
+              "track": "LOVE. (feat. Zacari)",
+              "album": "DAMN.",
+              "confidence": 0.642
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "massive-attack-psyche",
+      "artist": "Massive Attack",
+      "track": "Psyche",
+      "album": "Heligoland (Deluxe Edition)",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/psyche/724835339?i=724836402&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/psyche/724835339?i=724836402&uo=4",
+              "artist": "Massive Attack",
+              "track": "Psyche",
+              "album": "Heligoland (Deluxe Edition)",
+              "confidence": 1.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "metric-the-twist",
+      "artist": "Metric",
+      "track": "The Twist",
+      "album": "Grow Up and Blow Away",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/the-twist/1108657631?i=1108658090&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/the-twist/1108657631?i=1108658090&uo=4",
+              "artist": "Metric",
+              "track": "The Twist",
+              "album": "Grow Up and Blow Away",
+              "confidence": 1.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "mitski-shouldve-been-me",
+      "artist": "Mitski",
+      "track": "Should've Been Me",
+      "album": "Laurel Hell",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/shouldve-been-me/1589295663?i=1589296190&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/shouldve-been-me/1589295663?i=1589296190&uo=4",
+              "artist": "Mitski",
+              "track": "Should've Been Me",
+              "album": "Laurel Hell",
+              "confidence": 1.0
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "asap-rocky-holy-ghost-feat-joe-fox",
+      "artist": "A$AP Rocky",
+      "track": "Holy Ghost (feat. Joe Fox)",
+      "album": "AT.LONG.LAST.A$AP",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/holy-ghost-feat-joe-fox/994721471?i=994721473&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/holy-ghost-feat-joe-fox/994721471?i=994721473&uo=4",
+              "artist": "A$AP Rocky",
+              "track": "Holy Ghost (feat. Joe Fox)",
+              "album": "AT.LONG.LAST.A$AP",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/everyday-feat-rod-stewart-x-miguel-x-mark-ronson/994721471?i=994721775&uo=4",
+              "artist": "A$AP Rocky",
+              "track": "Everyday (feat. Rod Stewart x Miguel x Mark Ronson)",
+              "album": "AT.LONG.LAST.A$AP",
+              "confidence": 0.724
+            },
+            {
+              "url": "https://music.apple.com/us/album/a%24ap-forever-remix-feat-moby-t-i-kid-cudi/1388565682?i=1388566771&uo=4",
+              "artist": "A$AP Rocky",
+              "track": "A$AP Forever REMIX (feat. Moby, T.I. & Kid Cudi)",
+              "album": "TESTING",
+              "confidence": 0.613
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "emily-haines-the-soft-skeleton-doctor-blind",
+      "artist": "Emily Haines & The Soft Skeleton",
+      "track": "Doctor Blind",
+      "album": "Knives Don't Have Your Back",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/doctor-blind/1107263443?i=1107263457&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/doctor-blind/1107263443?i=1107263457&uo=4",
+              "artist": "Emily Haines & The Soft Skeleton",
+              "track": "Doctor Blind",
+              "album": "Knives Don't Have Your Back",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/our-hell/1107263443?i=1107263456&uo=4",
+              "artist": "Emily Haines & The Soft Skeleton",
+              "track": "Our Hell",
+              "album": "Knives Don't Have Your Back",
+              "confidence": 0.76
+            },
+            {
+              "url": "https://music.apple.com/us/album/mostly-waving/1107263443?i=1107263469&uo=4",
+              "artist": "Emily Haines & The Soft Skeleton",
+              "track": "Mostly Waving",
+              "album": "Knives Don't Have Your Back",
+              "confidence": 0.76
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "phantogram-running-through-colors",
+      "artist": "Phantogram",
+      "track": "Running Through Colors",
+      "album": "Memory Of A Day (Deluxe)",
+      "providers": {
+        "apple": {
+          "status": "strong-candidate",
+          "url": "https://music.apple.com/us/album/running-through-colors/1844778411?i=1844778422&uo=4",
+          "candidates": [
+            {
+              "url": "https://music.apple.com/us/album/running-through-colors/1844778411?i=1844778422&uo=4",
+              "artist": "Phantogram",
+              "track": "Running Through Colors",
+              "album": "Memory Of A Day (Deluxe)",
+              "confidence": 1.0
+            },
+            {
+              "url": "https://music.apple.com/us/album/earthshaker/1844778411?i=1844778600&uo=4",
+              "artist": "Phantogram",
+              "track": "Earthshaker",
+              "album": "Memory Of A Day (Deluxe)",
+              "confidence": 0.697
+            },
+            {
+              "url": "https://music.apple.com/us/album/it-wasnt-meant-to-be/1844778411?i=1844778415&uo=4",
+              "artist": "Phantogram",
+              "track": "It Wasn't Meant To Be",
+              "album": "Memory Of A Day (Deluxe)",
+              "confidence": 0.693
+            }
+          ]
+        }
+      }
+    },
+    {
+      "slug": "emily-haines-the-soft-skeleton-minefield-of-memory",
+      "artist": "Emily Haines & The Soft Skeleton",
+      "track": "Minefield of Memory",
+      "album": "Choir of the Mind",
+      "providers": {
+        "apple": {
+          "status": "no-match",
+          "url": "",
+          "candidates": []
+        }
+      }
+    }
+  ]
+}

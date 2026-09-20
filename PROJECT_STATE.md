@@ -6,6 +6,21 @@ The repository files are the authority on what is currently implemented. This do
 
 If the files and this document disagree, report the discrepancy rather than silently choosing one.
 
+## 2026-09 reconciliation
+
+This document preserves useful design history, but several of its phase labels now describe completed work rather than the current order of operations. In particular, the filter-room transition and Radio P53 landing/permanent pages are implemented in the source tree; P53 is no longer a post-1.0 future feature.
+
+For the current implementation sequence, use [docs/IMPLEMENTATION_ROADMAP.md](docs/IMPLEMENTATION_ROADMAP.md). It reflects the present source architecture, URL-state contract, accepted Albums rule, and the remaining P53, catalogue, reading-orientation, and delivery work. The historical sections below should not be treated as a request to undo implemented systems.
+
+The post-1.0 migration is now authorized and underway. `build.py` is the stable
+CLI/API facade; source preparation, page renderers, and output manifests live in
+named `builder/` modules while `builder/legacy_pipeline.py` contains
+orchestration and compatibility exports only. Page templates live in
+`templates/`; shared CSS and browser helpers live in `web/styles/` and
+`web/scripts/`. The migration plan records the remaining parity and
+device/deployment checks. For a plain-language map of these boundaries and a
+safe editing loop, use [docs/CODE_GUIDE.md](docs/CODE_GUIDE.md).
+
 -What GSI is
 
 GSI began as a place to archive songs that do something more significant than merely sounding good.
@@ -123,7 +138,10 @@ Stable filter identity belongs in config.json. Song-specific information belongs
 
 - Builder behavior already implemented
 
-The current builder is approximately 1,000 lines because Python, HTML, CSS, and JavaScript are still combined in one file.
+The legacy renderer is still present as a compatibility boundary; the root
+`build.py` is now only a compatibility facade. Page markup lives in `templates/`,
+CSS and JavaScript live in `web/styles/` and `web/scripts/`, and source
+preparation lives in `builder/source_pipeline.py`.
 
 It currently performs most or all of these jobs:
 
@@ -484,7 +502,9 @@ GSI/
 ├── config.json
 └── site/
 
-This is not an immediate instruction. It is the expected destination.
+This is the expected destination for the active migration. Work remains staged so
+the existing CLI, generated routes, and authored writing can be checked after each
+boundary rather than replaced in one opaque rewrite.
 
 Templates would eliminate most giant HTML strings.
 

@@ -1,0 +1,71 @@
+<!-- Homepage template: Python supplies cards and filter data; scripts add state. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="@@SAFE_META_DESCRIPTION@@">
+    <meta name="theme-color" content="#0d0d0f">
+    <meta property="og:type" content="website">
+    <meta property="og:site_name" content="GSI">
+    <meta property="og:title" content="@@SAFE_PAGE_TITLE@@">
+    <meta property="og:description" content="@@SAFE_META_DESCRIPTION@@">@@HOMEPAGE_URL_META@@@@SHARE_IMAGE_META@@
+    <link rel="icon" href="covers/GSI_favicon.svg" type="image/svg+xml">
+    <script src="scripts/theme-mode.js"></script>
+    <link rel="stylesheet" href="styles/gsi-tokens.css">
+    <link rel="stylesheet" href="styles/gsi-home.css">
+    <link rel="stylesheet" href="styles/theme-mode.css?v=20260920-final8">
+    <title>@@SAFE_PROJECT_TITLE@@</title>
+</head>
+<body data-view="wall">
+    <div class="signal-transform" aria-hidden="true"></div>
+    <header class="site-hero">
+        <div class="hero-copy">
+            <div class="hero-architecture" aria-hidden="true">
+                <span>GENOME</span><span>STABILITY</span><span>INDUCERS</span>
+            </div>
+            <div class="wordmark">GSI</div>
+            @@INTRO_HTML@@
+        </div>
+        @@P53_HTML@@
+    </header>
+    @@FILTERS_HTML@@
+    <div class="layout-format-controls">
+      <div class="view-control" role="group" aria-label="Layout">
+        <span class="view-control-label">LAYOUT</span>
+
+        <button class="view-btn" data-view="poster" aria-pressed="false">
+            Poster
+        </button>
+
+        <button class="view-btn active" data-view="wall" aria-pressed="true">
+            Wall
+        </button>
+
+        <button class="view-btn" data-view="gallery" aria-pressed="false">
+            Gallery
+        </button>
+      </div>
+      <div class="format-control" role="group" aria-label="Format">
+        <button class="format-option" data-format-option="songs" type="button" aria-pressed="true">SONGS</button>
+        <button class="format-option" data-format-option="albums" type="button" aria-pressed="false">ALBUMS</button>
+        <button class="format-option" data-format-option="artists" type="button" aria-pressed="false" disabled aria-disabled="true">ARTISTS</button>
+      </div>
+      <a class="playlist-card mini-playlist-card hidden" id="playlist-card" href="#" target="_blank" rel="noopener noreferrer">
+        <img id="playlist-cover" alt="Playlist cover">
+        <span class="playlist-card-text" id="playlist-cta"></span>
+      </a>
+    </div>
+    <a class="recommend-link" href="recommend.html">RECOMMEND A SIGNAL ↗</a>
+    <div class="grid">
+        @@CARDS_HTML@@
+    </div>
+<script src="scripts/gsi-context.js"></script>
+<script id="gsi-filter-data" type="application/json">@@FILTER_DATA_JSON@@</script>
+<script src="scripts/home-state.js"></script>
+<script src="scripts/home-layout.js"></script>
+<script src="scripts/home-format.js"></script>
+<script src="scripts/home-filters.js"></script>
+<script src="scripts/home-page.js"></script>
+</body>
+</html>
