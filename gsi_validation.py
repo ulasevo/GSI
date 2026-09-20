@@ -64,6 +64,8 @@ class _LocalRouteCollector(HTMLParser):
         element_id = attributes.get("id")
         if element_id:
             self.ids.add(element_id)
+        if tag.lower() == "base":
+            return
         for name, value in attrs:
             if name in LOCAL_ROUTE_ATTRIBUTES and value is not None:
                 self.references.append((name, value.strip(), element_id))

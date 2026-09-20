@@ -8,6 +8,7 @@ from builder.entry_pages import build_entry_page, extract_sections_from_markdown
 from builder.error_pages import build_404_page
 from builder.home_page import build_index_html
 from builder.manifests import write_generation_manifest
+from gsi_assets import copy_site_editor
 
 
 def sample_tracks():
@@ -185,6 +186,37 @@ class CatalogueRendererTests(unittest.TestCase):
         self.assertIn("THIS SIGNAL IS <em>NOT</em> HERE.", page)
         self.assertIn("metric-empty.html", page)
         self.assertIn("OPEN SIGNAL IN GSI", page)
+
+    def test_404_renderer_uses_deployed_root_for_nested_pages(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            config_path = root / "config.json"
+            output_path = root / "site" / "404.html"
+            config_path.write_text(
+                json.dumps({"site_url": "https://ulasevo.github.io/GSI", "not_found": {}}),
+                encoding="utf-8",
+            )
+            build_404_page([], config_file=config_path, output_path=output_path)
+            page = output_path.read_text(encoding="utf-8")
+
+        self.assertIn('<base href="/GSI/">', page)
+        self.assertIn('href="covers/GSI_favicon.svg"', page)
+
+    def test_browser_entry_loader_is_copied_by_site_assets(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            editor = root / "editor"
+            destination = root / "site" / "tools"
+            editor.mkdir()
+            for filename in ("new-entry.html", "new-entry.css", "new-entry.js"):
+                (editor / filename).write_text(filename, encoding="utf-8")
+            copy_site_editor(editor, destination, ["Charge", "Comment"])
+
+            self.assertTrue((destination / "new-entry.html").is_file())
+            self.assertEqual(
+                json.loads((destination / "editor-config.json").read_text(encoding="utf-8"))["sections"],
+                ["Charge", "Comment"],
+            )
 
 
 if __name__ == "__main__":

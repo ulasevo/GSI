@@ -36,6 +36,10 @@ jobs:
           python -m py_compile build.py
           python -m json.tool config.json > /dev/null
           python build.py --site-only
+          test -f site/tools/new-entry.html
+          test -f site/tools/new-entry.css
+          test -f site/tools/new-entry.js
+          test -f site/404.html
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5

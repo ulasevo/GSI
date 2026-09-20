@@ -7,7 +7,7 @@ existing command and tests continue to work while the migration settles.
 
 import argparse # command-line options such as the source-safe site build
 from pathlib import Path # cross OS handling
-from gsi_assets import copy_site_covers, copy_site_scripts, copy_site_styles
+from gsi_assets import copy_site_covers, copy_site_editor, copy_site_scripts, copy_site_styles
 from gsi_artists import artist_catalogue_records, copy_site_artist_assets, write_artist_manifest
 from gsi_data import artist_room_groups, build_generation_inventory, load_config, ordered_tracks, read_tracks
 from gsi_links import print_provider_link_audit, provider_link_audit
@@ -30,6 +30,7 @@ SITE_DATA_DIR = SITE_DIR / "data"
 WEB_DIR = BASE / "web"
 SITE_SCRIPTS_DIR = SITE_DIR / "scripts"
 SITE_STYLES_DIR = SITE_DIR / "styles"
+SITE_EDITOR_DIR = SITE_DIR / "tools"
 
 TRACKS_FILE = BASE / "tracks.csv" #list of song inputs
 CONFIG_FILE = BASE / "config.json" #settings file
@@ -114,6 +115,7 @@ def main() -> None:
     copy_site_artist_assets(ARTIST_ASSETS_DIR, SITE_ARTIST_ASSETS_DIR)
     copy_site_scripts(WEB_DIR, SITE_SCRIPTS_DIR)
     copy_site_styles(WEB_DIR, SITE_STYLES_DIR)
+    copy_site_editor(BASE / "tools" / "editor", SITE_EDITOR_DIR, config.get("sections", []))
     write_catalog_manifest(archive_tracks)
     write_generation_manifest(inventory)
     write_artist_manifest(
