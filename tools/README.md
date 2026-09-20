@@ -36,8 +36,9 @@ python tools/new_entry.py --interactive
 It asks for the raw provider URL, optional metadata overrides, filters,
 headings, custom headings, P53 membership, and final write confirmation.
 
-For the browser authoring room, install its source assets into the generated
-site with:
+The normal site build copies the browser authoring room into `site/tools/`
+automatically. To install or refresh it in an existing generated site without
+running the full build, use:
 
 ```text
 python tools/new_entry.py --install-editor

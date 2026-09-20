@@ -1,6 +1,7 @@
 """Artwork color extraction and copying for the generated GSI site."""
 
 import colorsys
+import json
 import shutil
 from pathlib import Path
 
@@ -354,6 +355,25 @@ def copy_site_styles(web_dir: Path, site_styles_dir: Path) -> None:
             + "\n",
             encoding="utf-8",
         )
+
+
+def copy_site_editor(
+    editor_dir: Path,
+    site_editor_dir: Path,
+    sections: list[str],
+) -> None:
+    """Copy the browser Entry Loader into every generated site build."""
+    site_editor_dir.mkdir(parents=True, exist_ok=True)
+    for filename in ("new-entry.html", "new-entry.css", "new-entry.js"):
+        source = editor_dir / filename
+        if not source.is_file():
+            raise FileNotFoundError(f"Missing browser editor asset: {source}")
+        shutil.copy2(source, site_editor_dir / filename)
+    (site_editor_dir / "editor-config.json").write_text(
+        json.dumps({"sections": sections}, ensure_ascii=False, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f" Copied browser Entry Loader into generated site: {site_editor_dir}")
 
 
 # Playlist art is a visual hint only; a missing optional cover falls back to the

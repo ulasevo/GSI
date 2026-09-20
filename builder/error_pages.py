@@ -61,6 +61,7 @@ def build_404_page(
                 {"tracks": recommendations, "deployedRoot": site_path},
                 ensure_ascii=False,
             ).replace("</", "<\\/"),
+            "site_path": html.escape(site_path, quote=True),
             "not_found_title": not_found_title,
             "protein_drops": protein_drops,
             "eyebrow": html.escape(copy.get("eyebrow", "SIGNAL LOST / 404")),

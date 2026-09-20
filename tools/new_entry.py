@@ -9,7 +9,6 @@ import argparse
 import csv
 import json
 from pathlib import Path
-import shutil
 import sys
 
 
@@ -26,6 +25,7 @@ from builder.entry_drafts import (
     render_empty_entry,
     slugify,
 )
+from gsi_assets import copy_site_editor
 try:
     from gsi_data import load_config, read_tracks
 except ModuleNotFoundError:
@@ -60,18 +60,11 @@ def _install_browser_editor(root: Path) -> None:
     """Copy the safe browser authoring surface into the generated site."""
     source_dir = root / "tools" / "editor"
     destination = root / "site" / "tools"
-    destination.mkdir(parents=True, exist_ok=True)
-    for filename in ("new-entry.html", "new-entry.css", "new-entry.js"):
-        source = source_dir / filename
-        if not source.is_file():
-            raise DraftMetadataError(f"Browser editor asset is missing: {source}")
-        shutil.copy2(source, destination / filename)
     config = load_config(root / "config.json")
-    (destination / "editor-config.json").write_text(
-        json.dumps({"sections": config.get("sections", [])}, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
-    print(f"Installed browser editor: {destination / 'new-entry.html'}")
+    try:
+        copy_site_editor(source_dir, destination, config.get("sections", []))
+    except FileNotFoundError as error:
+        raise DraftMetadataError(str(error)) from error
 
 
 def _parse_args() -> argparse.Namespace:
