@@ -14,6 +14,23 @@
     contextHref,
     syncContext,
   }) {
+    const sourceOrder = new Map([...cards].map((card, index) => [card, index]));
+
+    function orderCardsForFilter(filterName) {
+      const ordered = [...cards].sort((first, second) => {
+        if (filterName !== "p53") {
+          return sourceOrder.get(first) - sourceOrder.get(second);
+        }
+        const firstOrder = Number(first.dataset.p53Order);
+        const secondOrder = Number(second.dataset.p53Order);
+        const safeFirst = Number.isFinite(firstOrder) ? firstOrder : -1;
+        const safeSecond = Number.isFinite(secondOrder) ? secondOrder : -1;
+        return safeSecond - safeFirst || sourceOrder.get(first) - sourceOrder.get(second);
+      });
+      ordered.forEach(card => grid.append(card));
+      return ordered;
+    }
+
     function clearFilterAlbumGroups() {
       document.querySelectorAll(".filter-album-group").forEach(group => group.remove());
       cards.forEach(card => card.removeAttribute("data-album-pocket-hidden"));
@@ -23,6 +40,7 @@
       // An album appears when any represented song matches the room, but the
       // album page remains whole and still contains all of its songs.
       clearFilterAlbumGroups();
+      const cardsInOrder = orderCardsForFilter(filterName);
       if (state.activeFormat !== "albums") {
         cards.forEach(card => {
           card.style.display = homeState.cardMatchesFilter(card, filterName) ? "flex" : "none";
@@ -31,7 +49,7 @@
       }
 
       const byAlbum = new Map();
-      cards.forEach(card => {
+      cardsInOrder.forEach(card => {
         const key = `${card.dataset.artist}::${card.dataset.album}`;
         byAlbum.set(key, [...(byAlbum.get(key) || []), card]);
       });

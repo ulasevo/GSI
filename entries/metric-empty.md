@@ -15,8 +15,7 @@ accent: "#ff2f92"
 
 ## Charge
 
-Strength. Makes me feel aware of my current state.
-
+Strength. Makes me feel aware.
 
 ## Sonical Attraction
 
@@ -24,19 +23,19 @@ The distinct inverted V shape in the rhythm of the song , mixed with the blandne
 
 ## Lyric/Vocal Detail
 
-
+<!-- Any line, delivery, breath, pronunciation, or vocal moment worth preserving? -->
 
 ## Version of ulaş
 
- I discovered this entire album in between the midterm 2 grind. The first few listens were each incrementally pleasant, and currently it's one of my favorites off the album. Though that doesn’t really mean much because I’ll be saying that for at least 8 other songs in this album.
+I discovered this entire album in between the midterm 2 grind of the third year. The first few listens were each incrementally pleasant, and currently it's one of my favorites off the album. Though that doesn’t really mean much because I’ll be saying that for at least 9 other songs in this album.
 
 ## Lore
 
-
+<!-- Any personal history, repeated use, place, habit, person attached to this track? -->
 
 ## Reading
 
-
+<!-- What do I think the song is doing or narrating? -->
 
 ## Comment
 

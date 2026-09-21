@@ -25,7 +25,7 @@ class ArtworkAndRecommendationTests(unittest.TestCase):
                 "edge_top", "edge_right", "edge_bottom", "edge_left",
                 "rim_gradient",
                 "surface", "soft", "ink", "glow",
-                "light_surface", "light_surface_2", "dark_surface", "light_ink", "dark_ink",
+                "light_surface", "light_surface_2", "dark_surface", "light_ink", "section_ink", "dark_ink",
                 "control", "control_hover", "control_ink", "edge", "focus",
             },
         )

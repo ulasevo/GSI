@@ -26,8 +26,8 @@ const sandbox = {
   localStorage: storage,
   window: {
     location: {
-      href: "https://gsi.test/p53/secret-door.html?filter=dreamy&view=gallery&format=albums#signal",
-      search: "?filter=dreamy&view=gallery&format=albums",
+      href: "https://gsi.test/p53/secret-door.html?filter=dreamy&view=gallery&format=albums&theme=dark#signal",
+      search: "?filter=dreamy&view=gallery&format=albums&theme=dark",
     },
     localStorage: storage,
   },
@@ -37,21 +37,26 @@ vm.runInNewContext(source, sandbox, { filename: "gsi-context.js" });
 const context = sandbox.window.GSIContext;
 assert.ok(context, "the shared context helper should expose its public API");
 assert.deepEqual([...context.allowedViews], ["poster", "wall", "gallery"]);
+assert.deepEqual([...context.allowedThemes], ["light", "dark"]);
 
 const state = context.read();
 const valid = context.archiveParams({
   state,
   filterLabels: { dreamy: "Dreamy" },
 });
-assert.equal(valid.toString(), "filter=dreamy&view=gallery&format=albums");
-assert.equal(context.href("../index.html", valid), "../index.html?filter=dreamy&view=gallery&format=albums");
-assert.equal(context.canonicalHref(), "https://gsi.test/p53/secret-door.html");
+assert.equal(valid.toString(), "filter=dreamy&view=gallery&format=albums&theme=dark");
+assert.equal(context.href("../index.html", valid), "../index.html?filter=dreamy&view=gallery&format=albums&theme=dark");
+assert.equal(context.canonicalHref(), "https://gsi.test/p53/secret-door.html?theme=dark");
 
 const cleaned = context.archiveParams({
   state: new URLSearchParams("filter=unknown&view=sideways&format=artists"),
   filterLabels: { dreamy: "Dreamy" },
 });
 assert.equal(cleaned.toString(), "");
+assert.equal(
+  context.archiveParams({ state: new URLSearchParams("theme=neon"), filterLabels: {} }).toString(),
+  "",
+);
 
 context.storeView("poster");
 assert.equal(context.loadView(), "poster");
@@ -70,9 +75,11 @@ assert.equal(
     activeFilter: "dreamy",
     activeView: "gallery",
     activeFormat: "albums",
+    activeTheme: "dark",
     allowedViews: context.allowedViews,
+    allowedThemes: context.allowedThemes,
   }),
-  "../index.html?filter=dreamy&view=gallery&format=albums",
+  "../index.html?filter=dreamy&view=gallery&format=albums&theme=dark",
 );
 assert.equal(homeState.signalLabel(3), "03 SIGNALS");
 assert.equal(homeState.albumLabel(2), "02 signals");

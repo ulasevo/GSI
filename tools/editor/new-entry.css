@@ -53,6 +53,17 @@ button:hover { border-color: var(--accent); background: rgba(255,92,173,.13); }
 .artwork-preview figcaption span:last-child { width:28px; height:28px; border:1px solid rgba(255,255,255,.3); border-radius:50%; background:var(--accent); }
 .status { min-height: 1.4em; margin: 10px 0 20px; }
 .field-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.p53-options { display: grid; gap: 14px; margin-top: 18px; padding: 16px; border: 1px solid rgba(255,92,173,.3); border-radius: 16px; background: linear-gradient(135deg, rgba(255,92,173,.08), rgba(145,215,255,.06)); }
+.catalogue-notes-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px; }
+.catalogue-notes-grid label { color:#d3cfda; }
+.catalogue-notes-grid textarea { min-height:132px; }
+.field-hint { color:var(--muted); font-size:.68rem; font-weight:500; letter-spacing:.02em; text-transform:none; }
+.publish-button { color:#101015; border-color:transparent; background:linear-gradient(100deg,#b7f36b,#91d7ff); }
+.publish-button:hover { color:#101015; border-color:transparent; background:linear-gradient(100deg,#d2ff9a,#b1e5ff); }
+.p53-options[hidden], #p53-fields[hidden] { display: none; }
+.check-field { display: flex; grid-template-columns: none; align-items: center; gap: 10px; color: var(--text); }
+.check-field input { width: 18px; min-height: 18px; accent-color: var(--accent); }
+.field-note { margin: 0; color: var(--muted); font-size: .78rem; line-height: 1.45; }
 .section-list { display: grid; gap: 12px; }
 .section-card { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 14px; border: 1px solid var(--line); border-radius: 16px; background: rgba(0,0,0,.2); }
 .section-number { display: grid; place-items: center; width: 32px; height: 32px; border: 1px solid rgba(255,92,173,.4); border-radius: 50%; color: var(--accent); font-size: .72rem; font-weight: 900; }
@@ -71,6 +82,7 @@ code { color: var(--accent-cool); }
   .panel-heading { display: grid; gap: 12px; }
   .panel-mark, .draft-state { order: -1; }
   .field-grid { grid-template-columns: 1fr; }
+  .catalogue-notes-grid { grid-template-columns:1fr; }
   .link-row { grid-template-columns: 1fr; }
   .section-card { grid-template-columns: 30px minmax(0, 1fr); }
   .section-number { width: 28px; height: 28px; }

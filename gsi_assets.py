@@ -231,6 +231,11 @@ def artwork_palette(image_path: Path, fallback: str = "#444444") -> dict[str, st
     control_hover = _cap_brightness(_mix(primary, (255, 255, 255), .50), 202)
     light_ink = _best_ink(light_surface)
     dark_ink = _best_ink(dark_surface)
+    # Entry reading cards blend the sampled left/right artwork edges into the
+    # light-mode room. Choose their copy against that actual backdrop rather
+    # than reusing the hero's surface ink (which can disappear on dark rims).
+    section_backdrop = _mix(_mix(edges["left"], edges["right"], .5), field, .24)
+    section_ink = _best_ink(section_backdrop)
     control_ink = _best_ink(control)
     focus = (31, 20, 32) if _contrast_ratio(primary, (31, 20, 32)) >= 3 else (248, 245, 239)
     return {
@@ -252,6 +257,7 @@ def artwork_palette(image_path: Path, fallback: str = "#444444") -> dict[str, st
         "light_surface_2": _hex(light_surface_2),
         "dark_surface": _hex(dark_surface),
         "light_ink": _hex(light_ink),
+        "section_ink": _hex(section_ink),
         "dark_ink": _hex(dark_ink),
         "control": _hex(control),
         "control_hover": _hex(control_hover),
@@ -283,6 +289,7 @@ def palette_style(palette: dict | None, image_src: str = "") -> str:
         "--art-light-surface-2": palette.get("light_surface_2", "#ded9df"),
         "--art-dark-surface": palette.get("dark_surface", "#17151b"),
         "--art-light-ink": palette.get("light_ink", "#1f1420"),
+        "--art-section-ink": palette.get("section_ink", palette.get("light_ink", "#1f1420")),
         "--art-dark-ink": palette.get("dark_ink", "#f8f5ef"),
         "--art-control": palette.get("control", "#c7b0c6"),
         "--art-control-hover": palette.get("control_hover", "#b897b5"),
@@ -361,6 +368,7 @@ def copy_site_editor(
     editor_dir: Path,
     site_editor_dir: Path,
     sections: list[str],
+    section_info: dict[str, str] | None = None,
 ) -> None:
     """Copy the browser Entry Loader into every generated site build."""
     site_editor_dir.mkdir(parents=True, exist_ok=True)
@@ -370,7 +378,11 @@ def copy_site_editor(
             raise FileNotFoundError(f"Missing browser editor asset: {source}")
         shutil.copy2(source, site_editor_dir / filename)
     (site_editor_dir / "editor-config.json").write_text(
-        json.dumps({"sections": sections}, ensure_ascii=False, indent=2) + "\n",
+        json.dumps(
+            {"sections": sections, "sectionInfo": section_info or {}},
+            ensure_ascii=False,
+            indent=2,
+        ) + "\n",
         encoding="utf-8",
     )
     print(f" Copied browser Entry Loader into generated site: {site_editor_dir}")

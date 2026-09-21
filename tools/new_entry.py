@@ -9,6 +9,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
+import subprocess
 import sys
 
 
@@ -22,10 +23,13 @@ from builder.entry_drafts import (
     draft_record,
     metadata_from_link,
     p53_record_from_draft,
+    render_authored_entry,
     render_empty_entry,
     slugify,
+    validate_draft_payload,
 )
-from gsi_assets import copy_site_editor
+from builder.source_pipeline import download_cover
+from gsi_assets import copy_site_editor, dominant_color
 try:
     from gsi_data import load_config, read_tracks
 except ModuleNotFoundError:
@@ -62,7 +66,12 @@ def _install_browser_editor(root: Path) -> None:
     destination = root / "site" / "tools"
     config = load_config(root / "config.json")
     try:
-        copy_site_editor(source_dir, destination, config.get("sections", []))
+        copy_site_editor(
+            source_dir,
+            destination,
+            config.get("sections", []),
+            config.get("section_info", {}),
+        )
     except FileNotFoundError as error:
         raise DraftMetadataError(str(error)) from error
 
@@ -97,7 +106,14 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Install the browser authoring editor into site/tools/",
     )
+    parser.add_argument(
+        "--from-draft",
+        type=Path,
+        help="Load a browser Entry Loader JSON draft without changing sources until --write is supplied",
+    )
     parser.add_argument("--p53", action="store_true", help="Also add an explicit P53 history record")
+    parser.add_argument("--p53-note", default="", help="Transmission note to store for a P53 record")
+    parser.add_argument("--p53-current", action="store_true", help="Make this P53 record the current transmission")
     parser.add_argument("--write", action="store_true", help="Write the draft and catalogue data")
     parser.add_argument("--timeout", type=int, default=15, help="Provider lookup timeout in seconds")
     return parser.parse_args()
@@ -168,20 +184,276 @@ def _append_track(root: Path, record: dict) -> None:
         writer.writerow({column: record.get(column, "") for column in TRACK_COLUMNS})
 
 
-def _append_p53(root: Path, record: dict) -> None:
+def _replace_track(root: Path, record: dict) -> None:
+    """Update one existing catalogue row after an explicitly reviewed edit."""
+    rows = read_tracks(root / "tracks.csv")
+    target = next((row for row in rows if slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == record["slug"]), None)
+    if target is None:
+        raise DraftMetadataError(f"tracks.csv does not contain this edit target: {record['slug']}")
+    original_cover = target.get("cover_file", "")
+    target.update({column: record.get(column, "") for column in TRACK_COLUMNS if column != "order"})
+    target["cover_file"] = original_cover or record.get("cover_file", "")
+    with (root / "tracks.csv").open("w", encoding="utf-8", newline="") as file:
+        writer = csv.DictWriter(file, fieldnames=TRACK_COLUMNS, lineterminator="\n")
+        writer.writeheader()
+        writer.writerows({column: row.get(column, "") for column in TRACK_COLUMNS} for row in rows)
+
+
+def _append_p53(root: Path, record: dict, *, note: str = "", current: bool = False) -> None:
     config_path = root / "config.json"
     config = load_config(config_path)
     history = config.setdefault("p53_history", [])
     if any(item.get("slug") == record["slug"] for item in history if isinstance(item, dict)):
         raise DraftMetadataError(f"config.json already contains this P53 slug: {record['slug']}")
     history.append(p53_record_from_draft(record))
+    if note:
+        notes = config.setdefault("p53_transmission_notes", {})
+        notes[record["slug"]] = note
+    if current:
+        config["p53_current_slug"] = record["slug"]
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _update_p53(root: Path, record: dict, *, enabled: bool, note: str = "", current: bool = False) -> None:
+    """Apply P53 state from a private edit without touching unrelated history."""
+    config_path = root / "config.json"
+    config = load_config(config_path)
+    history = config.setdefault("p53_history", [])
+    existing = next((item for item in history if isinstance(item, dict) and item.get("slug") == record["slug"]), None)
+    if enabled and existing is None:
+        history.append(p53_record_from_draft(record))
+    elif not enabled and existing is not None:
+        history.remove(existing)
+    if enabled:
+        existing = next((item for item in history if isinstance(item, dict) and item.get("slug") == record["slug"]), None)
+        if existing is not None:
+            existing.update(p53_record_from_draft(record))
+        notes = config.setdefault("p53_transmission_notes", {})
+        if note:
+            notes[record["slug"]] = note
+        else:
+            notes.pop(record["slug"], None)
+        if current:
+            config["p53_current_slug"] = record["slug"]
+        elif config.get("p53_current_slug") == record["slug"]:
+            config.pop("p53_current_slug", None)
+    else:
+        config.setdefault("p53_transmission_notes", {}).pop(record["slug"], None)
+        if config.get("p53_current_slug") == record["slug"]:
+            config.pop("p53_current_slug", None)
+    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _update_catalogue_notes(root: Path, record: dict, *, artist_note: str = "", album_note: str = "") -> None:
+    """Persist the optional notes owned by the generated artist/album rooms."""
+    config_path = root / "config.json"
+    config = load_config(config_path)
+    artist_notes = config.setdefault("artist_notes", {})
+    if artist_note:
+        artist_notes[record["artist"]] = artist_note
+    album_notes = config.setdefault("album_notes", {})
+    artist_albums = album_notes.setdefault(record["artist"], {})
+    if album_note:
+        artist_albums[record["album"]] = album_note
+    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+
+
+def _snapshot_files(paths: list[Path]) -> dict[Path, bytes | None]:
+    """Capture the small source-file boundary touched by one local publish."""
+    return {path: path.read_bytes() if path.is_file() else None for path in paths}
+
+
+def _restore_files(snapshot: dict[Path, bytes | None]) -> None:
+    """Restore a publish snapshot, removing files that did not previously exist."""
+    for path, contents in snapshot.items():
+        if contents is None:
+            if path.is_file():
+                path.unlink()
+            continue
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_bytes(contents)
+
+
+def _rebuild_after_rollback(root: Path) -> str:
+    """Best-effort regeneration after restoring source files."""
+    try:
+        result = subprocess.run(
+            [sys.executable, str(root / "build.py"), "--site-only"],
+            cwd=root,
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            timeout=180,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        return str(error)
+    output = (result.stdout or "") + (result.stderr or "")
+    return "" if result.returncode == 0 else output[-1200:]
+
+
+def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict:
+    """Write one validated browser draft, cache its cover, and rebuild locally.
+
+    This is intentionally a local-only handoff used by ``submission_server``.
+    The public Pages site never receives this endpoint or its private editor.
+    """
+    clean, error = validate_draft_payload(payload)
+    if error or clean is None:
+        raise DraftMetadataError(error or "invalid draft")
+    record_data = dict(clean["record"])
+    edit_of = str(payload.get("editOf") or "").strip()
+    metadata = metadata_from_link(
+        record_data["link"],
+        artist=record_data["artist"],
+        track=record_data["track"],
+        album=record_data["album"],
+    )
+    record = draft_record(metadata, tags=record_data["tags"], accent=record_data["accent"])
+    if clean["p53"]["enabled"]:
+        tags = [tag.strip() for tag in record.get("tags", "").split(",") if tag.strip()]
+        if not any(tag.casefold() == "p53" for tag in tags):
+            tags.append("p53")
+        record["tags"] = ",".join(tags)
+    # Preserve the browser's resolved artwork URL when the provider lookup is
+    # unavailable on the local server, while keeping the canonical identity.
+    record["cover_url"] = record_data.get("cover_url") or record.get("cover_url", "")
+    record["cover_file"] = record_data.get("cover_file") or record["cover_file"]
+    if edit_of:
+        if edit_of != record["slug"]:
+            raise DraftMetadataError("private edits cannot change artist/track route slugs")
+        if not (root / "entries" / f"{edit_of}.md").is_file():
+            raise DraftMetadataError(f"edit target does not exist: {edit_of}")
+    else:
+        _assert_new_slug(root, record["slug"])
+
+    covers_dir = root / "covers"
+    covers_dir.mkdir(exist_ok=True)
+    cover_path = covers_dir / record["cover_file"]
+    entry_path = root / "entries" / f"{record['slug']}.md"
+    snapshot = _snapshot_files([root / "tracks.csv", root / "config.json", entry_path, cover_path])
+    build_output = ""
+    try:
+        if not cover_path.exists():
+            cover_url = record.get("cover_url", "").strip()
+            if not cover_url or not download_cover(cover_url, cover_path):
+                raise DraftMetadataError("the provider resolved the entry, but its cover could not be cached")
+        if not record.get("accent"):
+            record["accent"] = dominant_color(cover_path)
+
+        entry_path.write_text(
+            render_authored_entry(record, clean["sections"]),
+            encoding="utf-8",
+        )
+        if edit_of:
+            _replace_track(root, record)
+            _update_p53(
+                root,
+                record,
+                enabled=clean["p53"]["enabled"],
+                note=clean["p53"]["note"],
+                current=clean["p53"]["current"],
+            )
+        else:
+            _append_track(root, record)
+            if clean["p53"]["enabled"]:
+                _append_p53(
+                    root,
+                    record,
+                    note=clean["p53"]["note"],
+                    current=clean["p53"]["current"],
+                )
+        _update_catalogue_notes(
+            root,
+            record,
+            artist_note=clean["catalogue"]["artist_note"],
+            album_note=clean["catalogue"]["album_note"],
+        )
+
+        if build_site:
+            try:
+                result = subprocess.run(
+                    [sys.executable, str(root / "build.py"), "--site-only", "--validate-links"],
+                    cwd=root,
+                    capture_output=True,
+                    text=True,
+                    encoding="utf-8",
+                    timeout=180,
+                    check=False,
+                )
+            except (OSError, subprocess.TimeoutExpired) as error:
+                raise DraftMetadataError(f"local build could not run: {error}") from error
+            build_output = (result.stdout or "") + (result.stderr or "")
+            if result.returncode:
+                raise DraftMetadataError(f"local build failed:\n{build_output[-3000:]}")
+    except Exception as error:
+        try:
+            _restore_files(snapshot)
+            rollback_output = _rebuild_after_rollback(root) if build_site else ""
+        except Exception as rollback_error:
+            raise DraftMetadataError(
+                f"local publish failed and rollback was incomplete: {rollback_error}"
+            ) from error
+        suffix = " Source files were restored."
+        if rollback_output:
+            suffix += f" The recovery build reported:\n{rollback_output}"
+        if isinstance(error, DraftMetadataError):
+            raise DraftMetadataError(f"{error}{suffix}") from error
+        raise DraftMetadataError(f"local publish failed: {error}.{suffix}") from error
+
+    artist_slug = slugify(record["artist"])
+    album_slug = slugify(f"{record['artist']}-{record['album']}")
+    return {
+        "slug": record["slug"],
+        "entry": f"/entries/{record['slug']}.html",
+        "p53": f"/p53/{record['slug']}.html" if clean["p53"]["enabled"] else "",
+        "artist": f"/artists/{artist_slug}.html" if artist_slug else "",
+        "album": f"/albums/{album_slug}.html" if album_slug else "",
+        "cover": f"/covers/{record['cover_file']}",
+        "buildOutput": build_output[-1200:],
+    }
+
+
+def _load_browser_draft(path: Path) -> dict:
+    """Read and validate one private browser-to-local draft handoff."""
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        raise DraftMetadataError(f"unable to read draft {path}: {error}") from error
+    clean, error = validate_draft_payload(payload)
+    if error or clean is None:
+        raise DraftMetadataError(error or "invalid draft")
+    if isinstance(payload.get("editOf"), str) and payload["editOf"].strip():
+        clean["editOf"] = payload["editOf"].strip()
+    return clean
 
 
 def main() -> int:
     args = _parse_args()
     root = _root()
     config = load_config(root / "config.json")
+    draft_sections = None
+    draft_p53 = {"enabled": False, "current": False, "note": ""}
+    edit_of = ""
+    if args.from_draft:
+        try:
+            draft = _load_browser_draft(args.from_draft)
+        except DraftMetadataError as error:
+            print(f"Draft not created: {error}")
+            return 2
+        draft_record_data = draft["record"]
+        args.link = draft_record_data["link"]
+        args.artist = draft_record_data["artist"]
+        args.track = draft_record_data["track"]
+        args.album = draft_record_data["album"]
+        args.tags = draft_record_data["tags"]
+        args.accent = draft_record_data["accent"]
+        draft_sections = draft["sections"]
+        draft_p53 = draft["p53"]
+        edit_of = draft.get("editOf", "")
+        args.p53 = draft_p53["enabled"]
+        args.p53_current = draft_p53["current"]
+        args.p53_note = draft_p53["note"]
     if args.install_editor:
         try:
             _install_browser_editor(root)
@@ -208,11 +480,27 @@ def main() -> int:
             timeout=args.timeout,
         )
         record = draft_record(metadata, tags=args.tags, accent=args.accent)
+        if args.from_draft:
+            record["cover_url"] = draft_record_data.get("cover_url") or record.get("cover_url", "")
+            record["cover_file"] = draft_record_data.get("cover_file") or record["cover_file"]
         sections = _ensure_unique_sections(
             getattr(args, "_selected_sections", config.get("sections", [])),
             _flatten_sections(args.section, args.sections),
         )
-        _assert_new_slug(root, record["slug"])
+        if edit_of:
+            if edit_of != record["slug"]:
+                raise DraftMetadataError("private edits cannot change artist/track route slugs")
+            if not (root / "entries" / f"{edit_of}.md").exists():
+                raise DraftMetadataError(f"edit target does not exist: {edit_of}")
+        else:
+            _assert_new_slug(root, record["slug"])
+        if args.p53_current and not args.p53:
+            raise DraftMetadataError("--p53-current requires --p53")
+        if args.p53:
+            tags = [tag.strip() for tag in record.get("tags", "").split(",") if tag.strip()]
+            if not any(tag.casefold() == "p53" for tag in tags):
+                tags.append("p53")
+            record["tags"] = ",".join(tags)
     except DraftMetadataError as error:
         print(f"Draft not created: {error}")
         return 2
@@ -224,18 +512,39 @@ def main() -> int:
     print(f"Sections: {', '.join(sections)}")
     print(f"Entry:  entries/{record['slug']}.md")
     print(f"Cover:  covers/{record['cover_file']}")
+    if args.p53:
+        print(f"P53:    {'CURRENT TRANSMISSION' if args.p53_current else 'history'}")
+        if args.p53_note:
+            print("Note:   transmission note supplied")
     print("Mode:   write" if args.write else "Mode:   preview only")
 
     if not args.write:
         return 0
 
     entry_path = root / "entries" / f"{record['slug']}.md"
-    entry_path.write_text(render_empty_entry(record, sections), encoding="utf-8")
-    _append_track(root, record)
-    if args.p53:
-        _append_p53(root, record)
-    print(f"Created source entry: {entry_path}")
-    print("Next: review the blank headings, then run the normal build and source validator.")
+    entry_path.write_text(
+        render_authored_entry(record, draft_sections)
+        if draft_sections is not None
+        else render_empty_entry(record, sections),
+        encoding="utf-8",
+    )
+    if edit_of:
+        _replace_track(root, record)
+        _update_p53(root, record, enabled=args.p53, note=args.p53_note, current=args.p53_current)
+        print(f"Updated source entry: {entry_path}")
+    else:
+        _append_track(root, record)
+        if args.p53:
+            _append_p53(root, record, note=args.p53_note, current=args.p53_current)
+        print(f"Created source entry: {entry_path}")
+    if args.from_draft:
+        _update_catalogue_notes(
+            root,
+            record,
+            artist_note=draft.get("catalogue", {}).get("artist_note", ""),
+            album_note=draft.get("catalogue", {}).get("album_note", ""),
+        )
+    print("Next: run the normal build and source validator.")
     return 0
 
 

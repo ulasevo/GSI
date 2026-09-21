@@ -178,10 +178,10 @@ def build_index_html(
         p53_html = f"""
         <a class="p53-broadcast" data-base-href="p53/index.html" href="p53/index.html" aria-label="Open Radio P53: current and previous transmissions" style="{html.escape(p53_style, quote=True)}">
             <div class="p53-art">
-                <img src="covers/P53_cover.jpg" alt="P53 protein artwork">
+                <img src="covers/P53_cover.jpg" alt="P53 protein artwork" loading="eager" fetchpriority="high" decoding="async">
             </div>
             <div class="p53-overlay">
-                <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover">
+                <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover" loading="lazy" decoding="async">
                 <div class="p53-signal-copy">
                     <span>CURRENT TRANSMISSION</span>
                     <strong>{html.escape(p53_item['track'])}</strong>

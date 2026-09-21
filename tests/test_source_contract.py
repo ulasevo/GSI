@@ -122,7 +122,7 @@ class SourceContractTests(unittest.TestCase):
 
 
 class GenerationInventoryTests(unittest.TestCase):
-    def test_inventory_exposes_only_qualified_album_routes(self) -> None:
+    def test_inventory_exposes_album_routes_for_every_catalogue_album(self) -> None:
         tracks = [
             {"slug": "metric-empty", "html_file": "metric-empty.html", "artist": "Metric", "album": "Live It Out"},
             {"slug": "metric-too-little", "html_file": "metric-too-little.html", "artist": "Metric", "album": "Live It Out"},
@@ -140,7 +140,10 @@ class GenerationInventoryTests(unittest.TestCase):
             inventory["album_routes"][("Metric", "Live It Out")],
             "albums/metric-live-it-out.html",
         )
-        self.assertNotIn(("Beach House", "Bloom"), inventory["album_routes"])
+        self.assertEqual(
+            inventory["album_routes"][("Beach House", "Bloom")],
+            "albums/beach-house-bloom.html",
+        )
         self.assertIn("latest.html", inventory["expected_pages"]["p53"])
 
     def test_reconcile_removes_only_managed_stale_pages(self) -> None:

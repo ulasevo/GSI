@@ -31,12 +31,33 @@
           <label>Track<input id="track" type="text" autocomplete="off"></label>
           <label>Album<input id="album" type="text" autocomplete="off"></label>
           <label>Filters / tags<input id="tags" type="text" placeholder="dreamy, personal" autocomplete="off"></label>
+          <label>Accent override (optional)<input id="accent" type="text" placeholder="#ff4fa3" autocomplete="off"></label>
+        </div>
+        <div class="p53-options">
+          <label class="check-field"><input id="p53-enabled" type="checkbox"> Add this signal to Radio P53</label>
+          <div id="p53-fields" hidden>
+            <label>Transmission notes<textarea id="p53-note" rows="4" placeholder="What belongs in the transmission record?"></textarea></label>
+            <label class="check-field"><input id="p53-current" type="checkbox"> Make this the current transmission</label>
+            <p class="field-note">Current status and notes are written only by the local handoff. The public Pages editor never edits the catalogue.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel catalogue-panel" aria-labelledby="catalogue-title">
+        <div class="panel-heading">
+          <div><p class="eyebrow">03 / CATALOGUE ROOMS</p><h2 id="catalogue-title">Give the new rooms a voice</h2></div>
+          <span class="panel-mark">ARTIST + ALBUM</span>
+        </div>
+        <p id="room-plan" class="panel-note">Resolve a provider link to see which artist and album rooms this signal will create or update.</p>
+        <div class="catalogue-notes-grid">
+          <label>Artist note <span class="field-hint">shown on the artist room</span><textarea id="artist-note" rows="5" placeholder="What keeps this artist in your orbit?"></textarea></label>
+          <label>Album take <span class="field-hint">shown on the album room</span><textarea id="album-note" rows="5" placeholder="What does the full album hold for you?"></textarea></label>
         </div>
       </section>
 
       <section class="panel sections-panel" aria-labelledby="sections-title">
         <div class="panel-heading">
-          <div><p class="eyebrow">02 / READING ROOMS</p><h2 id="sections-title">Choose what this song can hold</h2></div>
+          <div><p class="eyebrow">04 / READING ROOMS</p><h2 id="sections-title">Choose what this song can hold</h2></div>
           <button id="add-section" class="quiet-button" type="button">＋ ADD SECTION</button>
         </div>
         <p class="panel-note">The configured headings begin here. Remove the rooms you do not need, add your own, and write directly into each one.</p>
@@ -45,7 +66,7 @@
 
       <section class="panel export-panel" aria-labelledby="export-title">
         <div class="panel-heading">
-          <div><p class="eyebrow">03 / HANDOFF</p><h2 id="export-title">Review the source before it enters GSI</h2></div>
+          <div><p class="eyebrow">05 / HANDOFF</p><h2 id="export-title">Review the source before it enters GSI</h2></div>
           <span id="draft-state" class="draft-state">DRAFT ONLY</span>
         </div>
         <div id="validation" class="validation" role="status"></div>
@@ -53,8 +74,11 @@
         <div class="export-actions">
           <button id="copy-markdown" type="button">COPY MARKDOWN</button>
           <button id="download-markdown" class="primary-button" type="button">DOWNLOAD NEW ENTRY ↗</button>
+          <button id="download-json" type="button">DOWNLOAD DRAFT JSON</button>
+          <button id="save-local-draft" type="button" hidden>SAVE TO LOCAL INBOX</button>
+          <button id="publish-local" class="publish-button" type="button" hidden>BUILD ENTRY + ROOMS ↗</button>
         </div>
-        <p class="export-footnote">The download is a new file. Review it, place it in <code>entries/</code>, and run the normal build when you are ready.</p>
+        <p class="export-footnote">The Markdown download is a new file. On the private local server, BUILD ENTRY + ROOMS caches the cover, writes the source registries, and rebuilds the generated entry, artist, album, and optional P53 transmission.</p>
       </section>
     </form>
   </main>

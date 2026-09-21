@@ -41,15 +41,17 @@
 }
 
 .theme-toggle {
+  box-sizing: border-box;
   position: fixed;
   bottom: 16px;
   right: 16px;
   z-index: 40;
   display: inline-flex;
   align-items: center;
-  gap: 7px;
-  min-height: 34px;
-  padding: 4px 8px 4px 5px;
+  gap: 9px;
+  min-width: 104px;
+  min-height: 50px;
+  padding: 6px 12px 6px 7px;
   color: var(--gsi-mode-muted);
   border: 1px solid var(--gsi-mode-line);
   border-radius: 999px;
@@ -65,9 +67,7 @@
 
 .theme-toggle:hover,
 .theme-toggle:focus-visible {
-  color: var(--gsi-mode-control-ink);
   border-color: var(--gsi-mode-control);
-  background: var(--gsi-mode-control);
   transform: translateY(-2px);
 }
 
@@ -76,19 +76,38 @@
   outline-offset: 3px;
 }
 
+.theme-toggle__track {
+  position: relative;
+  display: flex;
+  flex: 0 0 62px;
+  align-items: center;
+  justify-content: flex-start;
+  box-sizing: border-box;
+  width: 62px;
+  height: 34px;
+  padding: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--gsi-mode-ink), transparent 78%);
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, .24), 0 0 0 1px color-mix(in srgb, var(--gsi-mode-line), transparent 10%);
+}
+
 .theme-toggle__icon {
   display: grid;
+  flex: 0 0 28px;
   place-items: center;
-  width: 24px;
-  height: 24px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   color: var(--gsi-mode-control-ink);
   background: var(--gsi-mode-control);
-  font-size: 13px;
-  letter-spacing: 0;
+  box-shadow: 0 2px 7px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255,255,255,.52);
+  transform: translateX(0);
+  transition: transform 220ms var(--gsi-motion), background 220ms ease, color 220ms ease;
 }
 
-.theme-toggle__label { white-space: nowrap; }
+.theme-toggle[aria-pressed="true"] .theme-toggle__icon { transform: translateX(28px); }
+.theme-toggle__icon svg { display:block; width:16px; height:16px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.theme-toggle__label { display:inline-flex; align-items:center; min-width:24px; min-height:28px; color:var(--gsi-mode-ink); white-space:nowrap; font-size:10px; font-weight:950; line-height:1; letter-spacing:.14em; }
 
 /* Artwork rooms use palette-derived surfaces but still receive a controlled
    light/dark bias.  The cover itself remains untouched. */
@@ -194,12 +213,21 @@
 }
 
 @media (max-width: 760px) {
-  .theme-toggle { bottom: 12px; right: 10px; min-height: 32px; }
-  .theme-toggle__label { display: none; }
+  .theme-toggle { bottom: 12px; right: 10px; min-width: 106px; min-height: 52px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .theme-toggle { transition: none; }
+}
+
+/* Reading cards may inherit a dark sampled artwork rim even in light mode.
+   Use the contrast role calculated for that card backdrop; this changes ink,
+   not the artwork-led surface or layout. */
+:root[data-gsi-theme="light"] body.entry-room .section-card,
+:root[data-gsi-theme="light"] body.entry-room .section-card h2,
+:root[data-gsi-theme="light"] body.entry-room .section-card p,
+:root[data-gsi-theme="light"] body.entry-room .section-card a {
+  color: var(--art-section-ink, var(--room-ink, #211823));
 }
 
 /* Room-specific contrast pass. These selectors sit after each page family so
@@ -484,8 +512,8 @@
 :root[data-gsi-theme="light"] body.entry-room .section-card:nth-child(even) {
   color: var(--room-ink, #211823);
   background:
-    var(--art-rim-gradient, none),
-    linear-gradient(135deg, color-mix(in srgb, var(--room-left, #ded9df), white 6%), color-mix(in srgb, var(--room-field-soft, #ded9df), white 16%) 52%, color-mix(in srgb, var(--room-right, #ded9df), white 6%));
+    linear-gradient(135deg, color-mix(in srgb, var(--room-left, #ded9df), white 18%), color-mix(in srgb, var(--room-field-soft, #ded9df), white 28%) 52%, color-mix(in srgb, var(--room-right, #ded9df), white 18%));
+  background-blend-mode: normal;
 }
 
 /* Catalog dark mode: artist and album rooms need an explicit ink/surface

@@ -102,7 +102,10 @@ authored in ordered layers under `web/styles/home/` before being assembled into
 filter data is carried in a small JSON script node, keeping the behavior file
 static without changing the query-state contract. The build now also emits
 `site/data/catalog.json`, classifying provider links as canonical or search
-fallbacks and recording local cover health. Artist/album room navigation now
+fallbacks and recording local cover health. Generated image delivery now uses
+eager/high-priority asynchronous decoding for above-the-fold artwork and
+lazy/asynchronous decoding for below-fold catalogue images; the bounded audit
+checks this contract across generated HTML. Artist/album room navigation now
 lives in `web/scripts/artist-room.js` and `web/scripts/album-room.js`. Asset budgeting, broader
 tests, and the final device/deployment sweep remain future work. The P53 landing
 query-state and focus helper now lives in `web/scripts/p53-landing.js` alongside the
@@ -122,13 +125,33 @@ as an empty prompted section. `--write` is the explicit catalogue mutation;
 history record. Spotify links are accepted with explicit names, but API-based
 metadata lookup remains deferred.
 
-The next dynamic-entry slice is now split deliberately: the private Entry
-Loader remains export-only and now previews resolved Apple artwork, while the
+The next dynamic-entry slice is now split deliberately: the public Entry
+Loader remains Pages-safe and now previews resolved Apple artwork, while the
 public `recommend.html` room accepts only a provider link, a note, and an
 optional signature. Its local intake companion writes validated pending JSON
 under `submissions/inbox/`; it never edits `tracks.csv`, entries, or generated
 pages. The browser falls back to downloading that JSON when no intake process
 is available.
+
+The local authoring slice now adds three guarded boundaries: theme state is
+preserved as `?theme=light|dark` in shareable navigation; the Entry Loader can
+save validated draft JSON to the ignored local inbox, including P53 membership,
+transmission notes, current-transmission state, and the downstream artist/album
+notes; and a separate `__local/editor/edit-entry.html` route reads existing
+source entries and saves reviewed edits as local drafts. The private local
+server also has an explicit `BUILD ENTRY + ROOMS` handoff: an Apple Music URL
+can resolve identity and artwork, cache a 600px cover, write the entry and
+catalogue row, update P53 when selected, persist artist/album notes, and run a
+validated local build. Artist and album routes are now generated for every
+catalogue signal, including a first signal. The private editor is not copied
+into `site/`, and the local server stays bound to `127.0.0.1` until an
+authenticated opt-in LAN layer is designed.
+
+The private editor now shares that same explicit publish boundary for existing
+signals: it loads catalogue notes, can save an ignored review draft, or can
+`SAVE + BUILD ENTRY` directly on localhost and refresh the affected generated
+rooms. This keeps the phone-friendly editing goal separate from public hosting
+and authentication work.
 
 Generated rooms now also receive deterministic artwork roles (`primary`,
 `secondary`, `surface`, `soft`, `ink`, `glow`) in `catalog.json`. The shared
@@ -153,6 +176,12 @@ transmission records; those records should exist before any notification feature
   positives can be bounded.
 - Extract the remaining embedded CSS/JavaScript in contained slices and add
   generator tests once each surface has a stable contract.
+
+The next substantial infrastructure decisions remain intentionally separate:
+authenticated opt-in LAN/phone authoring, durable signal identities for title
+corrections or repeated P53 appearances, and a staging-output build that can be
+validated before replacing the generated site. None of these should be inferred
+from a provider URL or introduced as an incidental UI patch.
 
 ## Out of scope unless explicitly reopened
 

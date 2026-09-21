@@ -8,13 +8,14 @@ metadata remains an explicit later integration.
 """
 
 import json
+import re
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qs, urlsplit
 from urllib.request import Request, urlopen
 
 try:
-    from builder.source_pipeline import make_markdown_template
+    from builder.source_pipeline import make_frontmatter, make_markdown_template, make_section_prompt
 except ModuleNotFoundError:
     # The published/main checkout predates the structural migration. Keep this
     # small authoring tool runnable there without copying the whole build stack.
@@ -29,6 +30,11 @@ except ModuleNotFoundError:
             "Comment": "Free field. Final take, vibe, joke, conclusion, or whatever does not fit elsewhere.",
         }
         return prompts.get(section, "Write whatever belongs here.")
+
+    make_section_prompt = _section_prompt
+
+    def make_frontmatter(artist: str, track: str, album: str, cover_file: str, accent: str) -> str:
+        return f"""---\nartist: {json.dumps(artist, ensure_ascii=False)}\ntrack: {json.dumps(track, ensure_ascii=False)}\nalbum: {json.dumps(album, ensure_ascii=False)}\ncover: {json.dumps(f'../covers/{cover_file}', ensure_ascii=False)}\naccent: {json.dumps(accent, ensure_ascii=False)}\n---\n"""
 
     def make_markdown_template(
         artist: str,
@@ -238,7 +244,7 @@ def render_empty_entry(record: dict, sections: list[str]) -> str:
 
 def p53_record_from_draft(record: dict) -> dict:
     """Prepare an explicit P53 history record without inventing status labels."""
-    return {
+    result = {
         "artist": record["artist"],
         "track": record["track"],
         "album": record["album"],
@@ -248,3 +254,100 @@ def p53_record_from_draft(record: dict) -> dict:
         **({"spotify_url": record["spotify_url"]} if record.get("spotify_url") else {}),
         "show_in_archive": True,
     }
+    if record.get("accent"):
+        result["accent"] = record["accent"]
+    return result
+
+
+def render_authored_entry(record: dict, sections: list[dict]) -> str:
+    """Render a browser/local draft while preserving the written section bodies."""
+    accent = record.get("accent") or "#444444"
+    section_text = []
+    for section in sections:
+        title = str(section.get("title") or "").strip()
+        if not title:
+            continue
+        content = str(section.get("content") or "").strip()
+        body = content or f"<!-- {make_section_prompt(title)} -->"
+        section_text.append(f"## {title}\n\n{body}")
+    cover_file = record.get("cover_file", "")
+    cover_markdown = f"![cover](../covers/{cover_file})\n\n" if cover_file else ""
+    joined_sections = "\n\n".join(section_text)
+    return (
+        f"{make_frontmatter(record['artist'], record['track'], record['album'], cover_file, accent)}\n"
+        f"# {record['track']} — {record['artist']}\n\n"
+        f"{cover_markdown}**Album:** {record['album']}\n"
+        f"**Accent:** `{accent}`\n\n"
+        f"{joined_sections}\n"
+    )
+
+
+def validate_draft_payload(payload: object) -> tuple[dict | None, str | None]:
+    """Validate the private browser-to-local Entry Loader handoff."""
+    if not isinstance(payload, dict):
+        return None, "draft payload must be an object"
+    if payload.get("schema", 1) != 1:
+        return None, "unsupported draft schema"
+    record = payload.get("record")
+    if not isinstance(record, dict):
+        return None, "draft payload is missing record metadata"
+    clean_record = {
+        key: str(record.get(key) or "").strip()
+        for key in ("artist", "track", "album", "link", "tags", "accent", "cover", "cover_file", "cover_url")
+    }
+    # The browser calls this field ``cover`` while source rows call it
+    # ``cover_file``. Keep both spellings at the boundary.
+    clean_record["cover_file"] = clean_record["cover_file"] or clean_record["cover"]
+    missing = [key for key in ("artist", "track", "album", "link") if not clean_record[key]]
+    if missing:
+        return None, f"draft is missing {', '.join(missing)}"
+    try:
+        provider_for_url(clean_record["link"])
+    except DraftMetadataError as error:
+        return None, str(error)
+    if clean_record["accent"] and not re.fullmatch(r"#[0-9a-fA-F]{6}", clean_record["accent"]):
+        return None, "accent must be a six-digit hex color"
+    if clean_record["cover_url"]:
+        parsed_cover = urlsplit(clean_record["cover_url"])
+        if parsed_cover.scheme != "https" or not parsed_cover.netloc:
+            return None, "cover artwork must use an HTTPS URL"
+    if clean_record["cover_file"] and not re.fullmatch(r"[a-z0-9][a-z0-9._-]*\.jpg", clean_record["cover_file"], re.I):
+        return None, "cover filename must be a safe .jpg name"
+
+    raw_sections = payload.get("sections")
+    if not isinstance(raw_sections, list):
+        return None, "draft sections must be a list"
+    sections = []
+    for section in raw_sections:
+        if not isinstance(section, dict):
+            return None, "each draft section must be an object"
+        title = str(section.get("title") or "").strip()
+        content = str(section.get("content") or "")
+        prompt = str(section.get("prompt") or "Write what belongs here.").strip()
+        if title:
+            sections.append({"title": title, "content": content, "prompt": prompt})
+    if not sections:
+        return None, "draft needs at least one named section"
+
+    raw_p53 = payload.get("p53") or {}
+    if not isinstance(raw_p53, dict):
+        return None, "p53 draft settings must be an object"
+    p53 = {
+        "enabled": bool(raw_p53.get("enabled")),
+        "current": bool(raw_p53.get("current")),
+        "note": str(raw_p53.get("note") or "").strip(),
+    }
+    if p53["current"] and not p53["enabled"]:
+        return None, "a current transmission must also be enabled for P53"
+    if len(p53["note"]) > 4000:
+        return None, "the P53 transmission note is too long"
+    raw_catalogue = payload.get("catalogue") or {}
+    if not isinstance(raw_catalogue, dict):
+        return None, "catalogue notes must be an object"
+    catalogue = {
+        "artist_note": str(raw_catalogue.get("artist_note") or "").strip(),
+        "album_note": str(raw_catalogue.get("album_note") or "").strip(),
+    }
+    if len(catalogue["artist_note"]) > 4000 or len(catalogue["album_note"]) > 4000:
+        return None, "artist and album notes must be under 4000 characters"
+    return {"schema": 1, "record": clean_record, "sections": sections, "p53": p53, "catalogue": catalogue}, None

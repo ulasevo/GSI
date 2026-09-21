@@ -87,7 +87,11 @@ def build_entry_page(
     if item["cover_file"]:
         cover_src = f"../covers/{item['cover_file']}"
         art_image_src = cover_src
-        cover_html = f'<img class = "cover" src = "{cover_src}" alt = "{html.escape(item["album"])} cover">'
+        # Entry covers are the reading-room hero, so keep the first visual
+        # request eager while allowing the browser to decode it off the main
+        # thread.  The explicit priority avoids the cover arriving after the
+        # prose on slower mobile connections.
+        cover_html = f'<img class = "cover" src = "{cover_src}" alt = "{html.escape(item["album"])} cover" loading="eager" fetchpriority="high" decoding="async">'
         # Keep the cover treatment as a custom property on the page body. This
         # lets the shared stylesheet stay static while the URL remains escaped.
         bg_style = html.escape(
@@ -156,7 +160,7 @@ def build_entry_page(
     # These are factual exits from the entry, not recommendations or inferred
     # similarities.
     also_paths = []
-    artist_room_exists = (artist_counts or {}).get(item["artist"], 0) >= 2
+    artist_room_exists = (artist_counts or {}).get(item["artist"], 0) >= 1
     artist_slug = slugify(item["artist"])
     artist_href = f'../artists/{slugify(item["artist"])}.html'
     entry_context_json = json.dumps({

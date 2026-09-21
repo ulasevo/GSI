@@ -1,9 +1,9 @@
 order,tags,artist,track,album,accent,cover_file,cover_url,spotify_url,apple_url
-1,personal,Metric,Empty,Live It Out,#ff2f92,,,,https://music.apple.com/us/album/empty/1108029976?i=1108031306&uo=4
-,personal,Metric,Too Little Too Late,Live It Out,#ff2f92,,,,https://music.apple.com/us/album/too-little-too-late/1108029976?i=1108031310&uo=4
+1,personal,Metric,Empty,Live It Out,#ff2f92,metric-empty.jpg,,,https://music.apple.com/us/album/empty/1108029976?i=1108031306&uo=4
+,"personal,p53",Metric,Too Little Too Late,Live It Out,#ff2f92,metric-too-little-too-late.jpg,,,https://music.apple.com/us/album/too-little-too-late/1108029976?i=1108031310&uo=4
 ,personal,Metric,Poster of a Girl,Live It Out,#ff2f92,,,,https://music.apple.com/us/album/poster-of-a-girl/1108029976?i=1108031311&uo=4
 2,personal,Matt Maeson,Year After Year,A Quiet And Harmless Living,,,,,https://music.apple.com/us/album/year-after-year/1823989247?i=1823989517&uo=4
-,"personal,ulas",K.Flay,Time For You,Life as a Dog,,,https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/d7/05/0c/d7050c3f-dc10-86b9-9384-e795f2bda0ad/4050538649963.jpg/296x296bb.webp,,https://music.apple.com/tr/album/time-for-you/1535436611?i=1535436621&ls
+,"personal,ulas",K.Flay,Time For You,Life as a Dog,,k-flay-time-for-you.jpg,https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/d7/05/0c/d7050c3f-dc10-86b9-9384-e795f2bda0ad/4050538649963.jpg/600x600bb.jpg,,https://music.apple.com/tr/album/time-for-you/1535436611?i=1535436621&ls
 ,bassline,Kendrick Lamar,TV Off,GNX,#c7c7c7,,,,https://music.apple.com/us/album/tv-off-feat-lefty-gunplay/1781316864?i=1781316952&uo=4
 3,"personal,bassline",Travis Scott,Coffee Bean,ASTROWORLD,#d9a441,,,,https://music.apple.com/us/album/coffee-bean/1421658111?i=1421658667&uo=4
 ,bassline,Travis Scott,Through the Late Night,Birds In The Trap McKnight,,,,,https://music.apple.com/us/album/through-the-late-night/1151481435?i=1151481741&uo=4
@@ -23,3 +23,6 @@ order,tags,artist,track,album,accent,cover_file,cover_url,spotify_url,apple_url
 ,"personal,p53",Wet Leg,mangetout,Moisturizer,,,,,https://music.apple.com/tr/album/mangetout/1802918329?i=1802918493&ls
 ,"bite, p53",Arctic Monkeys,Secret Door,Humbug (Bonus Track Version),,,,,https://music.apple.com/tr/album/secret-door/330283015?i=330283291&ls
 ,"dreamy, p53",Miki Matsubara,Mayonaka No Door ~Stay with Me,Pocket Park,#bb907a,,,,https://music.apple.com/us/album/mayonaka-no-door-stay-with-me/1858846278?i=1858846444&uo=4
+,"ulas,p53",Matt Maeson,Stubborn As Religion,A Quiet And Harmless Living,,matt-maeson-stubborn-as-religion.jpg,,,https://music.apple.com/us/album/1823989247?i=1823989514
+,distortion,Royal Blood,Little Monster,Royal Blood (10th Anniversary Edition),,royal-blood-little-monster.jpg,,,https://music.apple.com/us/song/little-monster/1759342188
+,distortion,Royal Blood,Ten Tonne Skeleton,Royal Blood (10th Anniversary Edition),#c69d46,royal-blood-ten-tonne-skeleton.jpg,https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/ff/c7/d5/ffc7d561-2e9a-91ca-7fa9-42a89abb2579/5021732266996.jpg/600x600bb.jpg,,https://music.apple.com/tr/album/ten-tonne-skeleton/1759342172?i=1759342403&ls

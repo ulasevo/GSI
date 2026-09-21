@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Edit signal · local GSI</title>
+  <link rel="stylesheet" href="private-entry.css">
+</head>
+<body>
+  <main class="private-shell">
+    <header>
+      <p class="eyebrow">PRIVATE LOCAL AUTHORING</p>
+      <h1>Edit a signal without touching the source.</h1>
+    <p class="intro">This room reads your local entries. Save a reviewable draft, or build the selected edit directly on this machine. It is not copied into the public site.</p>
+    </header>
+    <section class="panel chooser" aria-labelledby="chooser-title">
+      <label id="chooser-title">Signal
+        <select id="entry-select"><option value="">Loading local entries…</option></select>
+      </label>
+      <button id="load-entry" type="button">LOAD SIGNAL</button>
+      <p id="status" role="status">Choose an entry to begin.</p>
+    </section>
+    <form id="edit-form" class="panel" hidden>
+      <input id="edit-of" type="hidden">
+      <div class="field-grid">
+        <label>Artist<input id="artist" type="text"></label>
+        <label>Track<input id="track" type="text"></label>
+        <label>Album<input id="album" type="text"></label>
+        <label>Provider link<input id="provider-link" type="url"></label>
+        <label>Filters / tags<input id="tags" type="text"></label>
+        <label>Accent<input id="accent" type="text"></label>
+      </div>
+      <div class="p53-row">
+        <label><input id="p53-enabled" type="checkbox"> Radio P53</label>
+        <label><input id="p53-current" type="checkbox"> Current transmission</label>
+        <label class="wide">Transmission notes<textarea id="p53-note" rows="3"></textarea></label>
+      </div>
+      <h2>Catalogue rooms</h2>
+      <div class="catalogue-grid">
+        <label>Artist note<textarea id="artist-note" rows="4" placeholder="Context for the artist room"></textarea></label>
+        <label>Album take<textarea id="album-note" rows="4" placeholder="Your take for the album room"></textarea></label>
+      </div>
+      <h2>Reading rooms</h2>
+      <div id="section-list"></div>
+      <div class="edit-actions">
+        <button id="save-draft" class="primary" type="submit">SAVE PRIVATE EDIT DRAFT</button>
+        <button id="build-entry" type="button">SAVE + BUILD ENTRY ↗</button>
+      </div>
+    </form>
+  </main>
+  <script src="private-entry.js"></script>
+</body>
+</html>

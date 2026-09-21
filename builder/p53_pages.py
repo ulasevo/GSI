@@ -88,7 +88,7 @@ def build_p53_page(
     transmission_note = str((config.get("p53_transmission_notes") or {}).get(item["slug"], "")).strip()
     cover_src = f'../covers/{item["cover_file"]}' if item.get("cover_file") else ""
     art_style = html.escape(p53_style, quote=True)
-    cover_html = f'<img class="signal-cover" src="{cover_src}" alt="{html.escape(item["album"], quote=True)} cover">' if cover_src else ""
+    cover_html = f'<img class="signal-cover" src="{cover_src}" alt="{html.escape(item["album"], quote=True)} cover" loading="eager" fetchpriority="high" decoding="async">' if cover_src else ""
     note_html = (
         f'<section class="transmission-note"><h2>TRANSMISSION NOTES</h2>{simple_markdown_to_html(transmission_note)}</section>'
         if transmission_note else ""
@@ -146,7 +146,7 @@ def build_p53_archive(
     # near them.
     def cover(item: dict, eager: bool = False) -> str:
         if item.get("cover_file"):
-            loading = 'loading="eager" fetchpriority="high"' if eager else 'loading="lazy" decoding="async"'
+            loading = 'loading="eager" fetchpriority="high" decoding="async"' if eager else 'loading="lazy" decoding="async"'
             return f'<img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover" {loading}>'
         return '<div class="cover-missing" aria-hidden="true">P53</div>'
 

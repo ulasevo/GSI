@@ -1,17 +1,17 @@
 ---
-artist: "Metric"
-track: "Too Little Too Late"
-album: "Live It Out"
-cover: "../covers/metric-too-little-too-late.jpg"
-accent: "#ff2f92"
+artist: "Royal Blood"
+track: "Ten Tonne Skeleton"
+album: "Royal Blood (10th Anniversary Edition)"
+cover: "../covers/royal-blood-ten-tonne-skeleton.jpg"
+accent: "#c69d46"
 ---
 
-# Too Little Too Late — Metric
+# Ten Tonne Skeleton — Royal Blood
 
-![cover](../covers/metric-too-little-too-late.jpg)
+![cover](../covers/royal-blood-ten-tonne-skeleton.jpg)
 
-**Album:** Live It Out
-**Accent:** `#ff2f92`
+**Album:** Royal Blood (10th Anniversary Edition)
+**Accent:** `#c69d46`
 
 ## Charge
 
@@ -39,4 +39,4 @@ accent: "#ff2f92"
 
 ## Comment
 
-I have so much to say about this song, and this song has so much to say about me. So I'd rather keep it silent here. I'll just advise you to take a listen if you're in this page.
+<!-- Free field. Final take, vibe, joke, conclusion, or whatever does not fit elsewhere. -->

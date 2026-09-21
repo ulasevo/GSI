@@ -29,7 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
       activeFilter: state.activeFilter,
       activeView: document.body.dataset.view,
       activeFormat: state.activeFormat,
+      activeTheme: document.documentElement.dataset.gsiTheme,
       allowedViews,
+      allowedThemes: GSIContext.allowedThemes,
     });
   }
 
@@ -41,6 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (state.activeFilter) params.set("filter", state.activeFilter);
     if (allowedViews.has(document.body.dataset.view)) params.set("view", document.body.dataset.view);
     if (state.activeFormat === "albums") params.set("format", state.activeFormat);
+    const activeTheme = GSIContext.currentTheme();
+    if (activeTheme) params.set("theme", activeTheme);
     const query = params.size ? `?${params}` : "";
     window.history.replaceState(null, "", `${window.location.pathname}${query}${window.location.hash}`);
   }

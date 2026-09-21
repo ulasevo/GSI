@@ -1,7 +1,8 @@
 # Local review tools
 
-These scripts produce audit artifacts. They never edit `tracks.csv`,
-`config.json`, entries, covers, or generated pages.
+These scripts default to review-only artifacts. The authoring commands below
+keep source mutation behind an explicit `--write` boundary; generated pages
+are always produced by the normal build.
 
 ## Provider candidates
 
@@ -44,8 +45,18 @@ running the full build, use:
 python tools/new_entry.py --install-editor
 ```
 
-Then open `/tools/new-entry.html`. It exports a new Markdown file only; it does
-not overwrite entries or write directly into the source catalogue.
+Then open `/tools/new-entry.html`. On the private local server, the loader has
+two separate handoff buttons:
+
+- `SAVE DRAFT` writes a reviewable JSON draft into the ignored local inbox.
+- `BUILD ENTRY + ROOMS` is the explicit local publish path. After resolving the
+  provider URL and filling the writing rooms, it caches the cover, writes the
+  Markdown entry and `tracks.csv` row, optionally updates P53, saves the artist
+  note and album take, and runs the normal site build. The resulting artist and
+  album rooms are created automatically, even when this is their first signal.
+
+The generated Pages copy keeps the export/download controls but never exposes
+the local publish endpoint. The local server remains bound to `127.0.0.1`.
 
 If the machine cannot reach Apple's lookup endpoint, supply all three names to
 use the link safely offline; the canonical Apple URL is still preserved:
@@ -59,6 +70,38 @@ The command is preview-only by default. Add `--write` only after reviewing the
 resolved metadata; add `--p53` if the song should also become an explicit P53
 history record. Spotify links are accepted with explicit `--artist`, `--track`,
 and `--album` values, but Spotify API metadata lookup is intentionally deferred.
+
+A browser draft can be reviewed and committed with:
+
+```text
+python tools/new_entry.py --from-draft submissions/drafts/<draft>.json --write
+```
+
+The loader's P53 panel writes the `p53` tag, history record, optional
+transmission note, and current-transmission pointer together. Its catalogue
+room panel makes the downstream artist/album generation visible before you
+publish, so `artist note` and `album take` are captured at the same time as the
+entry.
+
+Apple Music URLs are fully self-resolving: the loader obtains identity and
+artwork from Apple's public lookup, then the local publish step caches the
+600px cover. Spotify URLs remain a safe manual-identity path for now because
+there is no unauthenticated metadata/artwork lookup in this private tool.
+
+## Private local entry editing
+
+The local server exposes a separate, non-generated editor at
+`http://127.0.0.1:8021/__local/editor/edit-entry.html`. It reads source entries,
+keeps the public Pages build untouched, and offers both ignored JSON drafts and
+an explicit `SAVE + BUILD ENTRY` action. The editor also loads and saves the
+artist note and album take associated with the selected signal:
+
+```text
+python tools/submission_server.py 8021
+```
+
+The route is intentionally bound to `127.0.0.1`; phone/LAN access should wait
+until an explicit authentication and opt-in bind layer exists.
 
 ## Recommend a Signal intake
 
@@ -88,3 +131,17 @@ The second command previews a Markdown draft. Add `--write-draft` only after
 reviewing it; the file is written to `submissions/drafts/`, never to
 `entries/` or `tracks.csv`. Apple links can resolve their identity; Spotify or
 other provider links need `--artist`, `--track`, and `--album` overrides.
+
+## Bounded overnight audit
+
+Run the read-only integrity pass before a long local authoring session:
+
+```text
+python tools/overnight_audit.py
+```
+
+It checks source entry/cover relationships (including Markdown-owned cover
+frontmatter), duplicate signal routes, P53 current/history consistency,
+generated-route manifests, generated image loading/decoding attributes, and the
+shared loader/theme contracts. It does not rewrite sources, download assets, or
+touch Git state.

@@ -16,11 +16,12 @@
 
   // Keep query-string rules in one place so every generated link carries the
   // same state and never invents an unsupported view or format.
-  function contextHref({ baseHref, activeFilter, activeView, activeFormat, allowedViews }) {
+  function contextHref({ baseHref, activeFilter, activeView, activeFormat, activeTheme, allowedViews, allowedThemes = new Set(["light", "dark"]) }) {
     const params = new URLSearchParams();
     if (activeFilter) params.set("filter", activeFilter);
     if (allowedViews.has(activeView)) params.set("view", activeView);
     if (activeFormat === "albums") params.set("format", activeFormat);
+    if (allowedThemes.has(activeTheme)) params.set("theme", activeTheme);
     return `${baseHref}${params.size ? `?${params}` : ""}`;
   }
 

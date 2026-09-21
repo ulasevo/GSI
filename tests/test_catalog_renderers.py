@@ -217,6 +217,10 @@ class CatalogueRendererTests(unittest.TestCase):
                 json.loads((destination / "editor-config.json").read_text(encoding="utf-8"))["sections"],
                 ["Charge", "Comment"],
             )
+            self.assertEqual(
+                json.loads((destination / "editor-config.json").read_text(encoding="utf-8"))["sectionInfo"],
+                {},
+            )
 
 
 if __name__ == "__main__":

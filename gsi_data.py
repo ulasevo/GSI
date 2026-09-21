@@ -55,11 +55,10 @@ def artist_room_groups(tracks: list[dict], p53_history: list[dict]) -> dict[str,
         p53_item["page_url"] = f'p53/{signal["slug"]}.html'
         grouped.setdefault(signal["artist"], []).append(p53_item)
 
-    return {
-        artist: items
-        for artist, items in grouped.items()
-        if len(items) >= 2
-    }
+    # Every catalogue signal gets a stable artist room. The loader can now
+    # publish a first signal without leaving its artist link dangling; later
+    # signals simply join the same generated room.
+    return {artist: items for artist, items in grouped.items() if items}
 
 
 # Derive every route once. Renderers consume this inventory instead of inventing
@@ -99,7 +98,7 @@ def build_generation_inventory(
     album_routes = {
         key: f'albums/{slugify(f"{key[0]}-{key[1]}")}.html'
         for key, items in album_groups.items()
-        if len(items) >= 2 and slugify(f"{key[0]}-{key[1]}")
+        if items and slugify(f"{key[0]}-{key[1]}")
     }
 
     p53_page_names = {"index.html"} if p53_history else set()

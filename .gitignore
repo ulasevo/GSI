@@ -152,6 +152,7 @@ venv.bak/
 # Local recommendation intake; keep pending submissions out of source control.
 submissions/inbox/*.json
 submissions/drafts/*.md
+submissions/drafts/*.json
 
 # mypy
 .mypy_cache/

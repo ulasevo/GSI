@@ -6,10 +6,18 @@
 (() => {
   // These are the only layouts the homepage and its return links understand.
   const allowedViews = new Set(["poster", "wall", "gallery"]);
+  const allowedThemes = new Set(["light", "dark"]);
 
   // Read the current URL at the moment a helper is called, not only at load time.
   function read() {
     return new URLSearchParams(window.location.search);
+  }
+
+  function currentTheme(state = read()) {
+    const queryTheme = state.get("theme");
+    if (allowedThemes.has(queryTheme)) return queryTheme;
+    const documentTheme = typeof document !== "undefined" ? document.documentElement.dataset.gsiTheme : "";
+    return allowedThemes.has(documentTheme) ? documentTheme : "";
   }
 
   function archiveParams({ state = read(), filterLabels = {}, filterKeys = [] } = {}) {
@@ -20,6 +28,8 @@
     const view = state.get("view");
     if (allowedViews.has(view)) params.set("view", view);
     if (state.get("format") === "albums") params.set("format", "albums");
+    const theme = currentTheme(state);
+    if (theme) params.set("theme", theme);
     return params;
   }
 
@@ -33,8 +43,10 @@
   // layout that happened to be active when someone pressed Share.
   function canonicalHref(location = window.location) {
     const url = new URL(location.href);
+    const theme = currentTheme(url.searchParams);
     url.search = "";
     url.hash = "";
+    if (theme) url.searchParams.set("theme", theme);
     return url.href;
   }
 
@@ -58,6 +70,8 @@
 
   window.GSIContext = Object.freeze({
     allowedViews,
+    allowedThemes,
+    currentTheme,
     read,
     archiveParams,
     href,

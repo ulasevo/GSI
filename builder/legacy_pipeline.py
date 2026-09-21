@@ -115,7 +115,12 @@ def main() -> None:
     copy_site_artist_assets(ARTIST_ASSETS_DIR, SITE_ARTIST_ASSETS_DIR)
     copy_site_scripts(WEB_DIR, SITE_SCRIPTS_DIR)
     copy_site_styles(WEB_DIR, SITE_STYLES_DIR)
-    copy_site_editor(BASE / "tools" / "editor", SITE_EDITOR_DIR, config.get("sections", []))
+    copy_site_editor(
+        BASE / "tools" / "editor",
+        SITE_EDITOR_DIR,
+        config.get("sections", []),
+        config.get("section_info", {}),
+    )
     write_catalog_manifest(archive_tracks)
     write_generation_manifest(inventory)
     write_artist_manifest(

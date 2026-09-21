@@ -75,3 +75,23 @@ body.art-room .artist-signal:focus-visible {
 }
 body.art-room .album-entry b,
 body.art-room .artist-signal b { color: var(--art-control-ink, var(--art-copy, #211823)); }
+
+:root[data-gsi-theme="dark"] body.art-room {
+  --art-copy: var(--art-dark-ink, #f8f5ef);
+  color: var(--art-copy);
+}
+:root[data-gsi-theme="dark"] body.art-room nav a,
+:root[data-gsi-theme="dark"] body.art-room nav strong,
+:root[data-gsi-theme="dark"] body.art-room .artist-heading h1,
+:root[data-gsi-theme="dark"] body.art-room .artist-heading>span,
+:root[data-gsi-theme="dark"] body.art-room .artist-note,
+:root[data-gsi-theme="dark"] body.art-room .album-stack>header h2,
+:root[data-gsi-theme="dark"] body.art-room .album-note-preview,
+:root[data-gsi-theme="dark"] body.art-room .album-entry,
+:root[data-gsi-theme="dark"] body.art-room .artist-signal,
+:root[data-gsi-theme="dark"] body.art-room .artist-signal p,
+:root[data-gsi-theme="dark"] body.art-room .album-entry b,
+:root[data-gsi-theme="dark"] body.art-room .artist-signal b {
+  color: var(--art-dark-ink, #f8f5ef);
+}
+:root[data-gsi-theme="dark"] body.art-room nav span { color: color-mix(in srgb, var(--art-dark-ink, #f8f5ef), transparent 42%); }

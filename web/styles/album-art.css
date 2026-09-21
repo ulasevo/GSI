@@ -69,3 +69,25 @@ body.art-room .album-song:focus-visible {
   background: var(--art-control-hover, #b897b5);
 }
 body.art-room .album-song b { color: var(--art-control-ink, var(--art-copy, #211823)); }
+
+/* The room sheets are dark-first, but the shared light palette was still
+   winning the copy role in dark mode. Keep the artwork field and switch only
+   the ink/control roles back to the dark contrast contract. */
+:root[data-gsi-theme="dark"] body.art-room {
+  --art-copy: var(--art-dark-ink, #f8f5ef);
+  color: var(--art-copy);
+}
+:root[data-gsi-theme="dark"] body.art-room nav a,
+:root[data-gsi-theme="dark"] body.art-room nav strong,
+:root[data-gsi-theme="dark"] body.art-room h1,
+:root[data-gsi-theme="dark"] body.art-room .artist,
+:root[data-gsi-theme="dark"] body.art-room .album-note,
+:root[data-gsi-theme="dark"] body.art-room .album-note>span,
+:root[data-gsi-theme="dark"] body.art-room .album-song,
+:root[data-gsi-theme="dark"] body.art-room .album-song b {
+  color: var(--art-dark-ink, #f8f5ef);
+}
+:root[data-gsi-theme="dark"] body.art-room nav span { color: color-mix(in srgb, var(--art-dark-ink, #f8f5ef), transparent 42%); }
+:root[data-gsi-theme="dark"] body.art-room .album-note {
+  background: linear-gradient(100deg, color-mix(in srgb, var(--art-primary), transparent 72%), color-mix(in srgb, var(--art-dark-surface), transparent 8%));
+}

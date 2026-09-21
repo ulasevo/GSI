@@ -52,7 +52,7 @@ def build_artist_pages(
         albums: dict[str, list[dict]] = {}
         for item in artist_tracks:
             albums.setdefault(item["album"], []).append(item)
-        grouped_albums = [(album, items) for album, items in albums.items() if len(items) >= 2]
+        grouped_albums = [(album, items) for album, items in albums.items() if items]
         grouped_slugs = {item["slug"] for _, items in grouped_albums for item in items}
 
         # Keep the base route separate from its query-state decoration. The
@@ -77,7 +77,7 @@ def build_artist_pages(
                 </a>'''
             state = "P53 TRANSMISSION" if item.get("p53_only") else html.escape(item["album"])
             return f'''<a class="artist-signal" data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
-                <img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover">
+                <img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover" loading="lazy" decoding="async">
                 <div><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{state}</small></div><b>{transmission_label}</b>
             </a>'''
 
@@ -93,7 +93,7 @@ def build_artist_pages(
             album_note = str(album_notes.get(artist, {}).get(album, "")).strip()
             album_note_html = f'<div class="album-note-preview">{simple_markdown_to_html(album_note)}</div>' if album_note else ""
             album_sections.append(f'''<section class="album-stack" style="--accent:{items[0]["accent"]}">
-                <header><img src="../covers/{html.escape(items[0]["cover_file"], quote=True)}" alt="{html.escape(album, quote=True)} cover"><div style="min-width:0"><span style="display:block;margin-bottom:6px;color:color-mix(in srgb,var(--accent),white 24%);font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2>{album_title_link}</h2>{album_note_html}</div></header>
+                <header><img src="../covers/{html.escape(items[0]["cover_file"], quote=True)}" alt="{html.escape(album, quote=True)} cover" loading="lazy" decoding="async"><div style="min-width:0"><span style="display:block;margin-bottom:6px;color:color-mix(in srgb,var(--accent),white 24%);font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2>{album_title_link}</h2>{album_note_html}</div></header>
                 <div>{''.join(entry_tile(item, compact=True) for item in items)}</div>
             </section>''')
         albums_html = "".join(album_sections)
@@ -143,7 +143,7 @@ def build_album_pages(
     *,
     output_dir: Path | None = None,
 ) -> None:
-    """Build a focused room for albums represented by at least two signals."""
+    """Build a focused room for every catalogue album with a valid route."""
     # Album rooms are generated from the shared route inventory so an album link
     # cannot appear unless the corresponding page is actually written.
     config = load_config(CONFIG_FILE)
@@ -154,7 +154,7 @@ def build_album_pages(
     for item in tracks:
         grouped.setdefault((item["artist"], item["album"]), []).append(item)
     for (artist, album), items in grouped.items():
-        if len(items) < 2:
+        if not items:
             continue
         route = (album_routes or {}).get((artist, album))
         slug = slugify(f"{artist}-{album}")
@@ -165,7 +165,7 @@ def build_album_pages(
             palette_style(items[0].get("palette") or artwork_palette(Path("__missing_artwork__.jpg"), accent), f'../covers/{items[0].get("cover_file", "")}'),
             quote=True,
         )
-        artist_room_exists = artist in (artist_groups or {}) if artist_groups is not None else sum(1 for item in tracks if item.get("artist") == artist) >= 2
+        artist_room_exists = artist in (artist_groups or {}) if artist_groups is not None else any(item.get("artist") == artist for item in tracks)
         artist_href = f"../artists/{slugify(artist)}.html"
         artist_nav = (
             f'<a id="album-artist-return" class="artist-link" data-artist-base-href="{html.escape(artist_href, quote=True)}" href="{html.escape(artist_href, quote=True)}">{html.escape(artist.upper())}</a>'
@@ -176,7 +176,7 @@ def build_album_pages(
             if artist_room_exists else html.escape(artist)
         )
         cover = items[0].get("cover_file", "")
-        cover_html = f'<img class="album-cover" src="../covers/{html.escape(cover, quote=True)}" alt="{html.escape(album, quote=True)} cover">' if cover else ""
+        cover_html = f'<img class="album-cover" src="../covers/{html.escape(cover, quote=True)}" alt="{html.escape(album, quote=True)} cover" loading="eager" fetchpriority="high" decoding="async">' if cover else ""
         song_links = []
         for item in items:
             target = item.get("page_url") or f'entries/{item["html_file"]}'
