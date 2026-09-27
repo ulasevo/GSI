@@ -16,6 +16,13 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT))
+
+from gsi_data import current_p53_record
+from gsi_links import provider_link_audit
+
+P53_RUNTIME_ASSET = Path("covers/P53_cover-runtime.webp")
+P53_RUNTIME_ASSET_BUDGET_BYTES = 500_000
 
 
 def _load_json(path: Path) -> dict:
@@ -74,6 +81,38 @@ def _image_delivery_errors(site_dir: Path) -> list[str]:
     return errors
 
 
+def _runtime_asset_report(root: Path, site_dir: Path) -> tuple[list[str], list[str], dict[str, int | None]]:
+    """Check that the heavy P53 source has a small published runtime derivative."""
+    errors: list[str] = []
+    warnings: list[str] = []
+    source_path = root / P53_RUNTIME_ASSET
+    site_path = site_dir / P53_RUNTIME_ASSET
+    source_bytes = source_path.stat().st_size if source_path.is_file() else None
+    site_bytes = site_path.stat().st_size if site_path.is_file() else None
+    if source_bytes is None:
+        errors.append(f"missing runtime artwork source: {P53_RUNTIME_ASSET.as_posix()}")
+    elif source_bytes > P53_RUNTIME_ASSET_BUDGET_BYTES:
+        errors.append(
+            f"runtime artwork exceeds budget: {P53_RUNTIME_ASSET.as_posix()} "
+            f"is {source_bytes} bytes (budget {P53_RUNTIME_ASSET_BUDGET_BYTES})"
+        )
+    if site_bytes is None:
+        errors.append(f"generated runtime artwork is missing: {P53_RUNTIME_ASSET.as_posix()}")
+    elif source_bytes is not None and site_bytes != source_bytes:
+        errors.append(
+            f"generated runtime artwork is stale: {P53_RUNTIME_ASSET.as_posix()} "
+            f"source={source_bytes} site={site_bytes}"
+        )
+    original_path = root / "covers" / "P53_cover.jpg"
+    if not original_path.is_file():
+        warnings.append("P53 source artwork is missing; social preview generation may be affected")
+    return errors, warnings, {
+        "source_bytes": source_bytes,
+        "site_bytes": site_bytes,
+        "original_bytes": original_path.stat().st_size if original_path.is_file() else None,
+    }
+
+
 def audit(root: Path = ROOT) -> dict:
     errors: list[str] = []
     warnings: list[str] = []
@@ -82,6 +121,15 @@ def audit(root: Path = ROOT) -> dict:
     site_dir = root / "site"
     tracks = list(csv.DictReader(tracks_path.open("r", encoding="utf-8", newline="")))
     config = _load_json(config_path)
+    provider_report_full = provider_link_audit(tracks + [
+        item for item in config.get("p53_history", [])
+        if isinstance(item, dict)
+    ])
+    provider_report = {
+        "signals_inspected": provider_report_full["signals_inspected"],
+        "counts": provider_report_full["counts"],
+        "fallback_count": len(provider_report_full["fallbacks"]),
+    }
 
     slugs: dict[str, list[str]] = {}
     missing_entries = []
@@ -109,8 +157,14 @@ def audit(root: Path = ROOT) -> dict:
     history = [item for item in config.get("p53_history", []) if isinstance(item, dict)]
     history_slugs = {str(item.get("slug") or "").strip() for item in history}
     current = str(config.get("p53_current_slug") or "").strip()
+    current_id = str(config.get("p53_current_signal_id") or "").strip()
     if current and current not in history_slugs:
         errors.append(f"P53 current slug is not in history: {current}")
+    current_record = current_p53_record(config, history)
+    if current_id and not current_record:
+        errors.append(f"P53 current signal ID is not in history: {current_id}")
+    if current_record and current_record.get("slug") != current:
+        errors.append("P53 current slug and signal ID resolve to different records")
     for slug in sorted(history_slugs):
         if not (root / "site" / "p53" / f"{slug}.html").is_file():
             warnings.append(f"generated P53 page missing until next build: {slug}")
@@ -128,12 +182,17 @@ def audit(root: Path = ROOT) -> dict:
                     errors.append(f"generated route missing: {family}/{filename}")
 
     errors.extend(_image_delivery_errors(site_dir))
+    runtime_errors, runtime_warnings, runtime_asset = _runtime_asset_report(root, site_dir)
+    errors.extend(runtime_errors)
+    warnings.extend(runtime_warnings)
 
     theme_css = (root / "web" / "styles" / "theme-mode.css").read_text(encoding="utf-8")
     theme_js = (root / "web" / "scripts" / "theme-mode.js").read_text(encoding="utf-8")
     loader_js = (root / "tools" / "editor" / "new-entry.js").read_text(encoding="utf-8")
     if "theme" not in theme_js or "searchParams.set(\"theme\"" not in theme_js:
         errors.append("theme URL-state contract is missing")
+    if "setTheme(initial, true)" not in theme_js or "localStorage.setItem(storageKey, next)" not in theme_js:
+        errors.append("theme preference persistence contract is missing")
     if "theme-toggle__track" not in theme_js or "aria-pressed" not in theme_css:
         errors.append("theme toggle contract is incomplete")
     if "art-section-ink" not in theme_css:
@@ -147,6 +206,8 @@ def audit(root: Path = ROOT) -> dict:
         "p53_history": len(history),
         "current_p53": current,
         "generated_families": {key: len(value) for key, value in manifest.get("expected_pages", {}).items()},
+        "provider_links": provider_report,
+        "p53_runtime_asset": runtime_asset,
         "errors": errors,
         "warnings": warnings,
     }

@@ -6,10 +6,11 @@ from pathlib import Path
 
 from build import reconcile_generated_pages, sync_entry_metadata
 from gsi_data import build_generation_inventory
-from gsi_validation import validate_generation_manifest, validate_source_contract
+from gsi_validation import validate_generated_links, validate_generation_manifest, validate_source_contract
 
 
 TRACK_FIELDS = [
+    "signal_id",
     "order",
     "tags",
     "artist",
@@ -54,6 +55,7 @@ def _config(**overrides: object) -> dict:
 
 def _row(**overrides: str) -> dict:
     row = {
+        "signal_id": "sig-test000000000000000000",
         "order": "",
         "tags": "personal",
         "artist": "Metric",
@@ -82,6 +84,15 @@ class SourceContractTests(unittest.TestCase):
         )
         self.assertEqual(errors, [])
         self.assertEqual(warnings, [])
+
+    def test_current_sources_have_durable_signal_and_p53_ids(self) -> None:
+        root = Path(__file__).resolve().parents[1]
+        with (root / "tracks.csv").open(encoding="utf-8", newline="") as file:
+            rows = list(csv.DictReader(file))
+        config = json.loads((root / "config.json").read_text(encoding="utf-8"))
+        self.assertEqual(len(rows), len({row["signal_id"] for row in rows}))
+        self.assertTrue(config["p53_current_signal_id"].startswith("sig-"))
+        self.assertEqual(config["p53_history"][-1]["signal_id"], config["p53_current_signal_id"])
 
     def test_duplicate_slug_is_blocked(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
@@ -113,6 +124,21 @@ class SourceContractTests(unittest.TestCase):
             errors, _ = validate_source_contract(*sources)
             self.assertTrue(any("p53_current_slug" in error for error in errors))
 
+    def test_current_p53_must_be_last_history_record(self) -> None:
+        history = [
+            {"artist": "Metric", "track": "Empty", "album": "Live It Out", "slug": "metric-empty"},
+            {"artist": "Beach House", "track": "New Year", "album": "Bloom", "slug": "beach-house-new-year"},
+        ]
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            sources = _write_sources(
+                root,
+                [_row()],
+                _config(p53_history=history, p53_current_slug="metric-empty"),
+            )
+            errors, _ = validate_source_contract(*sources)
+            self.assertTrue(any("last p53_history" in error for error in errors))
+
     def test_site_only_requires_existing_entry_sources(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -122,6 +148,49 @@ class SourceContractTests(unittest.TestCase):
 
 
 class GenerationInventoryTests(unittest.TestCase):
+    def test_catalogue_manifest_must_match_generated_route_relationships(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            for family, name in {
+                "entries": "metric-empty.html",
+                "artists": "metric.html",
+                "albums": "metric-live-it-out.html",
+            }.items():
+                (root / family).mkdir(parents=True, exist_ok=True)
+                (root / family / name).write_text("", encoding="utf-8")
+            (root / "data").mkdir()
+            (root / "data/generation.json").write_text(
+                json.dumps({
+                    "relationships": {
+                        "entries": [{"slug": "metric-empty", "href": "entries/metric-empty.html"}],
+                        "p53": [],
+                        "artists": [{"artist": "Metric", "href": "artists/metric.html"}],
+                        "albums": [{"artist": "Metric", "album": "Live It Out", "href": "albums/metric-live-it-out.html"}],
+                    },
+                    "expected_pages": {"entries": ["metric-empty.html"], "p53": [], "artists": ["metric.html"], "albums": ["metric-live-it-out.html"]},
+                }),
+                encoding="utf-8",
+            )
+            (root / "data/catalog.json").write_text(
+                json.dumps({
+                    "signals": [{
+                        "slug": "metric-empty",
+                        "artist": "Metric",
+                        "track": "Empty",
+                        "album": "Live It Out",
+                        "page_url": "entries/missing.html",
+                        "links": {
+                            "spotify": {"url": "https://open.spotify.com/search/Metric%20Empty", "kind": "search"},
+                            "apple": {"url": "https://music.apple.com/search?term=Metric+Empty", "kind": "search"},
+                        },
+                        "cover": {"exists": False, "path": ""},
+                    }],
+                }),
+                encoding="utf-8",
+            )
+            errors = validate_generated_links(root)
+            self.assertTrue(any("page_url is absent" in error for error in errors))
+
     def test_inventory_exposes_album_routes_for_every_catalogue_album(self) -> None:
         tracks = [
             {"slug": "metric-empty", "html_file": "metric-empty.html", "artist": "Metric", "album": "Live It Out"},

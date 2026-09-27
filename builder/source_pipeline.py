@@ -50,6 +50,37 @@ from gsi_links import normalize_provider_url
 from gsi_text import slugify
 
 
+ARTWORK_PREFERRED_SIZE = 1200
+ARTWORK_MINIMUM_SIZE = 600
+
+
+def artwork_url_for_size(url: str, size: int = ARTWORK_PREFERRED_SIZE) -> str:
+    """Ask providers that expose dimensioned artwork URLs for a larger image."""
+    raw = (url or "").strip()
+    if not raw:
+        return ""
+    return re.sub(r"\b\d{2,4}x\d{2,4}bb\b", f"{size}x{size}bb", raw)
+
+
+def artwork_quality(image_path: Path) -> dict:
+    """Return a small, receipt-safe quality classification for local artwork."""
+    from gsi_assets import local_image_metadata
+
+    metadata = local_image_metadata(image_path)
+    width = metadata.get("width") or 0
+    height = metadata.get("height") or 0
+    shortest = min(width, height) if width and height else 0
+    if not metadata.get("valid"):
+        status = "invalid"
+    elif shortest < ARTWORK_MINIMUM_SIZE:
+        status = "too-small"
+    elif shortest < ARTWORK_PREFERRED_SIZE:
+        status = "usable-low-resolution"
+    else:
+        status = "preferred"
+    return {**metadata, "minimum_pixels": ARTWORK_MINIMUM_SIZE, "preferred_pixels": ARTWORK_PREFERRED_SIZE, "status": status}
+
+
 # Cover lookup is used only when a normal build needs missing artwork.
 def search_itunes_cover(artist: str, track: str, album: str) -> str | None:
     """Find a high-confidence iTunes artwork URL using all three identities."""
@@ -86,19 +117,29 @@ def search_itunes_cover(artist: str, track: str, album: str) -> str | None:
     if result_score(best_result) < 12:
         return None
     artwork_url = best_result.get("artworkUrl100")
-    return artwork_url.replace("100x100bb", "600x600bb") if artwork_url else None
+    return artwork_url_for_size(artwork_url) if artwork_url else None
 
 
 def download_cover(url: str, save_path: Path) -> bool:
-    """Cache one cover without making a failed remote request fatal."""
+    """Cache one verified cover without making a failed remote request fatal."""
+    temporary_path = save_path.with_name(f".{save_path.name}.part")
     try:
         response = requests.get(url, timeout=15, headers={"User-Agent": "Mozilla/5.0"})
         response.raise_for_status()
-        save_path.write_bytes(response.content)
+        temporary_path.write_bytes(response.content)
+        quality = artwork_quality(temporary_path)
+        if quality["status"] == "invalid" or quality["status"] == "too-small":
+            print(f" Cover artwork rejected for quality: {url} ({quality['status']})")
+            temporary_path.unlink(missing_ok=True)
+            return False
+        if quality["status"] == "usable-low-resolution":
+            print(f" Cover artwork is usable but below the preferred {ARTWORK_PREFERRED_SIZE}px: {url}")
+        temporary_path.replace(save_path)
         return True
-    except requests.RequestException as error:
+    except (requests.RequestException, OSError) as error:
         print(f" Cover download failed: {url}")
         print(f" Reason: {error}")
+        temporary_path.unlink(missing_ok=True)
         return False
 
 
@@ -278,12 +319,17 @@ def build_entries(
                 manual_cover_file = ""
 
         has_local_cover = bool(manual_cover_file)
-        should_download_cover = write_sources and (not has_local_cover) and (
+        should_upgrade_cover = write_sources and has_local_cover and bool(manual_cover_url) and (
+            config.get("upgrade_low_res_covers", True)
+            and artwork_quality(cover_path).get("status") == "usable-low-resolution"
+        )
+        should_download_cover = write_sources and ((not has_local_cover) or should_upgrade_cover) and (
             force_refresh_covers or not cover_path.exists()
+            or should_upgrade_cover
         )
         if should_download_cover:
             if manual_cover_url:
-                cover_url = manual_cover_url
+                cover_url = artwork_url_for_size(manual_cover_url)
             else:
                 try:
                     cover_url = search_itunes_cover(artist, track, album)
@@ -327,7 +373,17 @@ def build_entries(
         else:
             print(f" Read entry without modifying source: {entry_path}")
 
+        enrichment_file = Path(__file__).resolve().parent.parent / "data" / "signal_enrichment.json"
+        enrichment = {}
+        if enrichment_file.exists():
+            try:
+                enrichment = json.loads(enrichment_file.read_text(encoding="utf-8"))
+            except Exception:
+                enrichment = {}
+        enriched = enrichment.get(slug, {})
+
         built_tracks.append({
+            "signal_id": (row.get("signal_id") or "").strip(),
             "tags": tags,
             "artist": artist,
             "track": track,
@@ -341,6 +397,10 @@ def build_entries(
             "site_url": site_url,
             "spotify_url": normalized_spotify_url,
             "apple_url": normalized_apple_url,
+            "preview_url": enriched.get("preview_url", ""),
+            "release_year": enriched.get("release_year", ""),
+            "track_number": enriched.get("track_number"),
+            "track_count": enriched.get("track_count"),
         })
     return built_tracks
 
@@ -387,6 +447,16 @@ def prepare_p53_history(
             item["accent"] = dominant_color(cover_path)
         item["accent"] = item.get("accent") or "#444444"
         item["palette"] = artwork_palette(cover_path, item["accent"]) if cover_path.exists() else artwork_palette(Path("__missing_artwork__.jpg"), item["accent"])
+        enrichment_file = Path(__file__).resolve().parent.parent / "data" / "signal_enrichment.json"
+        if enrichment_file.exists():
+            try:
+                enr = json.loads(enrichment_file.read_text(encoding="utf-8")).get(slug, {})
+                item["preview_url"] = enr.get("preview_url", "")
+                item["release_year"] = enr.get("release_year", "")
+                item["track_number"] = enr.get("track_number")
+                item["track_count"] = enr.get("track_count")
+            except Exception:
+                pass
         prepared.append(item)
     return prepared
 

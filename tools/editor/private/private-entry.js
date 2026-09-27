@@ -1,5 +1,8 @@
 (() => {
-  const state = { sections: [], coverFile: "" };
+  const state = {
+    sections: [], coverFile: "", coverUrl: "", signalId: "",
+    artistArtwork: GSIDraftContract.defaultArtistArtwork()
+  };
   const $ = (id) => document.getElementById(id);
   const setStatus = (message, kind = "") => { $("status").textContent = message; $("status").dataset.kind = kind; };
 
@@ -28,19 +31,20 @@
   }
 
   function record() {
-    return {
+    return GSIDraftContract.record({
+      signal_id: state.signalId,
       artist: $("artist").value.trim(), track: $("track").value.trim(), album: $("album").value.trim(),
       link: $("provider-link").value.trim(), tags: $("tags").value.trim(), accent: $("accent").value.trim(),
-      slug: $("edit-of").value, cover: state.coverFile || `${$("edit-of").value}.jpg`
-    };
+      slug: $("edit-of").value, cover: state.coverFile || `${$("edit-of").value}.jpg`, cover_url: state.coverUrl
+    });
   }
 
   function payload() {
-    return {
-      schema: 1, editOf: $("edit-of").value, record: record(), sections: state.sections,
+    return GSIDraftContract.payload({
+      editOf: $("edit-of").value, record: record(), sections: state.sections,
       p53: { enabled: $("p53-enabled").checked, current: $("p53-current").checked, note: $("p53-note").value.trim() },
-      catalogue: { artist_note: $("artist-note").value.trim(), album_note: $("album-note").value.trim() },
-    };
+      catalogue: { artist_note: $("artist-note").value.trim(), album_note: $("album-note").value.trim(), artist_artwork: state.artistArtwork }
+    });
   }
 
   async function loadCatalog() {
@@ -61,7 +65,10 @@
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.error || "entry unavailable");
       $("edit-of").value = slug;
+      state.signalId = payload.record.signal_id || "";
       state.coverFile = payload.record.cover || `${slug}.jpg`;
+      state.coverUrl = payload.record.cover_url || "";
+      state.artistArtwork = { ...GSIDraftContract.defaultArtistArtwork(), ...(payload.catalogue?.artist_artwork || {}) };
       for (const field of ["artist", "track", "album", "provider-link", "tags", "accent"]) $(field).value = field === "provider-link" ? payload.record.link : payload.record[field];
       $("p53-enabled").checked = Boolean(payload.p53.enabled);
       $("p53-current").checked = Boolean(payload.p53.current);

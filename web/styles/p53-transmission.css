@@ -9,7 +9,7 @@ body {
     font-family: var(--gsi-reading-font, Arial, sans-serif);
     background:
         linear-gradient(118deg, rgba(8, 10, 9, .88), rgba(31, 15, 36, .92)),
-        url("../covers/P53_cover.jpg") center / cover fixed;
+        url("../covers/P53_cover-runtime.webp") center / cover fixed;
 }
 
 body::before {
@@ -273,6 +273,12 @@ h1 {
     .p53-details { grid-template-columns: 1fr; }
 }
 
+@media (max-width: 1024px) {
+    body {
+        background-attachment: scroll;
+    }
+}
+
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
@@ -342,4 +348,73 @@ body.p53-transmission-room .transmission-note {
     background:
         var(--art-rim-gradient, none),
         color-mix(in srgb, var(--art-surface, #17151b), transparent 10%);
+}
+
+
+@view-transition { navigation: auto; }
+
+.stream-link.audition-trigger {
+    cursor: pointer;
+    border: 1px solid color-mix(in srgb, var(--art-primary, var(--accent, #ff2f92)), white 26%);
+    background: linear-gradient(135deg, rgba(255,255,255,.08), transparent 50%), rgba(22, 20, 26, .84);
+    box-shadow: 0 4px 18px color-mix(in srgb, var(--art-primary, var(--accent, #ff2f92)), transparent 82%);
+}
+
+.stream-link.audition-trigger::after {
+    content: none !important;
+}
+
+.stream-link.audition-trigger:hover,
+.stream-link.audition-trigger:focus-visible {
+    border-color: color-mix(in srgb, var(--art-primary, var(--accent, #ff2f92)), white 60%);
+    box-shadow: 0 0 22px color-mix(in srgb, var(--art-primary, var(--accent, #ff2f92)), transparent 40%);
+    transform: translateY(-2px);
+}
+
+.stream-link.audition-trigger .peek-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 9px;
+    font-size: 10px;
+    line-height: 1;
+}
+
+.stream-link.audition-trigger.is-playing {
+    color: #fff;
+    border-color: color-mix(in srgb, var(--art-primary, var(--accent, #ff2f92)), white 50%);
+    background: linear-gradient(120deg,
+        color-mix(in srgb, var(--art-primary, var(--accent, #ff2f92)), transparent 32%),
+        color-mix(in srgb, var(--art-secondary, var(--accent, #ff2f92)), transparent 48%)), rgba(28, 22, 34, .92);
+    box-shadow:
+        0 0 0 1px var(--art-edge, var(--art-soft, #b7afbc)),
+        0 0 26px color-mix(in srgb, var(--art-primary, var(--accent, #ff2f92)), transparent 35%);
+    animation: audition-pill-pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes audition-pill-pulse {
+    0% { box-shadow: 0 0 16px color-mix(in srgb, var(--art-primary, var(--accent, #ff2f92)), transparent 50%); }
+    100% { box-shadow: 0 0 28px color-mix(in srgb, var(--art-secondary, var(--accent, #ff2f92)), transparent 25%); }
+}
+
+body.signal-auditioning .cover-frame {
+    animation: signal-cover-pulse 2.2s ease-in-out infinite alternate;
+}
+
+@keyframes signal-cover-pulse {
+    0% {
+        box-shadow: 0 0 26px color-mix(in srgb, var(--art-primary, var(--accent)), transparent 45%),
+                    0 20px 50px rgba(0,0,0,.5);
+        transform: scale(1);
+    }
+    50% {
+        box-shadow: 0 0 46px color-mix(in srgb, var(--art-secondary, var(--accent)), transparent 25%),
+                    0 24px 60px rgba(0,0,0,.55);
+        transform: scale(1.008);
+    }
+    100% {
+        box-shadow: 0 0 26px color-mix(in srgb, var(--art-primary, var(--accent)), transparent 45%),
+                    0 20px 50px rgba(0,0,0,.5);
+        transform: scale(1);
+    }
 }

@@ -1,9 +1,13 @@
 import json
+import base64
 from pathlib import Path
 from types import SimpleNamespace
 import tempfile
 import unittest
 from unittest.mock import Mock, patch
+from io import BytesIO
+
+from PIL import Image
 
 from builder.entry_drafts import (
     DraftMetadataError,
@@ -34,6 +38,18 @@ class _Response:
 
 
 class EntryDraftTests(unittest.TestCase):
+    @staticmethod
+    def _valid_cover_bytes() -> bytes:
+        output = BytesIO()
+        Image.new("RGB", (600, 600), "#884466").save(output, format="JPEG")
+        return output.getvalue()
+
+    @staticmethod
+    def _valid_artist_artwork_data_url() -> str:
+        output = BytesIO()
+        Image.new("RGB", (800, 800), "#224466").save(output, format="PNG")
+        return "data:image/png;base64," + base64.b64encode(output.getvalue()).decode("ascii")
+
     def test_provider_and_track_id(self):
         url = "https://music.apple.com/tr/album/foo/123?i=456&ls"
         self.assertEqual(provider_for_url(url), "apple")
@@ -130,13 +146,55 @@ class EntryDraftTests(unittest.TestCase):
         self.assertIsNone(clean)
         self.assertIn("enabled", error)
 
+    def test_local_publish_returns_complete_route_receipt(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "entries").mkdir()
+            (root / "covers").mkdir()
+            (root / "config.json").write_text('{"sections": ["Charge"]}\n', encoding="utf-8")
+            (root / "tracks.csv").write_text(
+                "signal_id,order,tags,artist,track,album,accent,cover_file,cover_url,spotify_url,apple_url\n",
+                encoding="utf-8",
+            )
+            payload = {
+                "schema": 1,
+                "record": {
+                    "artist": "Example Artist",
+                    "track": "New Signal",
+                    "album": "Example Album",
+                    "link": "https://open.spotify.com/track/example",
+                    "tags": "",
+                    "accent": "",
+                    "cover": "example-artist-new-signal.jpg",
+                    "cover_url": "https://cdn.example.test/600x600.jpg",
+                },
+                "sections": [{"title": "Charge", "content": "A note."}],
+                "p53": {"enabled": True, "current": True, "note": "Transmission note."},
+                "catalogue": {"artist_note": "Artist note.", "album_note": "Album note."},
+            }
+
+            def fake_download(_url, path):
+                path.write_bytes(self._valid_cover_bytes())
+                return True
+
+            with patch("tools.new_entry.download_cover", side_effect=fake_download), \
+                patch("tools.new_entry.dominant_color", return_value="#112233"):
+                receipt = publish_draft(root, payload, build_site=False)
+
+            self.assertEqual(receipt["receiptSchema"], 1)
+            self.assertEqual(receipt["routes"]["entry"], "/entries/example-artist-new-signal.html")
+            self.assertEqual(receipt["routes"]["p53"], "/p53/example-artist-new-signal.html")
+            self.assertTrue(receipt["p53State"]["current"])
+            self.assertEqual(receipt["snapshot"]["files"], 4)
+            self.assertTrue((root / receipt["snapshot"]["path"] / "manifest.json").is_file())
+
     def test_local_publish_restores_sources_when_build_fails(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
             (root / "entries").mkdir()
             (root / "covers").mkdir()
             original_config = '{"sections": ["Charge"]}\n'
-            original_tracks = "order,tags,artist,track,album,accent,cover_file,cover_url,spotify_url,apple_url\n"
+            original_tracks = "signal_id,order,tags,artist,track,album,accent,cover_file,cover_url,spotify_url,apple_url\n"
             (root / "config.json").write_text(original_config, encoding="utf-8")
             (root / "tracks.csv").write_text(original_tracks, encoding="utf-8")
             payload = {
@@ -157,7 +215,7 @@ class EntryDraftTests(unittest.TestCase):
             }
 
             def fake_download(_url, path):
-                path.write_bytes(b"new cover")
+                path.write_bytes(self._valid_cover_bytes())
                 return True
 
             failed_build = SimpleNamespace(returncode=1, stdout="build failed", stderr="")
@@ -173,6 +231,39 @@ class EntryDraftTests(unittest.TestCase):
             self.assertEqual((root / "tracks.csv").read_text(encoding="utf-8"), original_tracks)
             self.assertFalse((root / "entries" / "example-artist-new-signal.md").exists())
             self.assertFalse((root / "covers" / "example-artist-new-signal.jpg").exists())
+
+    def test_local_publish_registers_artist_artwork_and_quality_receipts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            (root / "entries").mkdir()
+            (root / "covers").mkdir()
+            (root / "config.json").write_text('{"sections": ["Charge"]}\n', encoding="utf-8")
+            (root / "tracks.csv").write_text(
+                "signal_id,order,tags,artist,track,album,accent,cover_file,cover_url,spotify_url,apple_url\n",
+                encoding="utf-8",
+            )
+            payload = {
+                "schema": 1,
+                "record": {
+                    "artist": "Example Artist", "track": "Artwork Signal", "album": "Example Album",
+                    "link": "https://open.spotify.com/track/artwork", "tags": "", "accent": "",
+                    "cover": "example-artist-artwork-signal.jpg", "cover_url": "https://cdn.example.test/600x600.jpg",
+                },
+                "sections": [{"title": "Charge", "content": "A note."}],
+                "p53": {"enabled": False, "current": False, "note": ""},
+                "catalogue": {"artist_note": "", "album_note": "", "artist_artwork": {
+                    "data_url": self._valid_artist_artwork_data_url(), "mime": "image/png", "name": "artist.png", "alt": "Example Artist portrait"
+                }},
+            }
+            def fake_download(_url, path):
+                path.write_bytes(self._valid_cover_bytes())
+                return True
+            with patch("tools.new_entry.download_cover", side_effect=fake_download), patch("tools.new_entry.dominant_color", return_value="#112233"):
+                receipt = publish_draft(root, payload, build_site=False)
+            self.assertEqual(receipt["artwork"]["status"], "usable-low-resolution")
+            self.assertEqual(receipt["artistArtwork"]["file"], "example-artist.png")
+            config = json.loads((root / "config.json").read_text(encoding="utf-8"))
+            self.assertEqual(config["artist_assets"]["Example Artist"]["image_file"], "example-artist.png")
 
 
 if __name__ == "__main__":

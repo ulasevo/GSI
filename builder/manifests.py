@@ -115,11 +115,11 @@ def write_generation_manifest(
     # Every renderer reads the same relationships, preventing route drift.
     relationships = {
         "entries": [
-            {"slug": slug, "href": href}
+            {"slug": slug, "signal_id": inventory.get("signal_ids", {}).get("entries", {}).get(slug, ""), "href": href}
             for slug, href in sorted(inventory["entry_routes"].items())
         ],
         "p53": [
-            {"slug": slug, "href": href}
+            {"slug": slug, "signal_id": inventory.get("signal_ids", {}).get("p53", {}).get(slug, ""), "href": href}
             for slug, href in sorted(inventory["p53_routes"].items())
         ],
         "artists": [

@@ -93,3 +93,23 @@ assert.equal(
 );
 
 console.log("browser-state-contract=passed");
+
+const draftContractSource = fs.readFileSync(
+  path.join(__dirname, "..", "tools", "editor", "draft-contract.js"),
+  "utf8",
+);
+vm.runInNewContext(draftContractSource, sandbox, { filename: "draft-contract.js" });
+const draftContract = sandbox.window.GSIDraftContract;
+assert.ok(draftContract, "the browser editors should expose one shared draft contract");
+const draft = draftContract.payload({
+  record: { artist: "Example Artist", track: "New Signal", album: "Example Album", link: "https://open.spotify.com/track/example" },
+  sections: [{ title: "Charge", content: "A note." }],
+  p53: { enabled: true, current: true, note: "Transmission note." },
+  catalogue: { artist_note: "Artist note." },
+});
+assert.equal(draft.schema, 1);
+assert.equal(draft.record.slug, "example-artist-new-signal");
+assert.equal(draft.catalogue.artist_artwork.data_url, "");
+assert.equal(draftContract.validationIssues(draft).length, 0);
+
+console.log("draft-contract=passed");

@@ -11,7 +11,7 @@ import re
 from pathlib import Path
 from urllib.parse import quote
 
-from gsi_data import load_config
+from gsi_data import current_p53_slug, load_config
 from gsi_assets import artwork_palette, palette_style
 from gsi_text import make_streaming_links, simple_markdown_to_html, slugify
 from builder.template_renderer import render_template
@@ -91,7 +91,8 @@ def build_entry_page(
         # request eager while allowing the browser to decode it off the main
         # thread.  The explicit priority avoids the cover arriving after the
         # prose on slower mobile connections.
-        cover_html = f'<img class = "cover" src = "{cover_src}" alt = "{html.escape(item["album"])} cover" loading="eager" fetchpriority="high" decoding="async">'
+        vt_name = f'cover-{item["slug"]}'
+        cover_html = f'<img class = "cover" src = "{cover_src}" alt = "{html.escape(item["album"])} cover" loading="eager" fetchpriority="high" decoding="async" style="view-transition-name: {vt_name};">'
         # Keep the cover treatment as a custom property on the page body. This
         # lets the shared stylesheet stay static while the URL remains escaped.
         bg_style = html.escape(
@@ -137,7 +138,7 @@ def build_entry_page(
         entry_index_html = f'''<aside class="entry-index" aria-label="Entry sections"><span>SECTIONS</span><nav>{index_links}</nav></aside>'''
     entry_layout_class = "entry-reading-layout has-entry-index" if entry_index_html else "entry-reading-layout"
     streaming_links_html = make_streaming_links(item)
-    p53_current_slug = (config.get("p53_current_slug") or "").strip()
+    p53_current_slug = current_p53_slug(config, config.get("p53_history", []))
     in_p53 = any(record.get("slug") == item["slug"] for record in config.get("p53_history", []))
     p53_counterpart_html = ""
     if in_p53:

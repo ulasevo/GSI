@@ -53,6 +53,16 @@
           <label>Artist note <span class="field-hint">shown on the artist room</span><textarea id="artist-note" rows="5" placeholder="What keeps this artist in your orbit?"></textarea></label>
           <label>Album take <span class="field-hint">shown on the album room</span><textarea id="album-note" rows="5" placeholder="What does the full album hold for you?"></textarea></label>
         </div>
+        <div class="artist-artwork-field">
+          <label for="artist-artwork-file">Artist room artwork <span class="field-hint">private upload; square image, 1200px preferred</span></label>
+          <input id="artist-artwork-file" type="file" accept="image/jpeg,image/png,image/webp">
+          <div id="artist-artwork-drop" class="artist-artwork-drop" tabindex="0" role="button" aria-label="Choose or drop artist artwork">
+            <strong>DROP FAVORED ARTIST IMAGE</strong>
+            <span>or choose a JPEG, PNG, or WebP · minimum 800px on the shortest side</span>
+          </div>
+          <figure id="artist-artwork-preview" class="artist-artwork-preview" hidden><img id="artist-artwork-image" alt="Artist artwork preview"><figcaption id="artist-artwork-status"></figcaption></figure>
+          <input id="artist-artwork-alt" type="text" placeholder="Artist artwork alt text (optional)" autocomplete="off">
+        </div>
       </section>
 
       <section class="panel sections-panel" aria-labelledby="sections-title">
@@ -82,6 +92,7 @@
       </section>
     </form>
   </main>
+  <script src="draft-contract.js"></script>
   <script src="new-entry.js"></script>
 </body>
 </html>

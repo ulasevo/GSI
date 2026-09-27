@@ -6,6 +6,9 @@ entries, or the generated site, and it deliberately has no mail credentials.
 
 import json
 import mimetypes
+import argparse
+import hmac
+import os
 import re
 import sys
 import csv
@@ -18,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from builder.entry_drafts import DraftMetadataError, validate_draft_payload
+from gsi_data import current_p53_record
 from gsi_text import slugify
 from tools.new_entry import publish_draft
 
@@ -31,6 +35,25 @@ SUPPORTED_PROVIDERS = {
     "youtube.com", "music.youtube.com", "youtu.be", "soundcloud.com",
     "bandcamp.com", "deezer.com", "tidal.com",
 }
+
+PRIVATE_PATH_PREFIXES = ("/api/local-", "/__local/")
+
+
+def is_loopback_host(host: str) -> bool:
+    """Return whether a bind/host value is local-only."""
+    return host.strip().lower().removeprefix("[").removesuffix("]") in {"127.0.0.1", "localhost", "::1"}
+
+
+def private_path(path: str) -> bool:
+    """Identify editor and local-authoring routes that must not be public."""
+    return path.startswith(PRIVATE_PATH_PREFIXES)
+
+
+def bearer_token_matches(header: str, expected: str) -> bool:
+    """Compare a bearer header without leaking token contents through timing."""
+    prefix = "Bearer "
+    supplied = header[len(prefix):].strip() if header.startswith(prefix) else ""
+    return bool(expected) and hmac.compare_digest(supplied, expected)
 
 
 def validate(payload: dict) -> tuple[dict | None, str | None]:
@@ -96,6 +119,7 @@ def local_entry_catalog() -> list[dict]:
         if not slug or not (ROOT / "entries" / f"{slug}.md").is_file():
             continue
         catalog.append({
+            "signal_id": row.get("signal_id", ""),
             "slug": slug,
             "artist": row.get("artist", ""),
             "track": row.get("track", ""),
@@ -113,7 +137,9 @@ def local_entry_payload(slug: str) -> tuple[dict | None, str | None]:
     frontmatter, body = _frontmatter_and_body(entry_path.read_text(encoding="utf-8"))
     row = next((item for item in _tracks() if slugify(f"{item.get('artist', '')}-{item.get('track', '')}") == slug), {})
     config = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
-    p53_history = {item.get("slug"): item for item in config.get("p53_history", []) if isinstance(item, dict)}
+    p53_records = [item for item in config.get("p53_history", []) if isinstance(item, dict)]
+    p53_history = {item.get("slug"): item for item in p53_records}
+    p53_record = next((item for item in p53_records if item.get("slug") == slug), None)
     p53_enabled = slug in p53_history
     artist_name = str(frontmatter.get("artist") or row.get("artist") or "").strip()
     album_name = str(frontmatter.get("album") or row.get("album") or "").strip()
@@ -122,6 +148,7 @@ def local_entry_payload(slug: str) -> tuple[dict | None, str | None]:
     return {
         "schema": 1,
         "record": {
+            "signal_id": str(row.get("signal_id") or "").strip(),
             "artist": str(frontmatter.get("artist") or row.get("artist") or "").strip(),
             "track": str(frontmatter.get("track") or row.get("track") or "").strip(),
             "album": str(frontmatter.get("album") or row.get("album") or "").strip(),
@@ -134,7 +161,7 @@ def local_entry_payload(slug: str) -> tuple[dict | None, str | None]:
         "sections": _entry_sections(body),
         "p53": {
             "enabled": p53_enabled,
-            "current": config.get("p53_current_slug") == slug,
+            "current": bool(p53_record and p53_record is current_p53_record(config, p53_records)),
             "note": str(config.get("p53_transmission_notes", {}).get(slug) or "").strip(),
         },
         "catalogue": {
@@ -145,22 +172,45 @@ def local_entry_payload(slug: str) -> tuple[dict | None, str | None]:
 
 
 class SubmissionHandler(BaseHTTPRequestHandler):
+    def _private_authorized(self) -> bool:
+        expected = str(getattr(self.server, "gsi_auth_token", "") or "")
+        if not expected:
+            return is_loopback_host(str(self.server.server_address[0]))
+        return bearer_token_matches(self.headers.get("Authorization", ""), expected)
+
+    def _guard_private_path(self, path: str) -> bool:
+        if not private_path(path):
+            return True
+        self._private_response = True
+        if self._private_authorized():
+            return True
+        self._json(401, {"error": "private local authoring requires a bearer token"})
+        return False
+
     def _json(self, status: int, body: dict) -> None:
         encoded = json.dumps(body).encode("utf-8")
         self.send_response(status)
         self.send_header("Content-Type", "application/json")
         self.send_header("Content-Length", str(len(encoded)))
-        self.send_header("Access-Control-Allow-Origin", "*")
+        if not getattr(self, "_private_response", False):
+            self.send_header("Access-Control-Allow-Origin", "*")
+        if status == 401:
+            self.send_header("WWW-Authenticate", "Bearer")
         self.end_headers()
         self.wfile.write(encoded)
 
     def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler hook
         path = urlparse(self.path).path
+        if not self._guard_private_path(path):
+            return
         if path not in {"/api/recommendations", "/api/entry-drafts", "/api/local-entry-drafts", "/api/local-entry-publish"}:
             return self._json(404, {"error": "not found"})
         try:
-            size = min(int(self.headers.get("Content-Length", "0")), 100_000)
-            payload = json.loads(self.rfile.read(size).decode("utf-8"))
+            content_length = int(self.headers.get("Content-Length", "0"))
+            max_size = 8_000_000 if path.startswith("/api/local-") else 100_000
+            if content_length <= 0 or content_length > max_size:
+                return self._json(413, {"error": f"request body exceeds the {max_size // 1_000_000} MB local limit" if path.startswith("/api/local-") else "request body is too large"})
+            payload = json.loads(self.rfile.read(content_length).decode("utf-8"))
         except (ValueError, json.JSONDecodeError):
             return self._json(400, {"error": "invalid JSON"})
         if path in {"/api/entry-drafts", "/api/local-entry-drafts", "/api/local-entry-publish"}:
@@ -200,6 +250,8 @@ class SubmissionHandler(BaseHTTPRequestHandler):
     def do_GET(self) -> None:  # noqa: N802 - serve the generated room beside the intake API
         """Serve the generated site so local review needs one process."""
         path = urlparse(self.path).path
+        if not self._guard_private_path(path):
+            return
         if path == "/api/local-entry-catalog":
             return self._json(200, {"entries": local_entry_catalog()})
         if path == "/api/local-entry":
@@ -209,9 +261,12 @@ class SubmissionHandler(BaseHTTPRequestHandler):
             return self._json(404 if error else 200, {"error": error} if error else payload)
         if path.startswith("/__local/editor/"):
             relative_private = path.removeprefix("/__local/editor/")
-            candidate = (ROOT / "tools" / "editor" / "private" / relative_private).resolve()
+            editor_root = (ROOT / "tools" / "editor").resolve()
+            private_root = (editor_root / "private").resolve()
+            source_root = editor_root if relative_private == "draft-contract.js" else private_root
+            candidate = (source_root / relative_private).resolve()
             try:
-                candidate.relative_to((ROOT / "tools" / "editor" / "private").resolve())
+                candidate.relative_to(source_root)
             except ValueError:
                 return self._json(404, {"error": "not found"})
             if not candidate.is_file():
@@ -245,7 +300,18 @@ class SubmissionHandler(BaseHTTPRequestHandler):
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8021
-    server = ThreadingHTTPServer(("127.0.0.1", port), SubmissionHandler)
-    print(f"GSI recommendation intake listening on http://127.0.0.1:{port}")
+    parser = argparse.ArgumentParser(description="Serve the local GSI site and private authoring tools.")
+    parser.add_argument("port", nargs="?", type=int, default=8021)
+    parser.add_argument("--host", default=os.environ.get("GSI_BIND_HOST", "127.0.0.1"))
+    parser.add_argument(
+        "--auth-token",
+        default=os.environ.get("GSI_LOCAL_AUTH_TOKEN", ""),
+        help="Bearer token for private editor routes; required for non-loopback binds.",
+    )
+    args = parser.parse_args()
+    if not is_loopback_host(args.host) and not args.auth_token:
+        parser.error("LAN binding requires --auth-token or GSI_LOCAL_AUTH_TOKEN")
+    server = ThreadingHTTPServer((args.host, args.port), SubmissionHandler)
+    server.gsi_auth_token = args.auth_token
+    print(f"GSI recommendation intake listening on http://{args.host}:{args.port}")
     server.serve_forever()

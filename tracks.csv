@@ -1,28 +1,28 @@
-order,tags,artist,track,album,accent,cover_file,cover_url,spotify_url,apple_url
-1,personal,Metric,Empty,Live It Out,#ff2f92,metric-empty.jpg,,,https://music.apple.com/us/album/empty/1108029976?i=1108031306&uo=4
-,"personal,p53",Metric,Too Little Too Late,Live It Out,#ff2f92,metric-too-little-too-late.jpg,,,https://music.apple.com/us/album/too-little-too-late/1108029976?i=1108031310&uo=4
-,personal,Metric,Poster of a Girl,Live It Out,#ff2f92,,,,https://music.apple.com/us/album/poster-of-a-girl/1108029976?i=1108031311&uo=4
-2,personal,Matt Maeson,Year After Year,A Quiet And Harmless Living,,,,,https://music.apple.com/us/album/year-after-year/1823989247?i=1823989517&uo=4
-,"personal,ulas",K.Flay,Time For You,Life as a Dog,,k-flay-time-for-you.jpg,https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/d7/05/0c/d7050c3f-dc10-86b9-9384-e795f2bda0ad/4050538649963.jpg/600x600bb.jpg,,https://music.apple.com/tr/album/time-for-you/1535436611?i=1535436621&ls
-,bassline,Kendrick Lamar,TV Off,GNX,#c7c7c7,,,,https://music.apple.com/us/album/tv-off-feat-lefty-gunplay/1781316864?i=1781316952&uo=4
-3,"personal,bassline",Travis Scott,Coffee Bean,ASTROWORLD,#d9a441,,,,https://music.apple.com/us/album/coffee-bean/1421658111?i=1421658667&uo=4
-,bassline,Travis Scott,Through the Late Night,Birds In The Trap McKnight,,,,,https://music.apple.com/us/album/through-the-late-night/1151481435?i=1151481741&uo=4
-,bassline,James Blake,Barefoot in the Park (feat. ROSALÍA),Assume Form (Deluxe),,,,,https://music.apple.com/us/album/barefoot-in-the-park-feat-rosal%C3%ADa/1459584222?i=1459584650&uo=4
-,bassline,"Tyler, The Creator",November,Flower Boy,,,,,https://music.apple.com/tr/album/november/1254572564?i=1254572584&ls
-,bassline,Kanye West,Champion,Graduation,,,,,https://music.apple.com/us/album/champion/1442845779?i=1442846321&uo=4
-4,personal,Metric,Combat Baby,"Old World Underground, Where Are You Now?",,,,,https://music.apple.com/us/album/combat-baby/906877401?i=906877416&uo=4
-1,dreamy,Beach House,Wishes,Bloom,,,,,https://music.apple.com/us/album/wishes/509665145?i=509665549&uo=4
-2,dreamy,Tame Impala,Let It Happen,Currents,,,,,https://music.apple.com/us/album/let-it-happen/1440838039?i=1440838060&uo=4
-,dreamy,Slowdive,Sugar for the Pill,Slowdive,,,,,https://music.apple.com/us/album/sugar-for-the-pill/1210172617?i=1210172774&uo=4
-,dreamy,Broken Social Scene,This Briefest Kiss,Remember The Humans,,,,,https://music.apple.com/us/album/this-briefest-kiss/1871484971?i=1871485311&uo=4
-,distortion,Muse,Sing For Absolution,Absolution,,,,,https://music.apple.com/us/album/sing-for-absolution/1716096819?i=1716096824&uo=4
-,distortion,Mitski,First Love/Late Spring,Bury Me At Makeout Creek,,,,,https://music.apple.com/us/album/first-love-late-spring/1070245429?i=1070245510&uo=4
-,distortion,Silversun Pickups,Skin Graph,Neck of the Woods,,,,,https://music.apple.com/us/album/skin-graph/1862926396?i=1862926399&uo=4
-,pop,Michael Jackson,Thriller,Thriller,,,,,https://music.apple.com/us/album/thriller/655260476?i=655262182&uo=4
-,bite,Arctic Monkeys,Perhaps Vampires Is a Bit Strong But...,"Whatever People Say I Am, That's What I'm Not",,,,,https://music.apple.com/us/album/perhaps-vampires-is-a-bit-strong-but/111153953?i=111153677&uo=4
-,"personal,p53",Wet Leg,mangetout,Moisturizer,,,,,https://music.apple.com/tr/album/mangetout/1802918329?i=1802918493&ls
-,"bite, p53",Arctic Monkeys,Secret Door,Humbug (Bonus Track Version),,,,,https://music.apple.com/tr/album/secret-door/330283015?i=330283291&ls
-,"dreamy, p53",Miki Matsubara,Mayonaka No Door ~Stay with Me,Pocket Park,#bb907a,,,,https://music.apple.com/us/album/mayonaka-no-door-stay-with-me/1858846278?i=1858846444&uo=4
-,"ulas,p53",Matt Maeson,Stubborn As Religion,A Quiet And Harmless Living,,matt-maeson-stubborn-as-religion.jpg,,,https://music.apple.com/us/album/1823989247?i=1823989514
-,distortion,Royal Blood,Little Monster,Royal Blood (10th Anniversary Edition),,royal-blood-little-monster.jpg,,,https://music.apple.com/us/song/little-monster/1759342188
-,distortion,Royal Blood,Ten Tonne Skeleton,Royal Blood (10th Anniversary Edition),#c69d46,royal-blood-ten-tonne-skeleton.jpg,https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/ff/c7/d5/ffc7d561-2e9a-91ca-7fa9-42a89abb2579/5021732266996.jpg/600x600bb.jpg,,https://music.apple.com/tr/album/ten-tonne-skeleton/1759342172?i=1759342403&ls
+signal_id,order,tags,artist,track,album,accent,cover_file,cover_url,spotify_url,apple_url
+sig-77f2bab901f777614d7a,1,personal,Metric,Empty,Live It Out,#ff2f92,metric-empty.jpg,,,https://music.apple.com/us/album/empty/1108029976?i=1108031306&uo=4
+sig-c642f8e16bafd04b2a18,,"personal,p53",Metric,Too Little Too Late,Live It Out,#ff2f92,metric-too-little-too-late.jpg,,,https://music.apple.com/us/album/too-little-too-late/1108029976?i=1108031310&uo=4
+sig-19b7748819b25af0faa5,,personal,Metric,Poster of a Girl,Live It Out,#ff2f92,,,,https://music.apple.com/us/album/poster-of-a-girl/1108029976?i=1108031311&uo=4
+sig-f914efdefe1ae05178b4,2,personal,Matt Maeson,Year After Year,A Quiet And Harmless Living,,,,,https://music.apple.com/us/album/year-after-year/1823989247?i=1823989517&uo=4
+sig-0d00b65514adb29066c6,,"personal,ulas",K.Flay,Time For You,Life as a Dog,,k-flay-time-for-you.jpg,https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/d7/05/0c/d7050c3f-dc10-86b9-9384-e795f2bda0ad/4050538649963.jpg/600x600bb.jpg,,https://music.apple.com/tr/album/time-for-you/1535436611?i=1535436621&ls
+sig-179cf5fc59b11701b497,,bassline,Kendrick Lamar,TV Off,GNX,#c7c7c7,,,,https://music.apple.com/us/album/tv-off-feat-lefty-gunplay/1781316864?i=1781316952&uo=4
+sig-08871cf06eff8ea14b6d,3,"personal,bassline",Travis Scott,Coffee Bean,ASTROWORLD,#d9a441,,,,https://music.apple.com/us/album/coffee-bean/1421658111?i=1421658667&uo=4
+sig-8588300e1ec13d082647,,bassline,Travis Scott,Through the Late Night,Birds In The Trap McKnight,,,,,https://music.apple.com/us/album/through-the-late-night/1151481435?i=1151481741&uo=4
+sig-c994e28c8aec6e515494,,bassline,James Blake,Barefoot in the Park (feat. ROSALÍA),Assume Form (Deluxe),,,,,https://music.apple.com/us/album/barefoot-in-the-park-feat-rosal%C3%ADa/1459584222?i=1459584650&uo=4
+sig-478434a3ac9d9a730cd7,,bassline,"Tyler, The Creator",November,Flower Boy,,,,,https://music.apple.com/tr/album/november/1254572564?i=1254572584&ls
+sig-d75b33d552c06d0c2010,,bassline,Kanye West,Champion,Graduation,,,,,https://music.apple.com/us/album/champion/1442845779?i=1442846321&uo=4
+sig-7d1e74978a7e10b57ee1,4,personal,Metric,Combat Baby,"Old World Underground, Where Are You Now?",,,,,https://music.apple.com/us/album/combat-baby/906877401?i=906877416&uo=4
+sig-83e9035ff69b1b3ab293,1,dreamy,Beach House,Wishes,Bloom,,,,,https://music.apple.com/us/album/wishes/509665145?i=509665549&uo=4
+sig-90abee289953c47653c3,2,dreamy,Tame Impala,Let It Happen,Currents,,,,,https://music.apple.com/us/album/let-it-happen/1440838039?i=1440838060&uo=4
+sig-7fba7be4a804ebf32fa5,,dreamy,Slowdive,Sugar for the Pill,Slowdive,,,,,https://music.apple.com/us/album/sugar-for-the-pill/1210172617?i=1210172774&uo=4
+sig-bf810a6c238ccffd7e7d,,dreamy,Broken Social Scene,This Briefest Kiss,Remember The Humans,,,,,https://music.apple.com/us/album/this-briefest-kiss/1871484971?i=1871485311&uo=4
+sig-1f07db54107aae82b224,,distortion,Muse,Sing For Absolution,Absolution,,,,,https://music.apple.com/us/album/sing-for-absolution/1716096819?i=1716096824&uo=4
+sig-72e87ce4192406d8bc61,,distortion,Mitski,First Love/Late Spring,Bury Me At Makeout Creek,,,,,https://music.apple.com/us/album/first-love-late-spring/1070245429?i=1070245510&uo=4
+sig-22278768ea27940e0aa6,,distortion,Silversun Pickups,Skin Graph,Neck of the Woods,,,,,https://music.apple.com/us/album/skin-graph/1862926396?i=1862926399&uo=4
+sig-37c39743cfe83ed11df7,,pop,Michael Jackson,Thriller,Thriller,,,,,https://music.apple.com/us/album/thriller/655260476?i=655262182&uo=4
+sig-6d43a9d9fa97dd94bad0,,bite,Arctic Monkeys,Perhaps Vampires Is a Bit Strong But...,"Whatever People Say I Am, That's What I'm Not",,,,,https://music.apple.com/us/album/perhaps-vampires-is-a-bit-strong-but/111153953?i=111153677&uo=4
+sig-d8e5374800f2310ee658,,"personal,p53",Wet Leg,mangetout,Moisturizer,,,,,https://music.apple.com/tr/album/mangetout/1802918329?i=1802918493&ls
+sig-488417fc9197580ccefe,,"bite, p53",Arctic Monkeys,Secret Door,Humbug (Bonus Track Version),,,,,https://music.apple.com/tr/album/secret-door/330283015?i=330283291&ls
+sig-bed0a3bd996d1b80b7e0,,"dreamy, p53",Miki Matsubara,Mayonaka No Door ~Stay with Me,Pocket Park,#bb907a,,,,https://music.apple.com/us/album/mayonaka-no-door-stay-with-me/1858846278?i=1858846444&uo=4
+sig-cad08a62f820d0cf19f2,,"ulas,p53",Matt Maeson,Stubborn As Religion,A Quiet And Harmless Living,,matt-maeson-stubborn-as-religion.jpg,,,https://music.apple.com/us/album/1823989247?i=1823989514
+sig-c1d33af2ac7d766da276,,distortion,Royal Blood,Little Monster,Royal Blood (10th Anniversary Edition),,royal-blood-little-monster.jpg,,,https://music.apple.com/us/song/little-monster/1759342188
+sig-c43f7513f87012ff4992,,distortion,Royal Blood,Ten Tonne Skeleton,Royal Blood (10th Anniversary Edition),#c69d46,royal-blood-ten-tonne-skeleton.jpg,https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/ff/c7/d5/ffc7d561-2e9a-91ca-7fa9-42a89abb2579/5021732266996.jpg/600x600bb.jpg,,https://music.apple.com/tr/album/ten-tonne-skeleton/1759342172?i=1759342403&ls

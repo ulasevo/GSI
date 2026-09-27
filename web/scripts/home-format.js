@@ -60,7 +60,7 @@
 
       byAlbum.forEach(groupCards => {
         const firstMatchingCard = groupCards.find(card => homeState.cardMatchesFilter(card, filterName));
-        if (!firstMatchingCard || groupCards.length < 2) return;
+        if (!firstMatchingCard) return;
         const first = groupCards[0];
         const group = document.createElement("section");
         group.className = "filter-album-group";
@@ -100,6 +100,19 @@
       });
     }
 
+    const cycleBtn = document.querySelector("#format-cycle-btn");
+    const cycleValue = document.querySelector("#format-cycle-value");
+
+    function updateFormatCycleUI(formatName) {
+      if (cycleBtn) {
+        cycleBtn.dataset.currentFormat = formatName;
+        cycleBtn.setAttribute("aria-label", `Cycle archive format (current: ${formatName.toUpperCase()})`);
+      }
+      if (cycleValue) {
+        cycleValue.textContent = formatName.toUpperCase();
+      }
+    }
+
     function applyFormat(formatName, sync = true) {
       state.activeFormat = formatName === "albums" ? "albums" : "songs";
       document.body.dataset.format = state.activeFormat;
@@ -109,13 +122,23 @@
         button.classList.toggle("active", isActive);
         button.setAttribute("aria-pressed", String(isActive));
       });
+      updateFormatCycleUI(state.activeFormat);
       renderFilterAlbumGroups(state.activeFilter);
       if (sync) syncContext();
+    }
+
+    if (cycleBtn) {
+      cycleBtn.addEventListener("click", () => {
+        const next = state.activeFormat === "songs" ? "albums" : "songs";
+        applyFormat(next);
+      });
     }
 
     formatButtons.forEach(button => {
       if (!button.disabled) button.addEventListener("click", () => applyFormat(button.dataset.formatOption));
     });
+
+    updateFormatCycleUI(state.activeFormat);
 
     return Object.freeze({ applyFormat, renderFilterAlbumGroups });
   }

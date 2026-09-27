@@ -149,10 +149,16 @@ def streaming_link_markup(item: dict) -> str:
             f'rel="noopener noreferrer">{label}</a>'
         )
 
+    preview_url = (item.get("preview_url") or "").strip()
+    audition_button = ""
+    if preview_url:
+        audition_button = f'<button class="stream-link audition-trigger" type="button" data-preview-url="{html.escape(preview_url, quote=True)}" aria-label="Peek signal of {track}">PEEK <span class="peek-icon">▶</span></button>'
+
     return f"""
                 <div class="stream-block">
-                    <div class= "stream-label">Have a listen on:</div>
-                    <div class= "stream-links">
+                    <div class="stream-label">Have a listen:</div>
+                    <div class="stream-links">
+                        {audition_button}
                         {link_markup("spotify", "Spotify")}
                         {link_markup("apple", "Apple Music")}
                     </div>
@@ -186,6 +192,7 @@ def catalogue_record(item: dict, covers_dir: Path, cover_metadata: dict) -> dict
         "bytes": None,
     }
     record = {
+        "signal_id": item.get("signal_id", ""),
         "slug": item.get("slug", ""),
         "artist": item.get("artist", ""),
         "track": item.get("track", ""),
@@ -196,6 +203,12 @@ def catalogue_record(item: dict, covers_dir: Path, cover_metadata: dict) -> dict
         "cover": {
             "path": f"covers/{cover_file}" if cover_file else "",
             **metadata,
+            "quality": (
+                "missing" if not metadata.get("valid") else
+                "too-small" if min(metadata.get("width") or 0, metadata.get("height") or 0) < 600 else
+                "usable-low-resolution" if min(metadata.get("width") or 0, metadata.get("height") or 0) < 1200 else
+                "preferred"
+            ),
         },
         "palette": dict(item.get("palette") or {}),
     }

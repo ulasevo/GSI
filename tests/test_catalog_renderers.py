@@ -208,7 +208,7 @@ class CatalogueRendererTests(unittest.TestCase):
             editor = root / "editor"
             destination = root / "site" / "tools"
             editor.mkdir()
-            for filename in ("new-entry.html", "new-entry.css", "new-entry.js"):
+            for filename in ("new-entry.html", "new-entry.css", "draft-contract.js", "new-entry.js"):
                 (editor / filename).write_text(filename, encoding="utf-8")
             copy_site_editor(editor, destination, ["Charge", "Comment"])
 

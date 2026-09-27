@@ -17,6 +17,7 @@ from gsi_text import slugify
 
 
 TRACK_COLUMNS = {
+    "signal_id",
     "order",
     "tags",
     "artist",
@@ -29,6 +30,7 @@ TRACK_COLUMNS = {
     "apple_url",
 }
 HEX_COLOR_PATTERN = re.compile(r"^#[0-9a-fA-F]{6}$")
+SIGNAL_ID_PATTERN = re.compile(r"^sig-[a-z0-9]{20,64}$")
 
 
 LOCAL_ROUTE_ATTRIBUTES = {
@@ -165,6 +167,7 @@ def validate_source_contract(
 
     track_by_slug: dict[str, dict] = {}
     track_route_seen: dict[str, str] = {}
+    signal_id_seen: dict[str, str] = {}
     artist_slugs: dict[str, str] = {}
     album_slugs: dict[str, str] = {}
     for row_number, row in enumerate(rows, start=2):
@@ -174,6 +177,13 @@ def validate_source_contract(
         track = (row.get("track") or "").strip()
         album = (row.get("album") or "").strip()
         identity = f"{artist} / {track} / {album}"
+        signal_id = (row.get("signal_id") or "").strip()
+        if not signal_id:
+            errors.append(f"tracks.csv:{row_number}: signal_id is blank")
+        elif not SIGNAL_ID_PATTERN.fullmatch(signal_id):
+            errors.append(f"tracks.csv:{row_number}: signal_id has invalid format")
+        else:
+            _append_slug_collision(errors, signal_id_seen, signal_id, identity, "signal ID")
         for field, value in (("artist", artist), ("track", track), ("album", album)):
             if not value:
                 errors.append(f"tracks.csv:{row_number}: {field} is blank")
@@ -225,6 +235,7 @@ def validate_source_contract(
         errors.append("config.json: p53_history must be a list")
         p53_history = []
     p53_slugs: dict[str, str] = {}
+    p53_signal_ids: dict[str, str] = {}
     for index, record in enumerate(p53_history):
         if not isinstance(record, dict):
             errors.append(f"config.json: p53_history[{index}] must be an object")
@@ -234,6 +245,18 @@ def validate_source_contract(
         album = str(record.get("album") or "").strip()
         slug = str(record.get("slug") or slugify(f"{artist}-{track}")).strip()
         identity = f"{artist} / {track} / {album}"
+        signal_id = str(record.get("signal_id") or "").strip()
+        if not signal_id:
+            errors.append(f"config.json: p53_history[{index}] signal_id is blank")
+        elif not SIGNAL_ID_PATTERN.fullmatch(signal_id):
+            errors.append(f"config.json: p53_history[{index}] signal_id has invalid format")
+        else:
+            _append_slug_collision(errors, p53_signal_ids, signal_id, identity, "P53 signal ID")
+            existing_identity = signal_id_seen.get(signal_id)
+            if existing_identity is not None and existing_identity != identity:
+                errors.append(
+                    f"config.json: p53_history[{index}] signal_id {signal_id!r} disagrees with tracks.csv metadata"
+                )
         for field, value in (("artist", artist), ("track", track), ("album", album), ("slug", slug)):
             if not value:
                 errors.append(f"config.json: p53_history[{index}] {field} is blank")
@@ -276,8 +299,30 @@ def validate_source_contract(
                 _append_slug_collision(errors, album_slugs, album_slug, f"{artist} / {album}", "album route")
 
     current_slug = str(config.get("p53_current_slug") or "").strip()
+    current_signal_id = str(config.get("p53_current_signal_id") or "").strip()
+    if current_signal_id and current_signal_id not in p53_signal_ids:
+        errors.append(f"config.json: p53_current_signal_id {current_signal_id!r} is not present in p53_history")
+    if current_signal_id and p53_history:
+        last_record = p53_history[-1] if isinstance(p53_history[-1], dict) else {}
+        if str(last_record.get("signal_id") or "").strip() != current_signal_id:
+            errors.append(
+                "config.json: p53_current_signal_id must identify the last p53_history "
+                "record so newest-first ordering remains deterministic"
+            )
+        if current_slug and str(last_record.get("slug") or "").strip() != current_slug:
+            errors.append("config.json: p53_current_slug and p53_current_signal_id identify different records")
     if current_slug and current_slug not in p53_slugs:
         errors.append(f"config.json: p53_current_slug {current_slug!r} is not present in p53_history")
+    if current_slug and p53_history:
+        last_record = p53_history[-1] if isinstance(p53_history[-1], dict) else {}
+        last_slug = str(last_record.get("slug") or "").strip()
+        if not last_slug:
+            last_slug = slugify(f'{last_record.get("artist", "")} {last_record.get("track", "")}')
+        if last_slug != current_slug:
+            errors.append(
+                "config.json: p53_current_slug must identify the last p53_history "
+                "record so newest-first ordering remains deterministic"
+            )
 
     artist_assets = config.get("artist_assets", {})
     if artist_assets is not None and not isinstance(artist_assets, dict):
@@ -457,6 +502,32 @@ def validate_generated_links(site_dir: Path) -> list[str]:
                         f"{target.relative_to(site_root).as_posix()}"
                     )
 
+    generation_manifest_path = site_root / "data" / "generation.json"
+    generation_relationships: dict = {}
+    if generation_manifest_path.is_file():
+        try:
+            generation_payload = json.loads(generation_manifest_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            generation_payload = {}
+        if isinstance(generation_payload, dict) and isinstance(generation_payload.get("relationships"), dict):
+            generation_relationships = generation_payload["relationships"]
+    generated_signal_hrefs = {
+        str(record.get("href") or "")
+        for family in ("entries", "p53")
+        for record in generation_relationships.get(family, [])
+        if isinstance(record, dict)
+    }
+    generated_artist_hrefs = {
+        str(record.get("href") or "")
+        for record in generation_relationships.get("artists", [])
+        if isinstance(record, dict)
+    }
+    generated_album_hrefs = {
+        str(record.get("href") or "")
+        for record in generation_relationships.get("albums", [])
+        if isinstance(record, dict)
+    }
+
     manifest_path = site_root / "data" / "catalog.json"
     if manifest_path.is_file():
         try:
@@ -493,6 +564,24 @@ def validate_generated_links(site_dir: Path) -> list[str]:
                         else:
                             if cover.get("exists") and not target.is_file():
                                 errors.append(f"{prefix} cover is missing from generated site")
+                    page_url = str(signal.get("page_url") or "")
+                    parsed_page_url = urlsplit(page_url)
+                    if not page_url or parsed_page_url.scheme or page_url.startswith("//"):
+                        errors.append(f"{prefix} has an invalid page_url")
+                    elif page_url not in generated_signal_hrefs:
+                        errors.append(
+                            f"{prefix} page_url is absent from generation relationships: {page_url!r}"
+                        )
+                    artist = str(signal.get("artist") or "").strip()
+                    album = str(signal.get("album") or "").strip()
+                    if artist:
+                        artist_href = f"artists/{slugify(artist)}.html"
+                        if artist_href not in generated_artist_hrefs:
+                            errors.append(f"{prefix} artist room is absent from generation relationships: {artist_href!r}")
+                    if artist and album:
+                        album_href = f"albums/{slugify(f'{artist}-{album}')}.html"
+                        if album_href not in generated_album_hrefs:
+                            errors.append(f"{prefix} album room is absent from generation relationships: {album_href!r}")
 
     artist_manifest_path = site_root / "data" / "artists.json"
     if artist_manifest_path.is_file():

@@ -50,7 +50,13 @@
         link.href = `${baseHref}${contextParams.size ? `?${contextParams}` : ""}`;
     });
     document.querySelectorAll("[data-filter-route]").forEach((link) => {
-        if (link.dataset.filterRoute === filter) link.hidden = true;
+        if (link.dataset.filterRoute === filter) {
+            link.hidden = true;
+            return;
+        }
+        const filterParams = new URLSearchParams(archiveParams);
+        filterParams.set("filter", link.dataset.filterRoute);
+        link.href = `../index.html?${filterParams}`;
     });
 
     const alsoAppears = document.querySelector("#also-appears");
@@ -97,4 +103,51 @@
             document.querySelector("#trace-context-separator")?.classList.remove("hidden");
         }
     }
+
+  // 30-Second Signal Audition Controller
+  (() => {
+    const btn = document.querySelector(".audition-trigger");
+    if (!btn) return;
+    const url = btn.dataset.previewUrl;
+    if (!url) return;
+    let audio = null;
+
+    btn.addEventListener("click", () => {
+      if (!audio) {
+        audio = new Audio(url);
+        audio.addEventListener("ended", () => {
+          btn.classList.remove("is-playing");
+          btn.innerHTML = 'PEEK <span class="peek-icon">▶</span>';
+          document.body.classList.remove("signal-auditioning");
+        });
+        audio.addEventListener("error", () => {
+          btn.textContent = "Preview unavailable";
+          btn.disabled = true;
+          document.body.classList.remove("signal-auditioning");
+        });
+      }
+      if (audio.paused) {
+        audio.play().then(() => {
+          btn.classList.add("is-playing");
+          btn.innerHTML = 'PEEKING <span class="peek-icon">⏸</span>';
+          document.body.classList.add("signal-auditioning");
+        }).catch(() => {
+          btn.textContent = "Playback blocked";
+        });
+      } else {
+        audio.pause();
+        btn.classList.remove("is-playing");
+        btn.innerHTML = 'PEEK <span class="peek-icon">▶</span>';
+        document.body.classList.remove("signal-auditioning");
+      }
+    });
+
+    window.addEventListener("pagehide", () => {
+      if (audio) {
+        audio.pause();
+        audio = null;
+      }
+    });
+  })();
+
 })();

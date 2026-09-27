@@ -1,3 +1,5 @@
+@view-transition { navigation: auto; }
+
 /* Foundational page shell and the original stable card rules. */
 /*
  * Homepage composition: hero, filter rooms, controls, playlist rail, and card
@@ -356,7 +358,7 @@
             flex-wrap: wrap;
             align-items: center;
             gap: 8px;
-            margin: 0 0 20px;
+            margin: 0;
         }
         .view-control-label {
             margin-right:4px;
@@ -421,20 +423,85 @@
         }
         body[data-active-filter="p53"] .card { order: 999; }
         body[data-active-filter="p53"] .card[data-tags~="p53"] { order: var(--p53-order); }
-        .grid.view-switching {
-            opacity: .18;
-            transform: translateY(5px);
+
+        @keyframes album-group-fade-in {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        .filter-album-group { display:none; position:relative; grid-column:span 1; min-width:0; }
-        .filter-album-summary { display:flex; flex-direction:column; width:100%; min-width:0; overflow:hidden; color:#eee; background:linear-gradient(180deg,rgba(255,255,255,.035),transparent 34%),color-mix(in srgb,var(--accent),#1b1b1b 86%); border:2px solid color-mix(in srgb,var(--accent),white 12%); border-radius:20px; box-shadow:0 0 24px color-mix(in srgb,var(--accent),transparent 76%),0 18px 42px rgba(0,0,0,.25); transition:transform .16s ease,box-shadow .16s ease,border-color .16s ease; }
-        .filter-album-summary img { width:100%; aspect-ratio:1; object-fit:cover; display:block; border-radius:22px 6px 0 0; }
-        .filter-album-summary { text-decoration:none; }
-        .filter-album-summary { border-radius:24px 8px 24px 8px; }
-        .filter-album-summary-copy { display:flex; flex-direction:column; gap:6px; padding:14px; }
-        .filter-album-summary-copy strong { font-size:20px; line-height:1; }
-        .filter-album-summary-copy > em { color:rgba(255,255,255,.68); font-size:13px; font-style:normal; font-weight:700; }
-        .filter-album-summary-copy > span { color:color-mix(in srgb,var(--accent),white 34%); font-size:10px; font-weight:950; letter-spacing:.12em; }
-        .filter-album-summary:hover,.filter-album-summary:focus-visible { border-color:color-mix(in srgb,var(--accent),white 35%); box-shadow:0 0 28px color-mix(in srgb,var(--accent),transparent 42%),0 24px 52px rgba(0,0,0,.35); transform:translateY(-5px) scale(1.012); border-radius:8px 24px 8px 24px; }
+        .filter-album-group {
+            display: none;
+            position: relative;
+            grid-column: span 1;
+            min-width: 0;
+            width: 100%;
+            animation: album-group-fade-in 220ms cubic-bezier(.2,.8,.2,1);
+        }
+        .filter-album-summary {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            min-width: 0;
+            overflow: hidden;
+            color: #eee;
+            text-decoration: none;
+            background:
+                linear-gradient(180deg, rgba(255,255,255,.035), transparent 34%),
+                color-mix(in srgb, var(--accent), #1b1b1b 86%);
+            border: 2px solid color-mix(in srgb, var(--accent), white 12%);
+            border-radius: 24px 8px 24px 8px;
+            box-shadow:
+                0 0 24px color-mix(in srgb, var(--accent), transparent 76%),
+                0 18px 42px rgba(0,0,0,.25);
+            transform: translateZ(0);
+            will-change: transform;
+            transition:
+                transform 420ms cubic-bezier(.2,.8,.2,1),
+                border-radius 420ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 220ms ease,
+                border-color 180ms ease;
+        }
+        .filter-album-summary img {
+            width: 100%;
+            aspect-ratio: 1 / 1;
+            object-fit: cover;
+            display: block;
+        }
+        .filter-album-summary-copy {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding: 18px;
+            flex: 1;
+        }
+        .filter-album-summary-copy strong {
+            font-size: 22px;
+            line-height: 1.1;
+            margin: 0;
+            color: #f7f7f7;
+        }
+        .filter-album-summary-copy > em {
+            color: rgba(255,255,255,.68);
+            font-size: 14px;
+            font-style: normal;
+            font-weight: 700;
+        }
+        .filter-album-summary-copy > span {
+            color: color-mix(in srgb, var(--accent), white 45%);
+            font-size: 10px;
+            font-weight: 950;
+            letter-spacing: .14em;
+            text-transform: uppercase;
+        }
+        .filter-album-summary:hover,
+        .filter-album-summary:focus-visible {
+            border-radius: 8px 24px 8px 24px;
+            transform: translateY(-8px) scale(1.02) rotate(-.35deg);
+            border-color: color-mix(in srgb, var(--accent), white 35%);
+            box-shadow:
+                0 0 28px color-mix(in srgb, var(--accent), transparent 42%),
+                0 0 80px color-mix(in srgb, var(--accent), transparent 72%),
+                0 24px 52px rgba(0,0,0,.35);
+        }
         body[data-view="gallery"] .filter-album-group { display:contents !important; }
         body[data-format="albums"][data-view="gallery"] .filter-album-group { display:block !important; }
         body[data-format="albums"][data-view="gallery"] .filter-album-summary-copy { display:none; }
@@ -474,10 +541,21 @@
             box-shadow:
                 0 0 24px color-mix(in srgb, var(--accent), transparent 76%),
                 0 18px 42px rgba(0,0,0,.25);
-            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+            transform: translateZ(0);
+            will-change: transform;
+            transition: transform 0.22s cubic-bezier(.2,.8,.2,1), box-shadow 0.22s cubic-bezier(.2,.8,.2,1), border-color 0.18s ease;
         }
 
-        .card:hover,
+        @media (hover: hover) {
+            .card:hover {
+                transform: translateY(-7px) scale(1.018) rotate(-0.35deg);
+                border-color: color-mix(in srgb, var(--accent), white 35%);
+                box-shadow:
+                    0 0 28px color-mix(in srgb, var(--accent), transparent 42%),
+                    0 0 80px color-mix(in srgb, var(--accent), transparent 72%),
+                    0 24px 52px rgba(0,0,0,.35);
+            }
+        }
         .card:focus-visible {
             transform: translateY(-7px) scale(1.018) rotate(-0.35deg);
             border-color: color-mix(in srgb, var(--accent), white 35%);

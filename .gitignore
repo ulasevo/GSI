@@ -148,11 +148,15 @@ venv.bak/
 
 # Codex-provided reference attachments; preserve locally, never stage as source
 .codex-remote-attachments/
+scratch/
+audit/backups/
 
 # Local recommendation intake; keep pending submissions out of source control.
 submissions/inbox/*.json
 submissions/drafts/*.md
 submissions/drafts/*.json
+# Local source snapshots are recoverability data, not public site content.
+submissions/snapshots/*
 
 # mypy
 .mypy_cache/

@@ -164,29 +164,80 @@
     if (!raw) return setStatus("Paste a raw Apple Music or Spotify URL first.", "error");
     let url;
     try { url = new URL(raw); } catch { return setStatus("That is not a valid URL.", "error"); }
-    const isApple = ["music.apple.com", "itunes.apple.com"].includes(url.hostname.toLowerCase());
-    if (!isApple || !url.searchParams.get("i")) {
-      setStatus("Spotify links are accepted, but enter artist, track, and album manually.");
-      updatePreview();
-      return;
-    }
-    setStatus("Resolving Apple Music metadata…");
-    try {
-      const response = await fetch(`https://itunes.apple.com/lookup?id=${encodeURIComponent(url.searchParams.get("i"))}`);
-      if (!response.ok) throw new Error(`lookup returned ${response.status}`);
-      const payload = await response.json();
-      const song = (payload.results || []).find((item) => item.kind === "song");
-      if (!song) throw new Error("no song found");
-      $("#artist").value = song.artistName || "";
-      $("#track").value = song.trackName || "";
-      $("#album").value = song.collectionName || "";
-      state.artworkUrl = song.artworkUrl100 ? song.artworkUrl100.replace("100x100bb", "600x600bb") : "";
-      showArtwork(song.artworkUrl100 || "", `${song.collectionName || "ARTWORK"} / ARTWORK CHECK`);
-      setStatus("Metadata resolved. Check the names before exporting.", "success");
-      updateRoomPlan();
-      updatePreview();
-    } catch (error) {
-      setStatus("Apple lookup was unavailable. Fill the three identity fields manually; the link can still be preserved.", "error");
+    const host = url.hostname.toLowerCase();
+    const isApple = ["music.apple.com", "itunes.apple.com"].includes(host) || host.endsWith(".apple.com");
+    const isSpotify = ["open.spotify.com", "spotify.link"].includes(host) || host.endsWith(".spotify.com");
+
+    if (isApple) {
+      let trackId = url.searchParams.get("i");
+      if (!trackId) {
+        const segments = url.pathname.split("/").filter((s) => /^\d+$/.test(s));
+        if (segments.length > 0) trackId = segments[segments.length - 1];
+      }
+      if (!trackId) {
+        setStatus("Could not find track ID in Apple Music URL. Enter fields manually.", "error");
+        updatePreview();
+        return;
+      }
+      setStatus("Resolving Apple Music metadata…");
+      try {
+        const response = await fetch(`https://itunes.apple.com/lookup?id=${encodeURIComponent(trackId)}`);
+        if (!response.ok) throw new Error(`lookup returned ${response.status}`);
+        const payload = await response.json();
+        const song = (payload.results || []).find((item) => item.kind === "song");
+        if (!song) throw new Error("no song found");
+        $("#artist").value = song.artistName || "";
+        $("#track").value = song.trackName || "";
+        $("#album").value = song.collectionName || "";
+        state.artworkUrl = song.artworkUrl100 ? song.artworkUrl100.replace(/\b\d{2,4}x\d{2,4}bb\b/, "1200x1200bb") : "";
+        showArtwork(song.artworkUrl100 || "", `${song.collectionName || "ARTWORK"} / ARTWORK CHECK`);
+        setStatus("Metadata resolved. Check the names before exporting.", "success");
+        updateRoomPlan();
+        updatePreview();
+      } catch (error) {
+        setStatus("Apple lookup was unavailable. Fill the three identity fields manually; the link can still be preserved.", "error");
+      }
+    } else if (isSpotify) {
+      setStatus("Resolving Spotify metadata…");
+      try {
+        const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(raw)}`;
+        const oembedResp = await fetch(oembedUrl);
+        if (!oembedResp.ok) throw new Error("Spotify oEmbed error");
+        const oembed = await oembedResp.json();
+        const title = (oembed.title || "").trim();
+        let thumb = (oembed.thumbnail_url || "").replace("ab67616d00001e02", "ab67616d0000b273");
+
+        let resolved = false;
+        if (title) {
+          try {
+            const itunesSearch = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(title)}&entity=song&limit=5`);
+            if (itunesSearch.ok) {
+              const data = await itunesSearch.json();
+              const song = (data.results || []).find((item) => item.kind === "song");
+              if (song) {
+                $("#artist").value = song.artistName || "";
+                $("#track").value = song.trackName || "";
+                $("#album").value = song.collectionName || "";
+                state.artworkUrl = song.artworkUrl100 ? song.artworkUrl100.replace(/\b\d{2,4}x\d{2,4}bb\b/, "1200x1200bb") : thumb;
+                showArtwork(song.artworkUrl100 || thumb, `${song.collectionName || title} / ARTWORK CHECK`);
+                resolved = true;
+              }
+            }
+          } catch (_) {}
+        }
+        if (!resolved) {
+          if (title) $("#track").value = title;
+          state.artworkUrl = thumb;
+          if (thumb) showArtwork(thumb, `${title || "SPOTIFY ARTWORK"} / ARTWORK CHECK`);
+        }
+        setStatus("Spotify metadata resolved. Check the names before exporting.", "success");
+        updateRoomPlan();
+        updatePreview();
+      } catch (err) {
+        setStatus("Spotify lookup unavailable. Fill the three identity fields manually.", "error");
+      }
+    } else {
+      setStatus("Use an Apple Music or Spotify track URL.", "error");
     }
   }
 

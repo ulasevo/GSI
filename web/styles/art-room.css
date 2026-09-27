@@ -38,6 +38,15 @@ body.art-room :is(a, button):focus-visible {
 }
 
 @media (max-width: 700px) {
-  body.art-room::before { position: absolute; opacity: .2; filter: blur(24px) saturate(1.08); }
+  /* Keep the atmospheric layer inside the document box on narrow viewports.
+     The desktop bleed (negative inset + scale) otherwise widens the page and
+     leaves a stray tinted strip beside and below the reading room. */
+  body.art-room::before {
+    position: absolute;
+    inset: 0;
+    opacity: .2;
+    filter: blur(24px) saturate(1.08);
+    transform: none;
+  }
   body.art-room::after { position: absolute; }
 }

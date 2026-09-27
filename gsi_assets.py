@@ -267,7 +267,28 @@ def artwork_palette(image_path: Path, fallback: str = "#444444") -> dict[str, st
     }
 
 
-def palette_style(palette: dict | None, image_src: str = "") -> str:
+def compact_rim_gradient(palette: dict | None) -> str:
+    """Build a low-cost four-sided rim for repeated visual surfaces."""
+    palette = palette or {}
+    stops = (
+        ("edge_top", "50%", "0%"),
+        ("edge_right", "100%", "50%"),
+        ("edge_bottom", "50%", "100%"),
+        ("edge_left", "0%", "50%"),
+    )
+    return ",".join(
+        "radial-gradient(ellipse at %s %s, color-mix(in srgb, %s, transparent 62%%), transparent 52%%)"
+        % (x, y, palette.get(key, palette.get("field", "#17151b")))
+        for key, x, y in stops
+    )
+
+
+def palette_style(
+    palette: dict | None,
+    image_src: str = "",
+    *,
+    rim_gradient: str | None = None,
+) -> str:
     """Serialize named palette roles as safe inline custom properties."""
     palette = palette or artwork_palette(Path("__missing_artwork__.jpg"))
     values = {
@@ -280,7 +301,9 @@ def palette_style(palette: dict | None, image_src: str = "") -> str:
         "--art-edge-right": palette.get("edge_right", palette.get("field", "#17151b")),
         "--art-edge-bottom": palette.get("edge_bottom", palette.get("field", "#17151b")),
         "--art-edge-left": palette.get("edge_left", palette.get("field", "#17151b")),
-        "--art-rim-gradient": palette.get("rim_gradient", ""),
+        "--art-rim-gradient": rim_gradient if rim_gradient is not None else palette.get("rim_gradient", ""),
+        "--art-section-rim-gradient": compact_rim_gradient(palette),
+        "--art-card-rim-gradient": compact_rim_gradient(palette),
         "--art-surface": palette.get("surface", "#17151b"),
         "--art-soft": palette.get("soft", "#aaaaaa"),
         "--art-ink": palette.get("ink", "#f8f5ef"),
@@ -372,7 +395,7 @@ def copy_site_editor(
 ) -> None:
     """Copy the browser Entry Loader into every generated site build."""
     site_editor_dir.mkdir(parents=True, exist_ok=True)
-    for filename in ("new-entry.html", "new-entry.css", "new-entry.js"):
+    for filename in ("new-entry.html", "new-entry.css", "draft-contract.js", "new-entry.js"):
         source = editor_dir / filename
         if not source.is_file():
             raise FileNotFoundError(f"Missing browser editor asset: {source}")

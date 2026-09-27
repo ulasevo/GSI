@@ -8,8 +8,8 @@ import html
 import json
 from pathlib import Path
 
-from gsi_assets import artwork_palette, palette_style, playlist_visuals
-from gsi_data import load_config
+from gsi_assets import artwork_palette, compact_rim_gradient, palette_style, playlist_visuals
+from gsi_data import current_p53_slug, load_config
 from builder.template_renderer import render_template
 
 
@@ -62,7 +62,8 @@ def build_index_html(
         safe_card_label = html.escape(f'{item["track"]} — {item["artist"]}', quote = True)
         cover_html = ""
         if item["cover_file"]:
-            cover_html = f'<img src="covers/{item["cover_file"]}" alt="{safe_album} cover" loading="lazy" decoding="async">'  # image tag
+            vt_name = f'cover-{item["slug"]}'
+            cover_html = f'<img src="covers/{item["cover_file"]}" alt="{safe_album} cover" loading="lazy" decoding="async" style="view-transition-name: {vt_name};">'  # image tag
         tags = item.get("tags", "")
         tags_for_attr = tags.lower().replace(","," ")
         p53_order = int(item.get("p53_order", 999))
@@ -156,29 +157,36 @@ def build_index_html(
                 <h2 id="filter-title"></h2>
                 <p id="filter-description"></p>
             </div>
+            <a class="playlist-card hidden" id="playlist-card" href="#" target="_blank" rel="noopener noreferrer">
+                <img id="playlist-cover" alt="Playlist cover" loading="lazy" decoding="async">
+                <div class="playlist-card-copy">
+                    <span class="playlist-card-eyebrow">APPLE MUSIC ↗</span>
+                    <span class="playlist-card-text" id="playlist-cta"></span>
+                </div>
+            </a>
         </div>
     </section>
     """
 
     # The homepage points to the Radio P53 landing surface, not directly to a
     # transmission; the landing page owns the historical sequence.
-    p53_slug = (config.get("p53_current_slug") or "").strip()
+    p53_slug = current_p53_slug(config, config.get("p53_history", []))
     p53_item = next((item for item in tracks if item["slug"] == p53_slug), None)
     p53_html = ""
     if p53_item:
-        p53_settings = config.get("p53") or {}
+        p53_settings = (config.get("filters") or {}).get("p53") or {}
         p53_cover_value = str(p53_settings.get("playlist_cover") or "covers/P53_cover.jpg").strip()
         p53_cover_path = base / p53_cover_value
         p53_palette = artwork_palette(p53_cover_path, p53_item.get("accent", "#ff65ad"))
         p53_style = (
             f'--signal-accent:{p53_palette.get("primary", p53_item.get("accent", "#ff65ad"))};'
             f'--p53-accent:{p53_palette.get("primary", p53_item.get("accent", "#ff65ad"))};'
-            f'{palette_style(p53_palette, p53_cover_value)}'
+            f'{palette_style(p53_palette, p53_cover_value, rim_gradient=compact_rim_gradient(p53_palette))}'
         )
         p53_html = f"""
         <a class="p53-broadcast" data-base-href="p53/index.html" href="p53/index.html" aria-label="Open Radio P53: current and previous transmissions" style="{html.escape(p53_style, quote=True)}">
             <div class="p53-art">
-                <img src="covers/P53_cover.jpg" alt="P53 protein artwork" loading="eager" fetchpriority="high" decoding="async">
+                <img src="covers/P53_cover-runtime.webp" alt="P53 protein artwork" loading="eager" fetchpriority="high" decoding="async">
             </div>
             <div class="p53-overlay">
                 <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover" loading="lazy" decoding="async">

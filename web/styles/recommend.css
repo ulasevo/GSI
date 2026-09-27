@@ -5,7 +5,7 @@ body.recommend-room { min-height: 100vh; margin: 0; overflow-x: hidden; color: #
 .recommend-path a { color: #ff82be; text-decoration: none; }
 .recommend-header { max-width: 680px; padding: clamp(70px, 12vw, 130px) 0 34px; }
 .eyebrow { margin: 0 0 12px; color: #ff82be; font: 950 11px/1 var(--gsi-ui-font, Arial, sans-serif); letter-spacing: .18em; }
-.recommend-header h1 { margin: 0 0 18px; font-size: clamp(48px, 9vw, 104px); line-height: .84; letter-spacing: -.065em; }
+.recommend-header h1 { margin: 0 0 18px; font-size: clamp(48px, 9vw, 104px); line-height: .84; letter-spacing: -.02em; }
 .recommend-header p:not(.eyebrow) { max-width: 620px; margin: 0; color: rgba(255,255,255,.72); font-size: clamp(17px, 2vw, 21px); line-height: 1.55; }
 .recommend-form { display: grid; gap: 20px; padding: clamp(20px, 4vw, 34px); border: 1px solid rgba(255,255,255,.2); border-radius: 30px 8px 30px 8px; background: rgba(20, 18, 27, .82); box-shadow: 0 28px 90px rgba(0,0,0,.28); }
 .recommend-form label { display: grid; gap: 8px; color: #f6f0f0; font: 900 12px/1.2 var(--gsi-ui-font, Arial, sans-serif); letter-spacing: .12em; text-transform: uppercase; }

@@ -46,6 +46,7 @@
 
     function hidePlaylist() {
       playlistCard.classList.add("hidden");
+      box.classList.remove("has-playlist");
       layoutFormatControls.classList.remove("has-playlist");
       playlistCard.removeAttribute("href");
       playlistCover.removeAttribute("src");
@@ -57,9 +58,10 @@
       if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
       window.clearTimeout(signalTransformTimer);
       document.body.classList.remove("signal-transforming");
-      void document.body.offsetWidth;
-      document.body.classList.add("signal-transforming");
-      signalTransformTimer = window.setTimeout(() => document.body.classList.remove("signal-transforming"), 720);
+      window.requestAnimationFrame(() => {
+        document.body.classList.add("signal-transforming");
+        signalTransformTimer = window.setTimeout(() => document.body.classList.remove("signal-transforming"), 720);
+      });
     }
 
     function clearFilter(sync = true) {
@@ -107,9 +109,10 @@
       box.classList.remove("hidden", "filter-entering");
       if (animate) {
         window.clearTimeout(filterEntranceTimer);
-        void box.offsetWidth;
-        box.classList.add("filter-entering");
-        filterEntranceTimer = window.setTimeout(() => box.classList.remove("filter-entering"), 1000);
+        window.requestAnimationFrame(() => {
+          box.classList.add("filter-entering");
+          filterEntranceTimer = window.setTimeout(() => box.classList.remove("filter-entering"), 1000);
+        });
       }
       renderRoomLabel(info, filterName);
       filterDecor.replaceChildren();
@@ -132,7 +135,7 @@
         if (info.playlist_url) playlistCard.target = "_blank";
         else playlistCard.removeAttribute("target");
         playlistCard.style.setProperty("--playlist-accent", info.playlist_color || info.color);
-        playlistCta.textContent = info.playlist_url ? "FOLLOW THE SIGNAL / ON APPLE MUSIC ↗" : "PLAYLIST UNAVAILABLE";
+        playlistCta.textContent = info.playlist_cta || (info.playlist_url ? "Want more of the same?" : "PLAYLIST UNAVAILABLE");
         if (info.playlist_cover) {
           playlistCover.src = info.playlist_cover;
           playlistCover.style.display = "block";
@@ -141,6 +144,7 @@
           playlistCover.style.display = "none";
         }
         playlistCard.classList.remove("hidden");
+        box.classList.add("has-playlist");
         layoutFormatControls.classList.add("has-playlist");
       } else {
         hidePlaylist();

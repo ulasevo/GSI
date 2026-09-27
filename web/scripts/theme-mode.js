@@ -41,13 +41,15 @@
     if (label) label.textContent = light ? "LIT" : "DIM";
   }
 
-  // Set the saved mode before the rest of the document can paint. Room
-  // styles are dark-first, so waiting for DOMContentLoaded causes a visible
-  // dark flash during back/forward navigation.
-  setTheme(initial, false);
+  // Set and persist the effective mode before the rest of the document can
+  // paint. Room styles are dark-first, so waiting for DOMContentLoaded causes
+  // a visible dark flash during back/forward navigation. Persisting an
+  // explicit URL theme also prevents a raw link from falling back to an older
+  // preference before its destination has a chance to decorate the URL.
+  setTheme(initial, true);
 
   function mount() {
-    setTheme(initial, false);
+    setTheme(root.dataset.gsiTheme || initial, true);
     let toggle = document.querySelector(".theme-toggle");
     if (!toggle) {
       toggle = document.createElement("button");

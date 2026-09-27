@@ -9,7 +9,7 @@ import argparse # command-line options such as the source-safe site build
 from pathlib import Path # cross OS handling
 from gsi_assets import copy_site_covers, copy_site_editor, copy_site_scripts, copy_site_styles
 from gsi_artists import artist_catalogue_records, copy_site_artist_assets, write_artist_manifest
-from gsi_data import artist_room_groups, build_generation_inventory, load_config, ordered_tracks, read_tracks
+from gsi_data import artist_room_groups, build_generation_inventory, current_p53_slug, load_config, ordered_tracks, read_tracks
 from gsi_links import print_provider_link_audit, provider_link_audit
 from gsi_text import slugify
 from gsi_validation import validate_generated_links, validate_source_contract
@@ -97,7 +97,7 @@ def main() -> None:
     p53_history = prepare_p53_history(config, tracks, download_missing = not args.site_only)
     archive_tracks = merge_p53_into_archive(tracks, p53_history)
     artist_groups = artist_room_groups(tracks, p53_history)
-    p53_slug = (config.get("p53_current_slug") or "").strip()
+    p53_slug = current_p53_slug(config, p53_history)
     inventory = build_generation_inventory(
         tracks,
         p53_history,

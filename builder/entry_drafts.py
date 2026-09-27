@@ -8,10 +8,11 @@ metadata remains an explicit later integration.
 """
 
 import json
+import uuid
 import re
 from pathlib import Path
 from urllib.error import HTTPError, URLError
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 from urllib.request import Request, urlopen
 
 try:
@@ -107,13 +108,18 @@ def provider_for_url(url: str) -> str:
 
 def apple_track_id(url: str) -> str:
     """Extract Apple's track id from a song URL."""
-    query = parse_qs(urlsplit(url).query)
+    parsed = urlsplit(url)
+    query = parse_qs(parsed.query)
     track_id = (query.get("i") or [""])[0].strip()
-    if not track_id.isdigit():
-        raise DraftMetadataError(
-            "This Apple Music link does not contain a track id (the `i=` value)."
-        )
-    return track_id
+    if track_id.isdigit():
+        return track_id
+    if "/song/" in parsed.path:
+        path_segments = [p for p in parsed.path.split("/") if p.isdigit()]
+        if path_segments:
+            return path_segments[-1]
+    raise DraftMetadataError(
+        "This Apple Music link does not contain a track id (the `i=` value or path id)."
+    )
 
 
 def _apple_lookup_payload(url: str, timeout: int = 15, opener=None) -> dict:
@@ -161,6 +167,54 @@ def metadata_from_apple_link(url: str, *, timeout: int = 15, opener=None) -> dic
     }
 
 
+def metadata_from_spotify_link(url: str, *, timeout: int = 15, opener=None) -> dict:
+    """Resolve track, artist, album, and artwork from a Spotify track URL."""
+    normalized_url = normalize_provider_url(url, "spotify")
+    if not normalized_url:
+        raise DraftMetadataError("This is not a valid HTTPS Spotify URL.")
+    opener = opener or urlopen
+    oembed_url = f"https://open.spotify.com/oembed?url={quote(normalized_url)}"
+    request = Request(oembed_url, headers={"User-Agent": "Mozilla/5.0 GSI entry drafter"})
+    try:
+        with opener(request, timeout=timeout) as response:
+            payload = json.loads(response.read().decode("utf-8"))
+    except Exception as error:
+        raise DraftMetadataError(f"Spotify oEmbed lookup failed: {error}") from error
+    title = str(payload.get("title") or "").strip()
+    thumbnail_url = str(payload.get("thumbnail_url") or "").strip()
+    if "ab67616d00001e02" in thumbnail_url:
+        thumbnail_url = thumbnail_url.replace("ab67616d00001e02", "ab67616d0000b273")
+    artist = ""
+    track = title
+    album = ""
+    artwork_url = thumbnail_url
+    if title:
+        try:
+            itunes_url = f"https://itunes.apple.com/search?term={quote(title)}&entity=song&limit=5"
+            itunes_req = Request(itunes_url, headers={"User-Agent": "Mozilla/5.0 GSI entry drafter"})
+            with opener(itunes_req, timeout=timeout) as itunes_resp:
+                itunes_data = json.loads(itunes_resp.read().decode("utf-8"))
+                results = itunes_data.get("results") or []
+                song = next((item for item in results if item.get("kind") == "song"), None)
+                if song:
+                    artist = str(song.get("artistName") or "").strip()
+                    track = str(song.get("trackName") or "").strip()
+                    album = str(song.get("collectionName") or "").strip()
+                    if song.get("artworkUrl100"):
+                        artwork_url = str(song["artworkUrl100"]).replace("100x100bb", "1200x1200bb")
+        except Exception:
+            pass
+    return {
+        "provider": "spotify",
+        "artist": artist,
+        "track": track,
+        "album": album,
+        "apple_url": "",
+        "spotify_url": normalized_url,
+        "cover_url": artwork_url,
+    }
+
+
 def metadata_from_link(
     url: str,
     *,
@@ -186,6 +240,20 @@ def metadata_from_link(
             "spotify_url": "",
             "cover_url": "",
         }
+    elif not all(value.strip() for value in (artist, track, album)):
+        try:
+            metadata = metadata_from_spotify_link(url, timeout=timeout, opener=opener)
+        except Exception:
+            normalized_url = normalize_provider_url(url, "spotify")
+            metadata = {
+                "provider": "spotify",
+                "artist": "",
+                "track": "",
+                "album": "",
+                "apple_url": "",
+                "spotify_url": normalized_url,
+                "cover_url": "",
+            }
     else:
         normalized_url = normalize_provider_url(url, "spotify")
         metadata = {
@@ -215,6 +283,7 @@ def draft_record(metadata: dict, *, tags: str = "", accent: str = "") -> dict:
     if not slug:
         raise DraftMetadataError("Artist and track do not produce a usable route slug.")
     return {
+        "signal_id": f"sig-{uuid.uuid4().hex[:20]}",
         "order": "",
         "tags": tags.strip(),
         "artist": metadata["artist"].strip(),
@@ -245,6 +314,7 @@ def render_empty_entry(record: dict, sections: list[str]) -> str:
 def p53_record_from_draft(record: dict) -> dict:
     """Prepare an explicit P53 history record without inventing status labels."""
     result = {
+        "signal_id": record.get("signal_id", ""),
         "artist": record["artist"],
         "track": record["track"],
         "album": record["album"],
@@ -293,7 +363,7 @@ def validate_draft_payload(payload: object) -> tuple[dict | None, str | None]:
         return None, "draft payload is missing record metadata"
     clean_record = {
         key: str(record.get(key) or "").strip()
-        for key in ("artist", "track", "album", "link", "tags", "accent", "cover", "cover_file", "cover_url")
+        for key in ("signal_id", "artist", "track", "album", "link", "tags", "accent", "cover", "cover_file", "cover_url")
     }
     # The browser calls this field ``cover`` while source rows call it
     # ``cover_file``. Keep both spellings at the boundary.
@@ -348,6 +418,17 @@ def validate_draft_payload(payload: object) -> tuple[dict | None, str | None]:
         "artist_note": str(raw_catalogue.get("artist_note") or "").strip(),
         "album_note": str(raw_catalogue.get("album_note") or "").strip(),
     }
+    raw_artist_artwork = raw_catalogue.get("artist_artwork") or {}
+    if not isinstance(raw_artist_artwork, dict):
+        return None, "artist artwork must be an object"
+    catalogue["artist_artwork"] = {
+        "data_url": str(raw_artist_artwork.get("data_url") or "").strip(),
+        "mime": str(raw_artist_artwork.get("mime") or "").strip().lower(),
+        "name": str(raw_artist_artwork.get("name") or "").strip(),
+        "alt": str(raw_artist_artwork.get("alt") or "").strip(),
+    }
+    if catalogue["artist_artwork"]["data_url"] and len(catalogue["artist_artwork"]["data_url"]) > 8_000_000:
+        return None, "artist artwork upload is too large"
     if len(catalogue["artist_note"]) > 4000 or len(catalogue["album_note"]) > 4000:
         return None, "artist and album notes must be under 4000 characters"
     return {"schema": 1, "record": clean_record, "sections": sections, "p53": p53, "catalogue": catalogue}, None

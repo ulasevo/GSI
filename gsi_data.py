@@ -24,6 +24,28 @@ def read_tracks(tracks_file: Path) -> list[dict]:
         return list(csv.DictReader(file))
 
 
+def current_p53_record(config: dict, p53_history: list[dict]) -> dict | None:
+    """Resolve the current transmission by durable ID, with slug fallback."""
+    current_id = str(config.get("p53_current_signal_id") or "").strip()
+    if current_id:
+        match = next(
+            (item for item in p53_history if str(item.get("signal_id") or "").strip() == current_id),
+            None,
+        )
+        if match:
+            return match
+    current_slug = str(config.get("p53_current_slug") or "").strip()
+    if current_slug:
+        return next((item for item in p53_history if item.get("slug") == current_slug), None)
+    return None
+
+
+def current_p53_slug(config: dict, p53_history: list[dict]) -> str:
+    """Return the current transmission slug for route-compatible consumers."""
+    record = current_p53_record(config, p53_history)
+    return str(record.get("slug") or "") if record else ""
+
+
 # Preserve a hand-authored order when one exists; otherwise use the configured
 # direction. No page markup should need to know how ordering was chosen.
 def ordered_tracks(rows: list[dict], config: dict) -> list[dict]:
@@ -111,6 +133,10 @@ def build_generation_inventory(
         "p53_routes": p53_routes,
         "artist_routes": artist_routes,
         "album_routes": album_routes,
+        "signal_ids": {
+            "entries": {item["slug"]: item.get("signal_id", "") for item in tracks if item.get("slug")},
+            "p53": {item["slug"]: item.get("signal_id", "") for item in p53_history if item.get("slug")},
+        },
         "expected_pages": {
             "entries": {item["html_file"] for item in tracks if item.get("html_file")},
             "p53": p53_page_names,

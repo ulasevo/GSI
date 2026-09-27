@@ -21,7 +21,7 @@ body {
   font-family: var(--gsi-reading-font, Arial, sans-serif);
   background:
     linear-gradient(118deg, rgba(8, 10, 9, .91), rgba(31, 15, 36, .95)),
-    url("../covers/P53_cover.jpg") center / cover fixed;
+    url("../covers/P53_cover-runtime.webp") center / cover fixed;
 }
 
 body::before {
@@ -138,6 +138,8 @@ body::before {
   width: min(100%, 1120px);
   margin: 0 auto;
   scroll-margin-top: 28px;
+  content-visibility: auto;
+  contain-intrinsic-size: 220px;
   transition: transform 320ms var(--gsi-motion), filter 260ms ease;
 }
 
@@ -307,6 +309,12 @@ body::before {
     border-top: 2px solid color-mix(in srgb, #ff7fbb, transparent 25%);
     border-left: 0;
     background: none;
+  }
+}
+
+@media (max-width: 1024px) {
+  body {
+    background-attachment: scroll;
   }
 }
 
@@ -502,4 +510,23 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
     radial-gradient(circle at 12% 18%, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 66%), transparent 36%),
     repeating-linear-gradient(90deg, transparent 0 38px, color-mix(in srgb, var(--art-secondary, #777), transparent 90%) 38px 39px),
     repeating-linear-gradient(0deg, transparent 0 24px, color-mix(in srgb, var(--art-ink, #fff), transparent 94%) 24px 25px);
+}
+
+.transmission-intercept {
+  margin: 14px 0 0;
+  padding: 8px 14px;
+  font-family: var(--gsi-ui-font, Arial, sans-serif);
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.45;
+  color: color-mix(in srgb, var(--accent, #ff7fbb), white 68%);
+  background: rgba(0, 0, 0, .32);
+  border-left: 2px solid color-mix(in srgb, var(--accent, #ff7fbb), white 32%);
+  border-radius: 0 8px 8px 0;
+}
+
+.transmission-card.is-current .transmission-intercept {
+  font-size: clamp(14px, 1.4vw, 17px);
+  padding: 10px 18px;
+  margin-top: 18px;
 }

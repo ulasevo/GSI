@@ -70,15 +70,41 @@ def build_artist_pages(
         def entry_tile(item: dict, compact: bool = False) -> str:
             transmission_label = "P53 ↗" if item.get("p53_only") else "OPEN ↗"
             entry_kind = ' data-entry-kind="transmission"' if item.get("p53_only") else ""
+            t_num = item.get("track_number")
+            t_cnt = item.get("track_count")
+            year = item.get("release_year")
             if compact:
+                arc_parts = []
+                if t_num and t_cnt:
+                    arc_parts.append(f"TRACK {int(t_num):02d} OF {int(t_cnt):02d}")
+                elif t_num:
+                    arc_parts.append(f"TRACK {int(t_num):02d}")
+                if year:
+                    arc_parts.append(str(year))
+                arc_badge = f'<small class="album-entry-arc">{" · ".join(arc_parts)}</small>' if arc_parts else ""
                 # The album stack owns its cover; nested track rows stay text-first.
                 return f'''<a class="album-entry"{entry_kind} data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
-                    <span class="album-entry-mark" aria-hidden="true"></span><h3>{html.escape(item["track"])}</h3><b>{transmission_label}</b>
+                    <span class="album-entry-mark" aria-hidden="true"></span>
+                    <div class="album-entry-meta"><h3>{html.escape(item["track"])}</h3>{arc_badge}</div>
+                    <b>{transmission_label}</b>
                 </a>'''
-            state = "P53 TRANSMISSION" if item.get("p53_only") else html.escape(item["album"])
+            meta_parts = []
+            if item.get("p53_only"):
+                meta_parts.append("P53 TRANSMISSION")
+            elif item.get("album"):
+                meta_parts.append(html.escape(item["album"].upper()))
+            if year:
+                meta_parts.append(str(year))
+            if t_num and t_cnt:
+                meta_parts.append(f"TRACK {int(t_num):02d} OF {int(t_cnt):02d}")
+            elif t_num:
+                meta_parts.append(f"TRACK {int(t_num):02d}")
+            arc_str = " · ".join(meta_parts)
+            arc_html = f'<small class="artist-signal-arc">{arc_str}</small>' if arc_str else ""
             return f'''<a class="artist-signal" data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
                 <img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover" loading="lazy" decoding="async">
-                <div><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{state}</small></div><b>{transmission_label}</b>
+                <div class="artist-signal-meta"><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p>{arc_html}</div>
+                <b>{transmission_label}</b>
             </a>'''
 
         # Albums are grouped only when two or more represented signals share the
@@ -123,13 +149,6 @@ def build_artist_pages(
                 "artist_room_data": artist_room_data,
                 "art_style": html.escape(palette_style(artist_palette, artist_image_src), quote=True),
             },
-        )
-        # Load the colour-field layer after the room's base stylesheet.  Keeping
-        # this explicit avoids relying on CSS @import ordering in mobile browsers.
-        page = page.replace(
-            "</head>",
-            '<link rel="stylesheet" href="../styles/artist-art.css?v=20260919-contrast"></head>',
-            1,
         )
         output_path = artists_dir / f"{artist_slug}.html"
         output_path.write_text(page, encoding="utf-8")
@@ -180,7 +199,22 @@ def build_album_pages(
         song_links = []
         for item in items:
             target = item.get("page_url") or f'entries/{item["html_file"]}'
-            song_links.append(f'<a class="album-song" data-entry-base-href="../{html.escape(target, quote=True)}" href="../{html.escape(target, quote=True)}"><span>{html.escape(item["track"])}</span><b>OPEN ↗</b></a>')
+            t_num = item.get("track_number")
+            t_cnt = item.get("track_count")
+            year = item.get("release_year")
+            arc_parts = []
+            if t_num and t_cnt:
+                arc_parts.append(f"TRACK {int(t_num):02d} OF {int(t_cnt):02d}")
+            elif t_num:
+                arc_parts.append(f"TRACK {int(t_num):02d}")
+            if year:
+                arc_parts.append(str(year))
+            arc_badge = f'<small class="album-song-arc">{" · ".join(arc_parts)}</small>' if arc_parts else ""
+            song_links.append(
+                f'<a class="album-song" data-entry-base-href="../{html.escape(target, quote=True)}" href="../{html.escape(target, quote=True)}">'
+                f'<div class="album-song-meta"><span>{html.escape(item["track"])}</span>{arc_badge}</div>'
+                f'<b>OPEN ↗</b></a>'
+            )
         note = str(notes.get(artist, {}).get(album, "")).strip()
         note_html = f'<section class="album-note"><span>MY TAKE</span>{simple_markdown_to_html(note)}</section>' if note else ""
         album_room_data = json.dumps(
@@ -204,13 +238,6 @@ def build_album_pages(
                 "album_room_data": album_room_data,
                 "art_style": art_style,
             },
-        )
-        # Load the colour-field layer after the room's base stylesheet.  Keeping
-        # this explicit avoids relying on CSS @import ordering in mobile browsers.
-        page = page.replace(
-            "</head>",
-            '<link rel="stylesheet" href="../styles/album-art.css?v=20260919-contrast"></head>',
-            1,
         )
         path = SITE_DIR / route if route else albums_dir / f"{slug}.html"
         path.parent.mkdir(parents=True, exist_ok=True)

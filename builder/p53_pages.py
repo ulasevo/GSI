@@ -9,8 +9,8 @@ import html
 import json
 from pathlib import Path
 
-from gsi_data import load_config
-from gsi_assets import artwork_palette, palette_style
+from gsi_data import current_p53_slug, load_config
+from gsi_assets import artwork_palette, compact_rim_gradient, palette_style
 from gsi_text import make_streaming_links, simple_markdown_to_html, slugify
 from builder.template_renderer import render_template
 
@@ -21,7 +21,7 @@ def _default_base() -> Path:
 
 def _p53_art_context(config: dict, base: Path) -> tuple[dict[str, str], str]:
     """Return the playlist artwork palette and a style string for P53 rooms."""
-    settings = config.get("p53") or {}
+    settings = (config.get("filters") or {}).get("p53") or {}
     cover_value = str(settings.get("playlist_cover") or "covers/P53_cover.jpg").strip()
     cover_path = base / cover_value
     palette = artwork_palette(cover_path, "#ff65ad")
@@ -31,7 +31,7 @@ def _p53_art_context(config: dict, base: Path) -> tuple[dict[str, str], str]:
     style = (
         f'--accent:{palette.get("primary", "#ff65ad")};'
         f'--p53-accent:{palette.get("primary", "#ff65ad")};'
-        f'{palette_style(palette, browser_cover)}'
+        f'{palette_style(palette, browser_cover, rim_gradient=compact_rim_gradient(palette))}'
     )
     return palette, style
 
@@ -55,7 +55,7 @@ def build_p53_page(
     entries_dir = entries_dir or base / "entries"
     config = load_config(config_file)
     p53_palette, p53_style = _p53_art_context(config, base)
-    signal_label = "CURRENT TRANSMISSION" if item["slug"] == (config.get("p53_current_slug") or "").strip() else "PAST TRANSMISSION"
+    signal_label = "CURRENT TRANSMISSION" if item["slug"] == current_p53_slug(config, config.get("p53_history", [])) else "PAST TRANSMISSION"
     artist_slug = slugify(item["artist"])
     has_artist_room = artist_slug in (artist_slugs or set())
     artist_display = (
@@ -150,16 +150,19 @@ def build_p53_archive(
             return f'<img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover" {loading}>'
         return '<div class="cover-missing" aria-hidden="true">P53</div>'
 
+    transmission_notes = config.get("p53_transmission_notes", {})
+
     def transmission_card(item: dict, index: int) -> str:
         number = str(index + 1).zfill(2)
         state = "CURRENT TRANSMISSION" if index == 0 else "PAST TRANSMISSION"
         current_class = " is-current" if index == 0 else ""
         current_attr = 'aria-current="true"' if index == 0 else ""
-        palette = html.escape(p53_style, quote=True)
-        return f'''<li class="transmission-card{current_class}" id="signal-{number}" data-index="{index}" style="{palette}">
+        note = str(transmission_notes.get(item["slug"], "")).strip()
+        note_html = f'<blockquote class="transmission-intercept">“{html.escape(note)}”</blockquote>' if note else ""
+        return f'''<li class="transmission-card{current_class}" id="signal-{number}" data-index="{index}">
     <a class="transmission-card-link" {current_attr} data-base-href="{html.escape(item["slug"], quote=True)}.html" href="{html.escape(item["slug"], quote=True)}.html">
         <div class="transmission-art">{cover(item, eager=index == 0)}</div>
-        <div class="transmission-copy"><div class="copy-content"><span class="signal-state">{state}</span><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small><b>ENTER TRANSMISSION ↗</b></div></div>
+        <div class="transmission-copy"><div class="copy-content"><span class="signal-state">{state}</span><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small>{note_html}<b>ENTER TRANSMISSION ↗</b></div></div>
     </a>
 </li>'''
 

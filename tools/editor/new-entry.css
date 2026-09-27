@@ -58,6 +58,15 @@ button:hover { border-color: var(--accent); background: rgba(255,92,173,.13); }
 .catalogue-notes-grid label { color:#d3cfda; }
 .catalogue-notes-grid textarea { min-height:132px; }
 .field-hint { color:var(--muted); font-size:.68rem; font-weight:500; letter-spacing:.02em; text-transform:none; }
+.artist-artwork-field { display:grid; gap:10px; margin-top:18px; }
+.artist-artwork-field > input[type="file"] { min-height:44px; padding:9px 12px; color:var(--muted); font-size:.82rem; }
+.artist-artwork-drop { display:grid; gap:6px; place-items:center; min-height:128px; padding:20px; border:1px dashed rgba(145,215,255,.55); border-radius:16px; color:var(--accent-cool); background:rgba(145,215,255,.05); text-align:center; cursor:pointer; }
+.artist-artwork-drop:hover, .artist-artwork-drop:focus-visible, .artist-artwork-drop.is-dragging { border-color:var(--accent); background:rgba(255,92,173,.1); outline:none; }
+.artist-artwork-drop span { color:var(--muted); font-size:.75rem; font-weight:500; letter-spacing:.02em; text-transform:none; }
+.artist-artwork-preview { display:grid; grid-template-columns:112px minmax(0,1fr); gap:14px; align-items:center; margin:0; padding:10px; border:1px solid rgba(145,215,255,.32); border-radius:16px 5px 16px 5px; background:rgba(0,0,0,.2); }
+.artist-artwork-preview img { display:block; width:112px; aspect-ratio:1; object-fit:cover; border-radius:11px 3px 11px 3px; }
+.artist-artwork-preview figcaption { color:var(--muted); font-size:.76rem; line-height:1.45; }
+.artist-artwork-preview[hidden] { display:none; }
 .publish-button { color:#101015; border-color:transparent; background:linear-gradient(100deg,#b7f36b,#91d7ff); }
 .publish-button:hover { color:#101015; border-color:transparent; background:linear-gradient(100deg,#d2ff9a,#b1e5ff); }
 .p53-options[hidden], #p53-fields[hidden] { display: none; }

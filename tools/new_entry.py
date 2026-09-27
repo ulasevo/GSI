@@ -6,9 +6,12 @@ from silently changing the site while metadata is still being reviewed.
 """
 
 import argparse
+import base64
+import binascii
 import csv
 import json
 from pathlib import Path
+import re
 import subprocess
 import sys
 
@@ -28,8 +31,9 @@ from builder.entry_drafts import (
     slugify,
     validate_draft_payload,
 )
-from builder.source_pipeline import download_cover
-from gsi_assets import copy_site_editor, dominant_color
+from builder.source_pipeline import artwork_quality, download_cover
+from gsi_assets import copy_site_editor, dominant_color, local_image_metadata
+from tools.source_snapshots import create_snapshot
 try:
     from gsi_data import load_config, read_tracks
 except ModuleNotFoundError:
@@ -43,6 +47,7 @@ except ModuleNotFoundError:
 
 
 TRACK_COLUMNS = [
+    "signal_id",
     "order",
     "tags",
     "artist",
@@ -55,9 +60,72 @@ TRACK_COLUMNS = [
     "apple_url",
 ]
 
+ARTIST_ARTWORK_MAX_BYTES = 5 * 1024 * 1024
+ARTIST_ARTWORK_MIN_PIXELS = 800
+ARTIST_ARTWORK_TYPES = {
+    "image/jpeg": ".jpg",
+    "image/png": ".png",
+    "image/webp": ".webp",
+}
+
 
 def _root() -> Path:
     return ROOT
+
+
+def _artist_artwork_path(root: Path, artist: str, artwork: dict | None) -> Path | None:
+    """Resolve the deterministic local destination for one uploaded artist image."""
+    if not isinstance(artwork, dict) or not artwork.get("data_url"):
+        return None
+    mime = str(artwork.get("mime") or "").lower().strip()
+    extension = ARTIST_ARTWORK_TYPES.get(mime)
+    if not extension:
+        return None
+    return root / "artist-assets" / f"{slugify(artist)}{extension}"
+
+
+def _store_artist_artwork(root: Path, record: dict, artwork: dict | None) -> dict | None:
+    """Decode, validate, and register a private loader artist-image upload."""
+    target = _artist_artwork_path(root, record["artist"], artwork)
+    if target is None:
+        if isinstance(artwork, dict) and artwork.get("data_url"):
+            raise DraftMetadataError("artist artwork must declare a JPEG, PNG, or WebP MIME type")
+        return None
+    data_url = str(artwork.get("data_url") or "")
+    match = re.fullmatch(r"data:(image/(?:jpeg|png|webp));base64,([A-Za-z0-9+/=]+)", data_url)
+    if not match:
+        raise DraftMetadataError("artist artwork must be a JPEG, PNG, or WebP data URL")
+    try:
+        contents = base64.b64decode(match.group(2), validate=True)
+    except (ValueError, binascii.Error) as error:
+        raise DraftMetadataError("artist artwork could not be decoded") from error
+    if not contents or len(contents) > ARTIST_ARTWORK_MAX_BYTES:
+        raise DraftMetadataError("artist artwork must be between 1 byte and 5 MB")
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(contents)
+    metadata = local_image_metadata(target)
+    width = metadata.get("width") or 0
+    height = metadata.get("height") or 0
+    if not metadata.get("valid") or min(width, height) < ARTIST_ARTWORK_MIN_PIXELS:
+        target.unlink(missing_ok=True)
+        raise DraftMetadataError(f"artist artwork must be a valid image with at least {ARTIST_ARTWORK_MIN_PIXELS}px on its shortest side")
+    config_path = root / "config.json"
+    config = load_config(config_path)
+    artist_assets = config.setdefault("artist_assets", {})
+    artist_assets[record["artist"]] = {
+        "image_file": target.name,
+        "alt": str(artwork.get("alt") or f"{record['artist']} artist image").strip(),
+        "source": "loader",
+        "source_url": "local-upload",
+    }
+    config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    return {
+        "file": target.name,
+        "artist": record["artist"],
+        "source": "loader",
+        "metadata": metadata,
+        "minimum_pixels": ARTIST_ARTWORK_MIN_PIXELS,
+    }
 
 
 def _install_browser_editor(root: Path) -> None:
@@ -187,7 +255,15 @@ def _append_track(root: Path, record: dict) -> None:
 def _replace_track(root: Path, record: dict) -> None:
     """Update one existing catalogue row after an explicitly reviewed edit."""
     rows = read_tracks(root / "tracks.csv")
-    target = next((row for row in rows if slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == record["slug"]), None)
+    target = next(
+        (
+            row
+            for row in rows
+            if (record.get("signal_id") and row.get("signal_id") == record.get("signal_id"))
+            or slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == record["slug"]
+        ),
+        None,
+    )
     if target is None:
         raise DraftMetadataError(f"tracks.csv does not contain this edit target: {record['slug']}")
     original_cover = target.get("cover_file", "")
@@ -203,7 +279,12 @@ def _append_p53(root: Path, record: dict, *, note: str = "", current: bool = Fal
     config_path = root / "config.json"
     config = load_config(config_path)
     history = config.setdefault("p53_history", [])
-    if any(item.get("slug") == record["slug"] for item in history if isinstance(item, dict)):
+    if any(
+        (item.get("signal_id") and item.get("signal_id") == record.get("signal_id"))
+        or item.get("slug") == record["slug"]
+        for item in history
+        if isinstance(item, dict)
+    ):
         raise DraftMetadataError(f"config.json already contains this P53 slug: {record['slug']}")
     history.append(p53_record_from_draft(record))
     if note:
@@ -211,6 +292,7 @@ def _append_p53(root: Path, record: dict, *, note: str = "", current: bool = Fal
         notes[record["slug"]] = note
     if current:
         config["p53_current_slug"] = record["slug"]
+        config["p53_current_signal_id"] = record.get("signal_id", "")
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
@@ -219,13 +301,31 @@ def _update_p53(root: Path, record: dict, *, enabled: bool, note: str = "", curr
     config_path = root / "config.json"
     config = load_config(config_path)
     history = config.setdefault("p53_history", [])
-    existing = next((item for item in history if isinstance(item, dict) and item.get("slug") == record["slug"]), None)
+    existing = next(
+        (
+            item
+            for item in history
+            if isinstance(item, dict)
+            and ((record.get("signal_id") and item.get("signal_id") == record.get("signal_id"))
+                 or item.get("slug") == record["slug"])
+        ),
+        None,
+    )
     if enabled and existing is None:
         history.append(p53_record_from_draft(record))
     elif not enabled and existing is not None:
         history.remove(existing)
     if enabled:
-        existing = next((item for item in history if isinstance(item, dict) and item.get("slug") == record["slug"]), None)
+        existing = next(
+            (
+                item
+                for item in history
+                if isinstance(item, dict)
+                and ((record.get("signal_id") and item.get("signal_id") == record.get("signal_id"))
+                     or item.get("slug") == record["slug"])
+            ),
+            None,
+        )
         if existing is not None:
             existing.update(p53_record_from_draft(record))
         notes = config.setdefault("p53_transmission_notes", {})
@@ -235,12 +335,15 @@ def _update_p53(root: Path, record: dict, *, enabled: bool, note: str = "", curr
             notes.pop(record["slug"], None)
         if current:
             config["p53_current_slug"] = record["slug"]
-        elif config.get("p53_current_slug") == record["slug"]:
+            config["p53_current_signal_id"] = record.get("signal_id", "")
+        elif config.get("p53_current_slug") == record["slug"] or config.get("p53_current_signal_id") == record.get("signal_id"):
             config.pop("p53_current_slug", None)
+            config.pop("p53_current_signal_id", None)
     else:
         config.setdefault("p53_transmission_notes", {}).pop(record["slug"], None)
-        if config.get("p53_current_slug") == record["slug"]:
+        if config.get("p53_current_slug") == record["slug"] or config.get("p53_current_signal_id") == record.get("signal_id"):
             config.pop("p53_current_slug", None)
+            config.pop("p53_current_signal_id", None)
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
@@ -324,6 +427,9 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
             raise DraftMetadataError("private edits cannot change artist/track route slugs")
         if not (root / "entries" / f"{edit_of}.md").is_file():
             raise DraftMetadataError(f"edit target does not exist: {edit_of}")
+        existing_row = next((row for row in read_tracks(root / "tracks.csv") if slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == edit_of), None)
+        if existing_row and existing_row.get("signal_id"):
+            record["signal_id"] = existing_row["signal_id"]
     else:
         _assert_new_slug(root, record["slug"])
 
@@ -331,8 +437,19 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
     covers_dir.mkdir(exist_ok=True)
     cover_path = covers_dir / record["cover_file"]
     entry_path = root / "entries" / f"{record['slug']}.md"
-    snapshot = _snapshot_files([root / "tracks.csv", root / "config.json", entry_path, cover_path])
+    artist_artwork = clean["catalogue"].get("artist_artwork")
+    artist_artwork_path = _artist_artwork_path(root, record["artist"], artist_artwork)
+    snapshot_paths = [root / "tracks.csv", root / "config.json", entry_path, cover_path]
+    if artist_artwork_path is not None:
+        snapshot_paths.append(artist_artwork_path)
+    snapshot = _snapshot_files(snapshot_paths)
+    try:
+        persistent_snapshot = create_snapshot(root, snapshot_paths, record["slug"])
+    except (OSError, ValueError) as error:
+        raise DraftMetadataError(f"could not create a recoverable source snapshot: {error}") from error
     build_output = ""
+    artist_artwork_receipt = None
+    cover_quality = None
     try:
         if not cover_path.exists():
             cover_url = record.get("cover_url", "").strip()
@@ -340,6 +457,9 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
                 raise DraftMetadataError("the provider resolved the entry, but its cover could not be cached")
         if not record.get("accent"):
             record["accent"] = dominant_color(cover_path)
+        cover_quality = artwork_quality(cover_path)
+        if cover_quality["status"] in {"invalid", "too-small"}:
+            raise DraftMetadataError("the cached cover is not a valid, sufficiently large image")
 
         entry_path.write_text(
             render_authored_entry(record, clean["sections"]),
@@ -363,6 +483,13 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
                     note=clean["p53"]["note"],
                     current=clean["p53"]["current"],
                 )
+        artist_artwork_receipt = _store_artist_artwork(root, record, artist_artwork)
+        if artist_artwork_receipt is None:
+            try:
+                from tools.fetch_artist_art import fetch_and_register_artist_asset
+                fetch_and_register_artist_asset(record["artist"], root=root)
+            except Exception:
+                pass
         _update_catalogue_notes(
             root,
             record,
@@ -403,13 +530,28 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
 
     artist_slug = slugify(record["artist"])
     album_slug = slugify(f"{record['artist']}-{record['album']}")
-    return {
-        "slug": record["slug"],
+    routes = {
         "entry": f"/entries/{record['slug']}.html",
         "p53": f"/p53/{record['slug']}.html" if clean["p53"]["enabled"] else "",
         "artist": f"/artists/{artist_slug}.html" if artist_slug else "",
         "album": f"/albums/{album_slug}.html" if album_slug else "",
+    }
+    return {
+        "receiptSchema": 1,
+        "slug": record["slug"],
+        "entry": routes["entry"],
+        "p53": routes["p53"],
+        "artist": routes["artist"],
+        "album": routes["album"],
         "cover": f"/covers/{record['cover_file']}",
+        "artwork": cover_quality,
+        "artistArtwork": artist_artwork_receipt,
+        "snapshot": persistent_snapshot,
+        "routes": routes,
+        "p53State": {
+            "enabled": bool(clean["p53"]["enabled"]),
+            "current": bool(clean["p53"]["current"]),
+        },
         "buildOutput": build_output[-1200:],
     }
 
@@ -492,6 +634,9 @@ def main() -> int:
                 raise DraftMetadataError("private edits cannot change artist/track route slugs")
             if not (root / "entries" / f"{edit_of}.md").exists():
                 raise DraftMetadataError(f"edit target does not exist: {edit_of}")
+            existing_row = next((row for row in read_tracks(root / "tracks.csv") if slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == edit_of), None)
+            if existing_row and existing_row.get("signal_id"):
+                record["signal_id"] = existing_row["signal_id"]
         else:
             _assert_new_slug(root, record["slug"])
         if args.p53_current and not args.p53:
@@ -543,6 +688,13 @@ def main() -> int:
             record,
             artist_note=draft.get("catalogue", {}).get("artist_note", ""),
             album_note=draft.get("catalogue", {}).get("album_note", ""),
+        )
+    elif args.artist_note or args.album_note:
+        _update_catalogue_notes(
+            root,
+            record,
+            artist_note=args.artist_note or "",
+            album_note=args.album_note or "",
         )
     print("Next: run the normal build and source validator.")
     return 0

@@ -52,7 +52,8 @@ two separate handoff buttons:
 - `BUILD ENTRY + ROOMS` is the explicit local publish path. After resolving the
   provider URL and filling the writing rooms, it caches the cover, writes the
   Markdown entry and `tracks.csv` row, optionally updates P53, saves the artist
-  note and album take, and runs the normal site build. The resulting artist and
+  note and album take, creates an ignored recoverable source snapshot, and runs
+  the normal site build. The resulting artist and
   album rooms are created automatically, even when this is their first signal.
 
 The generated Pages copy keeps the export/download controls but never exposes
@@ -77,6 +78,17 @@ A browser draft can be reviewed and committed with:
 python tools/new_entry.py --from-draft submissions/drafts/<draft>.json --write
 ```
 
+Each successful local publish returns a snapshot ID covering the source files
+it touched. If a later review needs to undo that publish, restore it explicitly:
+
+```text
+python tools/restore_snapshot.py <snapshot-id> --confirm
+python build.py --site-only --validate-links
+```
+
+Snapshots live under the ignored `submissions/snapshots/` directory and never
+enter the public Pages build.
+
 The loader's P53 panel writes the `p53` tag, history record, optional
 transmission note, and current-transmission pointer together. Its catalogue
 room panel makes the downstream artist/album generation visible before you
@@ -84,9 +96,16 @@ publish, so `artist note` and `album take` are captured at the same time as the
 entry.
 
 Apple Music URLs are fully self-resolving: the loader obtains identity and
-artwork from Apple's public lookup, then the local publish step caches the
-600px cover. Spotify URLs remain a safe manual-identity path for now because
+artwork from Apple's public lookup, upgrades dimensioned artwork URLs toward
+1200px, verifies the cached image, and includes its dimensions/quality in the
+publish receipt. Spotify URLs remain a safe manual-identity path for now because
 there is no unauthenticated metadata/artwork lookup in this private tool.
+
+The catalogue room panel also accepts a private artist-image upload by file
+picker or drag/drop. JPEG, PNG, and WebP files are checked locally (800px
+minimum on the shortest side, 1200px preferred), copied into `artist-assets/`,
+registered in `config.json`, and reported in the receipt. The image never goes
+to the public recommendation endpoint.
 
 ## Private local entry editing
 
@@ -100,8 +119,18 @@ artist note and album take associated with the selected signal:
 python tools/submission_server.py 8021
 ```
 
-The route is intentionally bound to `127.0.0.1`; phone/LAN access should wait
-until an explicit authentication and opt-in bind layer exists.
+The route is intentionally bound to `127.0.0.1`. LAN access is now opt-in and
+requires a bearer token; keep the token in an environment variable rather than
+putting it in shell history:
+
+```text
+$env:GSI_LOCAL_AUTH_TOKEN = "choose-a-long-random-token"
+python tools/submission_server.py 8021 --host 0.0.0.0
+```
+
+Only `/__local/` and `/api/local-*` require the token. The generated public
+site remains readable over the LAN, while drafts, entry reads, and publishing
+stay private. The default localhost command does not require a token.
 
 ## Recommend a Signal intake
 

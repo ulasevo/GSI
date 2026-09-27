@@ -2,6 +2,7 @@
   "project_title": "GSI",
   "site_url": "https://ulasevo.github.io/GSI",
   "p53_current_slug": "matt-maeson-stubborn-as-religion",
+  "p53_current_signal_id": "sig-cad08a62f820d0cf19f2",
   "p53_about": "This protein is one of the most integral factors in inducing genome stability, its makeup also increases during damage or stress; and Radio P53 is a composition of the tracks I have or had on loop.",
   "p53_transmission_notes": {
     "wet-leg-mangetout": "Bienvenue.",
@@ -16,6 +17,7 @@
       "track": "Mayonaka No Door ~Stay with Me",
       "album": "Pocket Park",
       "slug": "miki-matsubara-mayonaka-no-door-stay-with-me",
+      "signal_id": "sig-bed0a3bd996d1b80b7e0",
       "cover_file": "miki-matsubara-mayonaka-no-door-stay-with-me.jpg",
       "show_in_archive": true
     },
@@ -24,6 +26,7 @@
       "track": "Secret Door",
       "album": "Humbug (Bonus Track Version)",
       "slug": "arctic-monkeys-secret-door",
+      "signal_id": "sig-488417fc9197580ccefe",
       "cover_file": "arctic-monkeys-secret-door.jpg",
       "show_in_archive": true
     },
@@ -32,6 +35,7 @@
       "track": "Slave",
       "album": "Mosquito (Deluxe Edition)",
       "slug": "yeah-yeah-yeahs-slave",
+      "signal_id": "sig-c73781a45b932a554ffa",
       "cover_file": "yeah-yeah-yeahs-slave.jpg",
       "apple_url": "https://music.apple.com/us/album/slave/1440818498?i=1440818705&uo=4",
       "show_in_archive": true
@@ -41,6 +45,7 @@
       "track": "mangetout",
       "album": "Moisturizer",
       "slug": "wet-leg-mangetout",
+      "signal_id": "sig-d8e5374800f2310ee658",
       "cover_file": "wet-leg-mangetout.jpg",
       "show_in_archive": true
     },
@@ -49,6 +54,7 @@
       "track": "New Year",
       "album": "Bloom",
       "slug": "beach-house-new-year",
+      "signal_id": "sig-375aa22843a9b34a2507",
       "cover_file": "beach-house-new-year.jpg",
       "apple_url": "https://music.apple.com/us/album/new-year/509665145?i=509665493&uo=4",
       "show_in_archive": true
@@ -58,6 +64,7 @@
       "track": "Lazarus",
       "album": "Blackstar",
       "slug": "david-bowie-lazarus",
+      "signal_id": "sig-02a36b8c8c1f22627bdc",
       "cover_file": "david-bowie-lazarus.jpg",
       "apple_url": "https://music.apple.com/us/album/lazarus/1676286487?i=1676286742&uo=4",
       "show_in_archive": true
@@ -67,6 +74,7 @@
       "track": "Personal Jesus",
       "album": "Violator (Deluxe)",
       "slug": "depeche-mode-personal-jesus",
+      "signal_id": "sig-219356fe89e8c7d81727",
       "cover_file": "depeche-mode-personal-jesus.jpg",
       "apple_url": "https://music.apple.com/us/album/personal-jesus/1174246686?i=1174246806&uo=4",
       "show_in_archive": true
@@ -76,6 +84,7 @@
       "track": "Too Little Too Late",
       "album": "Live It Out",
       "slug": "metric-too-little-too-late",
+      "signal_id": "sig-c642f8e16bafd04b2a18",
       "cover_file": "metric-too-little-too-late.jpg",
       "show_in_archive": true,
       "apple_url": "https://music.apple.com/us/album/too-little-too-late/1108029976?i=1108031310&uo=4",
@@ -86,6 +95,7 @@
       "track": "The Prince & Old Lady Shade",
       "album": "Ninth",
       "slug": "peter-murphy-the-prince-old-lady-shade",
+      "signal_id": "sig-545a3a2034e484d4eed1",
       "cover_file": "peter-murphy-the-prince-old-lady-shade.jpg",
       "apple_url": "https://music.apple.com/us/album/the-prince-old-lady-shade/426296580?i=426296597&uo=4",
       "show_in_archive": true
@@ -95,6 +105,7 @@
       "track": "GOD.",
       "album": "DAMN.",
       "slug": "kendrick-lamar-god",
+      "signal_id": "sig-be92c2e5c2eb853ed8d5",
       "cover_file": "kendrick-lamar-god.jpg",
       "apple_url": "https://music.apple.com/us/album/god/1440881722?i=1440882179&uo=4",
       "show_in_archive": true
@@ -104,6 +115,7 @@
       "track": "Psyche",
       "album": "Heligoland (Deluxe Edition)",
       "slug": "massive-attack-psyche",
+      "signal_id": "sig-dd86a3af673e0584ef35",
       "cover_file": "massive-attack-psyche.jpg",
       "apple_url": "https://music.apple.com/us/album/psyche/724835339?i=724836402&uo=4",
       "show_in_archive": true
@@ -113,6 +125,7 @@
       "track": "The Twist",
       "album": "Grow Up and Blow Away",
       "slug": "metric-the-twist",
+      "signal_id": "sig-28ac093f9610c697695f",
       "cover_file": "metric-the-twist.jpg",
       "apple_url": "https://music.apple.com/us/album/the-twist/1108657631?i=1108658090&uo=4",
       "show_in_archive": true
@@ -122,6 +135,7 @@
       "track": "Should've Been Me",
       "album": "Laurel Hell",
       "slug": "mitski-shouldve-been-me",
+      "signal_id": "sig-92320d5c5fa3df763f9b",
       "cover_file": "mitski-shouldve-been-me.jpg",
       "apple_url": "https://music.apple.com/us/album/shouldve-been-me/1589295663?i=1589296190&uo=4",
       "show_in_archive": true
@@ -131,6 +145,7 @@
       "track": "Holy Ghost (feat. Joe Fox)",
       "album": "AT.LONG.LAST.A$AP",
       "slug": "asap-rocky-holy-ghost-feat-joe-fox",
+      "signal_id": "sig-889cc54187e1b3a786e1",
       "cover_file": "asap-rocky-holy-ghost-feat-joe-fox.jpg",
       "apple_url": "https://music.apple.com/us/album/holy-ghost-feat-joe-fox/994721471?i=994721473&uo=4",
       "show_in_archive": true
@@ -140,6 +155,7 @@
       "track": "Doctor Blind",
       "album": "Knives Don't Have Your Back",
       "slug": "emily-haines-the-soft-skeleton-doctor-blind",
+      "signal_id": "sig-984b20506ec37e1bfd98",
       "cover_file": "emily-haines-the-soft-skeleton-doctor-blind.jpg",
       "apple_url": "https://music.apple.com/us/album/doctor-blind/1107263443?i=1107263457&uo=4",
       "show_in_archive": true
@@ -149,6 +165,7 @@
       "track": "Running Through Colors",
       "album": "Memory Of A Day (Deluxe)",
       "slug": "phantogram-running-through-colors",
+      "signal_id": "sig-dfdc9ad0da83c56dff64",
       "cover_file": "phantogram-running-through-colors.jpg",
       "apple_url": "https://music.apple.com/us/album/running-through-colors/1844778411?i=1844778422&uo=4",
       "show_in_archive": true
@@ -158,6 +175,7 @@
       "track": "Minefield of Memory",
       "album": "Choir of the Mind",
       "slug": "emily-haines-the-soft-skeleton-minefield-of-memory",
+      "signal_id": "sig-c96186d66c941a58cfc0",
       "cover_file": "emily-haines-the-soft-skeleton-minefield-of-memory.jpg",
       "apple_url": "https://music.apple.com/tr/album/minefield-of-memory/1254594996?i=1254595454&ls",
       "show_in_archive": true
@@ -167,6 +185,7 @@
       "track": "Stubborn As Religion",
       "album": "A Quiet And Harmless Living",
       "slug": "matt-maeson-stubborn-as-religion",
+      "signal_id": "sig-cad08a62f820d0cf19f2",
       "show_in_archive": true
     }
   ],
@@ -180,6 +199,7 @@
   "intro": "Music is the one non-negotiable no matter how I am to feel, to cherish that and the songs that play the miniscule role in shaping who I am, I am creating this authentic web-page, you're welcome to linger. Note that neither me nor should you take this space too seriously. Nothing is critically acclaimed, everything is personal.",
   "newest_first": true,
   "force_refresh_covers": false,
+  "upgrade_low_res_covers": true,
   "filters": {
     "personal": {
       "label": "Personal",
@@ -190,7 +210,7 @@
       "color": "#d64b6a",
       "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls",
       "playlist_cover": "",
-      "playlist_cta": "Want more of the same?"
+      "playlist_cta": "CHECK OUT THE PLAYLIST"
     },
     "bassline": {
       "label": "Bassline",
@@ -201,7 +221,7 @@
       "color": "#7b5cff",
       "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls",
       "playlist_cover": "covers/bassline-playlist.png",
-      "playlist_cta": "Want more of the same?"
+      "playlist_cta": "CHECK OUT THE PLAYLIST"
     },
     "ulas": {
       "label": "Ulaş's Selection",
@@ -213,7 +233,7 @@
       "color": "#ff6b35",
       "playlist_url": "https://music.apple.com/tr/playlist/hip/pl.u-V9D7mR9F3pNDNqy?ls",
       "playlist_cover": "",
-      "playlist_cta": "Want more of the same?"
+      "playlist_cta": "CHECK OUT THE PLAYLIST"
     },
     "dreamy": {
       "label": "Dreamy",
@@ -224,7 +244,7 @@
       "color": "#c5c9d6",
       "playlist_url": "https://music.apple.com/tr/playlist/dup/pl.u-mJy8gPDFN50d0Go",
       "playlist_cover": "covers/dup_playlist_cover.webp",
-      "playlist_cta": "Want more of the same?"
+      "playlist_cta": "CHECK OUT THE PLAYLIST"
     },
     "bite": {
       "label": "Bite",
@@ -237,7 +257,7 @@
       "color": "#d8d34a",
       "playlist_url": "https://music.apple.com/tr/playlist/bite/pl.u-76oNl2mTvXYjY4g",
       "playlist_cover": "covers/bite_playlist_cover.webp",
-      "playlist_cta": "Want more of the same?"
+      "playlist_cta": "CHECK OUT THE PLAYLIST"
     },
     "pop": {
       "label": "POP",
@@ -248,7 +268,7 @@
       "color": "#49d9ef",
       "playlist_url": "https://music.apple.com/tr/playlist/pl.u-aZb0k79F1Mr5r9W?a=join&it=vpMwQBYSvA1x1GjfgN1DG&l=tr",
       "playlist_cover": "covers/POP_playlist_cover.webp",
-      "playlist_cta": "Want more of the same?"
+      "playlist_cta": "CHECK OUT THE PLAYLIST"
     },
     "distortion": {
       "label": "Distortion",
@@ -259,7 +279,7 @@
       "color": "#665cf0",
       "playlist_url": "https://music.apple.com/tr/playlist/bop/pl.u-DdAN8AdC0VX2XyW",
       "playlist_cover": "covers/bop_playlist_cover.webp",
-      "playlist_cta": "Want more of the same?"
+      "playlist_cta": "CHECK OUT THE PLAYLIST"
     },
     "p53": {
       "label": "P53",
@@ -269,7 +289,7 @@
       "description": "Songs that have made an apparence at the radio, all in one place. Read more about them, or check out their transmissions.",
       "color": "#ff4fa3",
       "playlist_url": "https://music.apple.com/tr/playlist/radio-p53/pl.u-DdAN8P6t0VX2XyW",
-      "playlist_cover": "covers/P53_cover.jpg",
+      "playlist_cover": "covers/P53_cover-runtime.webp",
       "playlist_cta": "CHECK OUT THE PLAYLIST"
     }
   },
@@ -301,6 +321,168 @@
       "image_file": "metric.webp",
       "alt": "Metric artist image",
       "source": "manual"
+    },
+    "Arctic Monkeys": {
+      "image_file": "arctic-monkeys.jpg",
+      "alt": "Arctic Monkeys artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/6c03e4c7c36800897fd468633286db24/1000x1000-000000-80-0-0.jpg"
+    },
+    "Beach House": {
+      "image_file": "beach-house.jpg",
+      "alt": "Beach House artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/bab7f5aedc71370b598262e065d3a0ef/1000x1000-000000-80-0-0.jpg"
+    },
+    "Broken Social Scene": {
+      "image_file": "broken-social-scene.jpg",
+      "alt": "Broken Social Scene artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/0197a637ccee63ac9b8a9ae584e8349d/1000x1000-000000-80-0-0.jpg"
+    },
+    "James Blake": {
+      "image_file": "james-blake.jpg",
+      "alt": "James Blake artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/a873f2495d9030268c534a6c689e96a0/1000x1000-000000-80-0-0.jpg"
+    },
+    "K.Flay": {
+      "image_file": "k-flay.jpg",
+      "alt": "K.Flay artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/81b47be9885c3693f4e3b20cf9e67db1/1000x1000-000000-80-0-0.jpg"
+    },
+    "Kanye West": {
+      "image_file": "kanye-west.jpg",
+      "alt": "Kanye West artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/bb76c2ee3b068726ab4c37b0aabdb57a/1000x1000-000000-80-0-0.jpg"
+    },
+    "Kendrick Lamar": {
+      "image_file": "kendrick-lamar.jpg",
+      "alt": "Kendrick Lamar artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/be0a7c550567f4af0ed202d7235b74d6/1000x1000-000000-80-0-0.jpg"
+    },
+    "Matt Maeson": {
+      "image_file": "matt-maeson.jpg",
+      "alt": "Matt Maeson artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/f3d686ccb8024debcdfe246246eda1da/1000x1000-000000-80-0-0.jpg"
+    },
+    "Michael Jackson": {
+      "image_file": "michael-jackson.jpg",
+      "alt": "Michael Jackson artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/ff1c8cf777db1efc2043b90d79dcbfc3/1000x1000-000000-80-0-0.jpg"
+    },
+    "Miki Matsubara": {
+      "image_file": "miki-matsubara.jpg",
+      "alt": "Miki Matsubara artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/f90affc41e23b6d6c03d0960f8e6befc/1000x1000-000000-80-0-0.jpg"
+    },
+    "Mitski": {
+      "image_file": "mitski.jpg",
+      "alt": "Mitski artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/95f0e0a39d7dd9eda8239c96d054527a/1000x1000-000000-80-0-0.jpg"
+    },
+    "Muse": {
+      "image_file": "muse.jpg",
+      "alt": "Muse artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/524df130b17c9cffee378b61264037f7/1000x1000-000000-80-0-0.jpg"
+    },
+    "Royal Blood": {
+      "image_file": "royal-blood.jpg",
+      "alt": "Royal Blood artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/dd47ec0db2813508d1a7a14fbe16062d/1000x1000-000000-80-0-0.jpg"
+    },
+    "Silversun Pickups": {
+      "image_file": "silversun-pickups.jpg",
+      "alt": "Silversun Pickups artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/d0eeec849ebce6a3f347e592f5659bf2/1000x1000-000000-80-0-0.jpg"
+    },
+    "Slowdive": {
+      "image_file": "slowdive.jpg",
+      "alt": "Slowdive artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/16417737fe6efb615f826ef4902e7faf/1000x1000-000000-80-0-0.jpg"
+    },
+    "Tame Impala": {
+      "image_file": "tame-impala.jpg",
+      "alt": "Tame Impala artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/879015e713cc6ad6ffaeec154c027505/1000x1000-000000-80-0-0.jpg"
+    },
+    "Travis Scott": {
+      "image_file": "travis-scott.jpg",
+      "alt": "Travis Scott artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/8d8316146026d7e6ce377e314536df62/1000x1000-000000-80-0-0.jpg"
+    },
+    "Tyler, The Creator": {
+      "image_file": "tyler-the-creator.jpg",
+      "alt": "Tyler, The Creator artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/5eceecd683beab6dd901a7931294a121/1000x1000-000000-80-0-0.jpg"
+    },
+    "Wet Leg": {
+      "image_file": "wet-leg.jpg",
+      "alt": "Wet Leg artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/6df9f45478aa0c897b028e06eb189159/1000x1000-000000-80-0-0.jpg"
+    },
+    "A$AP Rocky": {
+      "image_file": "a-ap-rocky.jpg",
+      "alt": "A$AP Rocky artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/5eebb137c5f4d0eb8fb5f9227e1b6288/1000x1000-000000-80-0-0.jpg"
+    },
+    "David Bowie": {
+      "image_file": "david-bowie.jpg",
+      "alt": "David Bowie artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/8301a6a09a24f4bb35950c59717defa0/1000x1000-000000-80-0-0.jpg"
+    },
+    "Depeche Mode": {
+      "image_file": "depeche-mode.jpg",
+      "alt": "Depeche Mode artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/b18856da7850c8b8cb10476fefc15657/1000x1000-000000-80-0-0.jpg"
+    },
+    "Emily Haines & The Soft Skeleton": {
+      "image_file": "emily-haines-the-soft-skeleton.jpg",
+      "alt": "Emily Haines & The Soft Skeleton artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/0e396253e558c835731be53e7642cee0/1000x1000-000000-80-0-0.jpg"
+    },
+    "Massive Attack": {
+      "image_file": "massive-attack.jpg",
+      "alt": "Massive Attack artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/3bfbf74ea27b926ba5376ea381f51d0b/1000x1000-000000-80-0-0.jpg"
+    },
+    "Peter Murphy": {
+      "image_file": "peter-murphy.jpg",
+      "alt": "Peter Murphy artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/5f24e30df3bf4543f491042a7d2d6089/1000x1000-000000-80-0-0.jpg"
+    },
+    "Phantogram": {
+      "image_file": "phantogram.jpg",
+      "alt": "Phantogram artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/1957a9af81882046ee16172bb53b1153/1000x1000-000000-80-0-0.jpg"
+    },
+    "Yeah Yeah Yeahs": {
+      "image_file": "yeah-yeah-yeahs.jpg",
+      "alt": "Yeah Yeah Yeahs artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/ed15ccc9eb592fd5452c4fba244c58c3/1000x1000-000000-80-0-0.jpg"
     }
   },
   "album_notes": {
