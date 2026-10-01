@@ -915,6 +915,18 @@
             border-color:var(--art-edge,var(--art-soft,#b7afbc));
             background:var(--art-control-hover,#b897b5);
         }
+        body.art-room .stream-link:active {
+            transform: scale(0.96) translateY(1px);
+            transition: transform 80ms ease-out;
+        }
+        body.art-room .section-card:active {
+            transform: scale(0.995);
+            transition: transform 80ms ease-out;
+        }
+        body.art-room .section-info-button:active {
+            transform: scale(0.92);
+            transition: transform 80ms ease-out;
+        }
         body.art-room .section-info-button {
             border-color:var(--art-edge,var(--art-soft,#b7afbc));
             background:var(--art-control,#c7b0c6);

@@ -70,6 +70,10 @@
   border-color: var(--gsi-mode-control);
   transform: translateY(-2px);
 }
+.theme-toggle:active {
+  transform: scale(0.94);
+  transition: transform 80ms ease-out;
+}
 
 .theme-toggle:focus-visible {
   outline: 2px solid var(--gsi-mode-control);
@@ -870,7 +874,6 @@
    retaining the artwork rim as a visible texture. */
 :root[data-gsi-theme="light"] body[data-view] .card .info {
   background:
-    linear-gradient(rgba(255, 255, 255, .44), rgba(255, 255, 255, .36)),
     var(--art-card-rim-gradient, var(--art-rim-gradient, none)),
     linear-gradient(145deg, color-mix(in srgb, var(--art-primary, var(--accent, #8c5de8)), white 76%), color-mix(in srgb, var(--art-secondary, var(--accent, #8c5de8)), white 82%));
 }

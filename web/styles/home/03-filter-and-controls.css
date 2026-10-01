@@ -40,6 +40,10 @@
             transform: translateY(-3px);
             border-radius: 7px 20px 7px 20px;
         }
+        .filter-btn:active {
+            transform: scale(0.96) translateY(1px);
+            transition: transform 80ms ease-out;
+        }
         .filter-btn.active {
             flex-grow: 2.25;
             border-radius: 32px 8px 32px 8px;
@@ -71,6 +75,35 @@
             padding: clamp(20px, 3vw, 32px);
             overflow: hidden;
             border-radius: 36px 10px 36px 10px;
+            transition:
+                min-height 240ms cubic-bezier(.2,.8,.2,1),
+                max-height 240ms cubic-bezier(.2,.8,.2,1),
+                opacity 200ms ease,
+                transform 240ms cubic-bezier(.2,.8,.2,1);
+        }
+        .filter-description.filter-collapsing {
+            max-height: 0 !important;
+            min-height: 0 !important;
+            padding-top: 0 !important;
+            padding-bottom: 0 !important;
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            opacity: 0 !important;
+            transform: translateY(-8px) scale(0.98);
+            overflow: hidden !important;
+            pointer-events: none !important;
+            transition:
+                max-height 240ms cubic-bezier(.2,.8,.2,1),
+                min-height 240ms cubic-bezier(.2,.8,.2,1),
+                padding 240ms cubic-bezier(.2,.8,.2,1),
+                margin 240ms cubic-bezier(.2,.8,.2,1),
+                opacity 180ms ease,
+                transform 220ms cubic-bezier(.2,.8,.2,1) !important;
+        }
+        .filter-description.filter-collapsing .playlist-card {
+            opacity: 0 !important;
+            transform: scale(0.92) translateY(-6px) !important;
+            transition: opacity 160ms ease, transform 180ms cubic-bezier(.2,.8,.2,1) !important;
         }
         .filter-room-label {
             position: absolute;
@@ -348,6 +381,13 @@
             background: rgba(255, 255, 255, 0.08);
             border-color: color-mix(in srgb, var(--page-tint, #fff), white 40%);
             color: #fff;
+        }
+        .view-cycle-btn:active,
+        .format-cycle-btn:active,
+        .recommend-link:active {
+            transform: scale(0.95);
+            background: rgba(255, 255, 255, 0.16);
+            transition: transform 80ms ease-out;
         }
         .view-cycle-icon,
         .format-cycle-icon {

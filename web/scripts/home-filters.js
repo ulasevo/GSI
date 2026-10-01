@@ -25,6 +25,7 @@
     let basslineResizeFrame = null;
     let signalTransformTimer = null;
     let filterEntranceTimer = null;
+    let filterExitTimer = null;
 
     function renderRoomLabel(info, filterName) {
       // Bassline grows with its room but remains one intentionally unbroken word.
@@ -65,6 +66,7 @@
     }
 
     function clearFilter(sync = true) {
+      const wasActive = Boolean(state.activeFilter);
       state.activeFilter = null;
       document.body.classList.remove("filter-active");
       document.body.removeAttribute("data-active-filter");
@@ -74,18 +76,36 @@
         button.setAttribute("aria-pressed", "false");
       });
       renderFilterAlbumGroups(null);
-      box.classList.add("hidden");
-      title.textContent = "";
-      description.textContent = "";
-      box.removeAttribute("data-filter-label");
-      box.removeAttribute("data-filter");
       window.clearTimeout(filterEntranceTimer);
+      window.clearTimeout(filterExitTimer);
       box.classList.remove("filter-entering");
-      filterRoomLabel.replaceChildren();
-      filterDecor.replaceChildren();
-      filterCount.textContent = "";
-      delete box.dataset.hasPlaylistCover;
-      hidePlaylist();
+      if (wasActive && !box.classList.contains("hidden")) {
+        box.classList.add("filter-collapsing");
+        filterExitTimer = window.setTimeout(() => {
+          box.classList.remove("filter-collapsing");
+          box.classList.add("hidden");
+          title.textContent = "";
+          description.textContent = "";
+          box.removeAttribute("data-filter-label");
+          box.removeAttribute("data-filter");
+          filterRoomLabel.replaceChildren();
+          filterDecor.replaceChildren();
+          filterCount.textContent = "";
+          delete box.dataset.hasPlaylistCover;
+          hidePlaylist();
+        }, 240);
+      } else {
+        box.classList.add("hidden");
+        title.textContent = "";
+        description.textContent = "";
+        box.removeAttribute("data-filter-label");
+        box.removeAttribute("data-filter");
+        filterRoomLabel.replaceChildren();
+        filterDecor.replaceChildren();
+        filterCount.textContent = "";
+        delete box.dataset.hasPlaylistCover;
+        hidePlaylist();
+      }
       if (sync) syncContext();
     }
 
@@ -106,7 +126,8 @@
       box.dataset.filterLabel = info.label;
       box.dataset.filter = filterName;
       box.dataset.hasPlaylistCover = String(Boolean(info.playlist_cover));
-      box.classList.remove("hidden", "filter-entering");
+      window.clearTimeout(filterExitTimer);
+      box.classList.remove("hidden", "filter-entering", "filter-collapsing");
       if (animate) {
         window.clearTimeout(filterEntranceTimer);
         window.requestAnimationFrame(() => {

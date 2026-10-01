@@ -419,7 +419,12 @@
             display: grid;
             opacity: 1;
             transform: translateY(0);
-            transition: opacity 120ms ease, transform 120ms ease;
+            transition: opacity 160ms cubic-bezier(.2,.8,.2,1), transform 160ms cubic-bezier(.2,.8,.2,1);
+        }
+        .grid.view-switching {
+            opacity: 0.15;
+            transform: scale(0.985) translateY(4px);
+            pointer-events: none;
         }
         body[data-active-filter="p53"] .card { order: 999; }
         body[data-active-filter="p53"] .card[data-tags~="p53"] { order: var(--p53-order); }
@@ -533,6 +538,7 @@
             text-decoration: none;
             color: #eee;
             background:
+                var(--art-card-rim-gradient, none),
                 linear-gradient(180deg, rgba(255,255,255,.035), transparent 34%),
                 color-mix(in srgb, var(--accent), #1b1b1b 86%);
             border: 2px solid color-mix(in srgb, var(--accent), white 12%);
@@ -582,6 +588,7 @@
             flex: 1;
             padding: 18px;
             background:
+                var(--art-card-rim-gradient, none),
                 linear-gradient(180deg, rgba(0,0,0,.08), rgba(0,0,0,.28));
         }
 

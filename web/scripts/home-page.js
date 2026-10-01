@@ -101,4 +101,5 @@ document.addEventListener("DOMContentLoaded", () => {
     filters.clearFilter(false);
   }
   syncContext();
+  window.addEventListener("gsi-theme-change", () => syncContext());
 });

@@ -31,8 +31,18 @@
         if (sync) syncContext();
       };
 
-      // Snappy synchronous view change eliminates layout thrashing & stutter
-      updateView();
+      if (animate && document.body.dataset.view && document.body.dataset.view !== viewName) {
+        window.clearTimeout(viewSwitchTimer);
+        grid.classList.add("view-switching");
+        viewSwitchTimer = window.setTimeout(() => {
+          updateView();
+          window.requestAnimationFrame(() => {
+            grid.classList.remove("view-switching");
+          });
+        }, 120);
+      } else {
+        updateView();
+      }
     }
 
     if (cycleBtn) {
