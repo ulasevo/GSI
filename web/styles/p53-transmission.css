@@ -351,7 +351,7 @@ body.p53-transmission-room .transmission-note {
 }
 
 
-@view-transition { navigation: auto; }
+
 
 .stream-link.audition-trigger {
     cursor: pointer;

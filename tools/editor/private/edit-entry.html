@@ -9,9 +9,21 @@
 <body>
   <main class="private-shell">
     <header>
-      <p class="eyebrow">PRIVATE LOCAL AUTHORING</p>
+      <div class="header-top">
+        <p class="eyebrow">PRIVATE LOCAL AUTHORING</p>
+        <button id="auth-toggle-btn" class="token-toggle" type="button" aria-label="Configure local authorization token" title="Local auth token">🔑 <span id="auth-indicator">LOCAL</span></button>
+      </div>
       <h1>Edit a signal without touching the source.</h1>
-    <p class="intro">This room reads your local entries. Save a reviewable draft, or build the selected edit directly on this machine. It is not copied into the public site.</p>
+      <p class="intro">This room reads your local entries. Save a reviewable draft, or build the selected edit directly on this machine. It is not copied into the public site.</p>
+      <div id="auth-panel" class="auth-panel" hidden>
+        <label for="auth-token-input">Local Auth Token <span class="field-hint">Required when accessing over phone / LAN</span>
+          <div class="auth-row">
+            <input id="auth-token-input" type="password" placeholder="Enter GSI_LOCAL_AUTH_TOKEN" autocomplete="off">
+            <button id="save-token-btn" type="button">SAVE</button>
+            <button id="clear-token-btn" class="quiet" type="button">CLEAR</button>
+          </div>
+        </label>
+      </div>
     </header>
     <section class="panel chooser" aria-labelledby="chooser-title">
       <label id="chooser-title">Signal

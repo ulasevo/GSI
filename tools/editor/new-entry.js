@@ -8,6 +8,10 @@
     ["Reading", "What do I think the song is doing or narrating?"],
     ["Comment", "Free field. Final take, vibe, joke, conclusion, or whatever does not fit elsewhere."]
   ];
+  const TOKEN_KEY = "gsi_local_auth_token";
+  const DRAFT_STORAGE_KEY = "gsi_new_entry_draft";
+  let autosaveTimer = null;
+
   const state = {
     sections: [],
     p53: { enabled: false, current: false, note: "" },
@@ -19,6 +23,123 @@
   const escapeYaml = (value) => JSON.stringify(value || "");
   const slugify = (value) => (value || "").toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
   const getValue = (id) => $(`#${id}`).value.trim();
+
+  function getToken() {
+    return (localStorage.getItem(TOKEN_KEY) || "").trim();
+  }
+
+  function setToken(val) {
+    const clean = (val || "").trim();
+    if (clean) {
+      localStorage.setItem(TOKEN_KEY, clean);
+    } else {
+      localStorage.removeItem(TOKEN_KEY);
+    }
+    updateAuthUI();
+  }
+
+  function updateAuthUI() {
+    const token = getToken();
+    const ind = $("#auth-indicator");
+    if (ind) {
+      const isLoopback = ["localhost", "127.0.0.1", "::1"].includes(location.hostname);
+      ind.textContent = token ? "TOKEN ACTIVE" : (isLoopback ? "LOCAL" : "AUTH REQUIRED");
+      ind.dataset.active = token ? "true" : "false";
+    }
+    const input = $("#auth-token-input");
+    if (input && token) {
+      input.value = token;
+    }
+  }
+
+  function authHeaders(existing = {}) {
+    const token = getToken();
+    return token ? { ...existing, "Authorization": `Bearer ${token}` } : existing;
+  }
+
+  async function authFetch(url, options = {}) {
+    const headers = authHeaders(options.headers || {});
+    const resp = await fetch(url, { ...options, headers });
+    if (resp.status === 401) {
+      const panel = $("#auth-panel");
+      if (panel) panel.hidden = false;
+      setStatus("LAN access requires your local authorization token.", "error");
+      throw new Error("401 Unauthorized — Please enter your local auth token.");
+    }
+    return resp;
+  }
+
+  function isLocalServer() {
+    const host = location.hostname;
+    if (!host) return false;
+    if (["localhost", "127.0.0.1", "::1"].includes(host)) return true;
+    if (host.endsWith(".local")) return true;
+    if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+    if (/^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+    if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(host)) return true;
+    if (location.protocol === "http:" && !host.endsWith("github.io")) return true;
+    return false;
+  }
+
+  function queueDraftAutosave() {
+    clearTimeout(autosaveTimer);
+    autosaveTimer = setTimeout(() => {
+      try {
+        const payload = draftPayload();
+        if (payload.record.artist || payload.record.track || payload.record.link || payload.sections.some((s) => s.content.trim())) {
+          localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(payload));
+        }
+      } catch (_) {}
+    }, 400);
+  }
+
+  function clearDraftAutosave() {
+    try {
+      localStorage.removeItem(DRAFT_STORAGE_KEY);
+    } catch (_) {}
+  }
+
+  function restoreDraftAutosave() {
+    try {
+      const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+      if (!raw) return false;
+      const data = JSON.parse(raw);
+      if (!data || !data.record) return false;
+      if (data.record.link) $("#provider-link").value = data.record.link;
+      if (data.record.artist) $("#artist").value = data.record.artist;
+      if (data.record.track) $("#track").value = data.record.track;
+      if (data.record.album) $("#album").value = data.record.album;
+      if (data.record.tags) $("#tags").value = data.record.tags;
+      if (data.record.accent) $("#accent").value = data.record.accent;
+      if (data.record.cover_url) {
+        state.artworkUrl = data.record.cover_url;
+        showArtwork(state.artworkUrl, `${data.record.album || "ARTWORK"} / RESTORED DRAFT`);
+      }
+      if (data.p53) {
+        state.p53 = { ...data.p53 };
+        $("#p53-enabled").checked = !!state.p53.enabled;
+        $("#p53-fields").hidden = !state.p53.enabled;
+        $("#p53-current").checked = !!state.p53.current;
+        $("#p53-current").disabled = !state.p53.enabled;
+        $("#p53-note").value = state.p53.note || "";
+      }
+      if (data.catalogue) {
+        state.catalogue = { ...data.catalogue };
+        if ($("#artist-note")) $("#artist-note").value = state.catalogue.artist_note || "";
+        if ($("#album-note")) $("#album-note").value = state.catalogue.album_note || "";
+      }
+      if (Array.isArray(data.sections) && data.sections.length > 0) {
+        state.sections = data.sections;
+        renderSections();
+      }
+      updateRoomPlan();
+      updatePreview();
+      setStatus("Restored your unsaved draft from this device.", "success");
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
 
   function setStatus(message, kind = "") {
     const status = $("#resolve-status");
@@ -145,6 +266,7 @@
     const issues = validationIssues(record);
     validation.textContent = issues.length ? `Still needed: ${issues.join(", ")}.` : `Ready to export entries/${record.slug}.md`;
     $("#markdown-preview").textContent = markdown();
+    queueDraftAutosave();
   }
 
   function showArtwork(url, caption = "ARTWORK CHECK") {
@@ -278,7 +400,7 @@
   }
 
   async function saveLocalDraft() {
-    if (!["localhost", "127.0.0.1"].includes(location.hostname)) {
+    if (!isLocalServer()) {
       return setStatus("Local handoff is only available on the private local server.", "error");
     }
     const issues = validationIssues();
@@ -287,7 +409,7 @@
       return;
     }
     try {
-      const response = await fetch("/api/entry-drafts", {
+      const response = await authFetch("/api/entry-drafts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draftPayload())
@@ -302,7 +424,7 @@
   }
 
   async function publishLocal() {
-    if (!["localhost", "127.0.0.1"].includes(location.hostname)) {
+    if (!isLocalServer()) {
       return setStatus("Local publishing is only available on the private local server.", "error");
     }
     const issues = validationIssues();
@@ -314,7 +436,7 @@
       return setStatus("Resolve an Apple Music link first so the cover can be cached safely.", "error");
     }
     try {
-      const response = await fetch("/api/local-entry-publish", {
+      const response = await authFetch("/api/local-entry-publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(draftPayload())
@@ -323,6 +445,7 @@
       if (!response.ok) throw new Error(payload.error || "local build failed");
       $("#draft-state").textContent = `BUILT / ${payload.slug}`;
       setStatus(`Built the entry and rooms. Open ${payload.entry} to review it.`, "success");
+      clearDraftAutosave();
     } catch (error) {
       setStatus(`Local build failed: ${error.message}`, "error");
     }
@@ -340,6 +463,7 @@
   }
 
   async function loadSections() {
+    if (state.sections.length > 0) return;
     try {
       const response = await fetch("editor-config.json", { cache: "no-store" });
       if (!response.ok) throw new Error("config unavailable");
@@ -370,9 +494,47 @@
   $("#artist-note").addEventListener("input", () => { state.catalogue.artist_note = $("#artist-note").value; updatePreview(); });
   $("#album-note").addEventListener("input", () => { state.catalogue.album_note = $("#album-note").value; updatePreview(); });
   $("#publish-local").addEventListener("click", publishLocal);
-  if (["localhost", "127.0.0.1"].includes(location.hostname)) {
-    $("#save-local-draft").hidden = false;
-    $("#publish-local").hidden = false;
+  const authToggle = $("#auth-toggle-btn");
+  if (authToggle) {
+    authToggle.addEventListener("click", () => {
+      const panel = $("#auth-panel");
+      if (panel) panel.hidden = !panel.hidden;
+    });
   }
-  loadSections();
+  const saveTokenBtn = $("#save-token-btn");
+  if (saveTokenBtn) {
+    saveTokenBtn.addEventListener("click", () => {
+      const val = $("#auth-token-input") ? $("#auth-token-input").value : "";
+      setToken(val);
+      const panel = $("#auth-panel");
+      if (panel) panel.hidden = true;
+      setStatus("Saved authorization token.", "success");
+    });
+  }
+  const clearTokenBtn = $("#clear-token-btn");
+  if (clearTokenBtn) {
+    clearTokenBtn.addEventListener("click", () => {
+      setToken("");
+      if ($("#auth-token-input")) $("#auth-token-input").value = "";
+      setStatus("Cleared local authorization token.", "info");
+    });
+  }
+  if (isLocalServer()) {
+    if ($("#save-local-draft")) $("#save-local-draft").hidden = false;
+    if ($("#publish-local")) $("#publish-local").hidden = false;
+  }
+  const urlParams = new URLSearchParams(window.location.search);
+  const tokenFromUrl = urlParams.get("token");
+  if (tokenFromUrl) {
+    setToken(tokenFromUrl);
+    urlParams.delete("token");
+    const cleanSearch = urlParams.toString();
+    const cleanUrl = window.location.pathname + (cleanSearch ? "?" + cleanSearch : "") + window.location.hash;
+    window.history.replaceState({}, document.title, cleanUrl);
+  }
+
+  updateAuthUI();
+  if (!restoreDraftAutosave()) {
+    loadSections();
+  }
 })();

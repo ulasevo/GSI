@@ -15,7 +15,8 @@ import csv
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
-from urllib.parse import urlparse
+from http.cookies import SimpleCookie
+from urllib.parse import parse_qs, urlparse
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -176,7 +177,24 @@ class SubmissionHandler(BaseHTTPRequestHandler):
         expected = str(getattr(self.server, "gsi_auth_token", "") or "")
         if not expected:
             return is_loopback_host(str(self.server.server_address[0]))
-        return bearer_token_matches(self.headers.get("Authorization", ""), expected)
+        if bearer_token_matches(self.headers.get("Authorization", ""), expected):
+            return True
+        query = parse_qs(urlparse(self.path).query)
+        token_param = query.get("token", [""])[0].strip()
+        if token_param and hmac.compare_digest(token_param, expected):
+            return True
+        cookie_header = self.headers.get("Cookie", "")
+        if cookie_header:
+            cookies = SimpleCookie()
+            try:
+                cookies.load(cookie_header)
+                if "gsi_auth_token" in cookies:
+                    cookie_val = cookies["gsi_auth_token"].value.strip()
+                    if cookie_val and hmac.compare_digest(cookie_val, expected):
+                        return True
+            except Exception:
+                pass
+        return False
 
     def _guard_private_path(self, path: str) -> bool:
         if not private_path(path):
@@ -275,6 +293,9 @@ class SubmissionHandler(BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header("Content-Type", mimetypes.guess_type(candidate.name)[0] or "application/octet-stream")
             self.send_header("Content-Length", str(len(payload)))
+            expected = str(getattr(self.server, "gsi_auth_token", "") or "")
+            if expected:
+                self.send_header("Set-Cookie", f"gsi_auth_token={expected}; Path=/; SameSite=Lax")
             self.end_headers()
             self.wfile.write(payload)
             return
@@ -292,6 +313,8 @@ class SubmissionHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-Type", mimetypes.guess_type(candidate.name)[0] or "application/octet-stream")
         self.send_header("Content-Length", str(len(payload)))
+        if candidate.name.endswith(".html") or candidate.name.endswith(".json"):
+            self.send_header("Cache-Control", "no-cache, must-revalidate")
         self.end_headers()
         self.wfile.write(payload)
 

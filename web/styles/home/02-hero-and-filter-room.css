@@ -26,24 +26,7 @@
                 radial-gradient(circle at 18% 88%, color-mix(in srgb, var(--page-tint, #ffffff), transparent 90%), transparent 34%);
         }
         .signal-transform {
-            position: fixed;
-            inset: -15%;
-            z-index: 20;
-            pointer-events: none;
-            opacity: 0;
-            background:
-                linear-gradient(104deg, transparent 0 34%, color-mix(in srgb, var(--page-tint), transparent 48%) 42%, transparent 50%),
-                repeating-linear-gradient(0deg, transparent 0 8px, rgba(255,255,255,.08) 8px 9px);
-            mix-blend-mode: screen;
-            transform: translateX(-65%) skewX(-12deg);
-        }
-        body.signal-transforming .signal-transform {
-            animation: signal-sweep 700ms cubic-bezier(.2,.8,.2,1) both;
-        }
-        @keyframes signal-sweep {
-            0% { opacity: 0; transform: translateX(-65%) skewX(-12deg); }
-            28% { opacity: .72; }
-            100% { opacity: 0; transform: translateX(65%) skewX(-12deg); }
+            display: none;
         }
         .site-hero {
             display: grid;
@@ -63,6 +46,7 @@
             flex-direction: column;
             justify-content: center; /* balance the desktop panel against the tall P53 artwork */
             min-height: 330px;
+            max-height: 520px;
             padding: clamp(22px, 4vw, 48px);
             overflow: hidden;
             border: 1px solid rgba(255,255,255,.13);
@@ -73,7 +57,13 @@
                 rgba(14,14,16,.86);
             box-shadow: 0 28px 80px rgba(0,0,0,.3);
             isolation: isolate;
-            transition: background 520ms ease, border-radius 520ms cubic-bezier(.2,.8,.2,1), border-color 300ms ease;
+            transition:
+                min-height 280ms cubic-bezier(.2,.8,.2,1),
+                max-height 280ms cubic-bezier(.2,.8,.2,1),
+                padding 280ms cubic-bezier(.2,.8,.2,1),
+                background 240ms ease,
+                border-radius 280ms cubic-bezier(.2,.8,.2,1),
+                border-color 200ms ease;
         }
         body.filter-active .site-hero {
             margin-bottom: 14px;
@@ -131,7 +121,7 @@
             pointer-events: none;
             font-family: Impact, Haettenschweiler, "Arial Black", sans-serif;
             line-height: .72;
-            transition: transform 650ms cubic-bezier(.2,.8,.2,1), opacity 300ms ease;
+            transition: transform 280ms cubic-bezier(.2,.8,.2,1), opacity 200ms ease;
         }
         .hero-architecture span {
             position: absolute;
@@ -143,7 +133,12 @@
         .hero-architecture span:nth-child(1) { top: -10px; right: -18px; transform: none; }
         .hero-architecture span:nth-child(2) { top: 39%; left: -26px; color: transparent; -webkit-text-stroke: 2px color-mix(in srgb, var(--page-tint, #fff), transparent 82%); transform: scaleX(1.18); }
         .hero-architecture span:nth-child(3) { right: -16px; bottom: -10px; transform: skew(-10deg); }
-        body.signal-transforming .hero-architecture { transform: translateX(12px) skew(-2deg); opacity: .72; }
+        body.filter-active .hero-architecture {
+            opacity: 0;
+            transform: translateY(-8px) scale(0.96);
+            pointer-events: none;
+        }
+        body.signal-transforming:not(.filter-active) .hero-architecture { transform: translateX(12px) skew(-2deg); opacity: .72; }
         body.signal-transforming .hero-copy {
             box-shadow: inset 8px 0 0 color-mix(in srgb, var(--page-tint), transparent 34%), 0 28px 80px rgba(0,0,0,.3);
         }
@@ -159,9 +154,9 @@
             transform: rotate(-2deg);
             animation: none;
             transition:
-                border-radius 500ms cubic-bezier(.2,.8,.2,1),
-                transform 500ms cubic-bezier(.2,.8,.2,1),
-                box-shadow 240ms ease;
+                border-radius 280ms cubic-bezier(.2,.8,.2,1),
+                transform 280ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 200ms ease;
         }
         .wordmark::before,
         .wordmark::after {
@@ -175,22 +170,21 @@
         }
         .hero-copy .intro {
             max-width: 760px;
-            max-height: none;
+            max-height: 240px;
             margin: 28px 0 0;
             padding: 0;
             border: 0;
             border-radius: 0;
             background: none;
             box-shadow: none;
+            overflow: hidden;
+            transition: max-height 280ms cubic-bezier(.2,.8,.2,1), margin-top 240ms ease, opacity 200ms ease;
         }
         .hero-copy .intro p {
             margin: 0;
             color: rgba(255,255,255,.72);
             font-size: clamp(14px, 1.6vw, 18px);
             line-height: 1.55;
-        }
-        .hero-copy .intro {
-            transition: max-height 420ms cubic-bezier(.2,.8,.2,1), margin-top 380ms ease, opacity 240ms ease;
         }
         body.filter-active .hero-copy .intro {
             max-height: 0;
@@ -204,6 +198,7 @@
             position: relative;
             display: block;
             min-height: 330px;
+            max-height: 520px;
             overflow: hidden;
             color: #f8f5eb;
             text-decoration: none;
@@ -212,8 +207,10 @@
             background: #283625;
             box-shadow: 0 0 0 6px rgba(255,79,154,.08), 0 26px 70px rgba(0,0,0,.38);
             transition:
-                transform 520ms cubic-bezier(.2,.8,.2,1),
-                border-radius 520ms cubic-bezier(.2,.8,.2,1),
+                min-height 280ms cubic-bezier(.2,.8,.2,1),
+                max-height 280ms cubic-bezier(.2,.8,.2,1),
+                transform 280ms cubic-bezier(.2,.8,.2,1),
+                border-radius 280ms cubic-bezier(.2,.8,.2,1),
                 box-shadow 220ms ease;
         }
         .p53-broadcast:hover,

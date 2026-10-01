@@ -2,15 +2,20 @@
         .card {
             border-radius: 24px 8px 24px 8px;
             transition:
-                transform 420ms cubic-bezier(.2,.8,.2,1),
-                border-radius 420ms cubic-bezier(.2,.8,.2,1),
-                box-shadow 220ms ease,
+                transform 220ms cubic-bezier(.2,.8,.2,1),
+                border-radius 220ms cubic-bezier(.2,.8,.2,1),
+                box-shadow 200ms ease,
                 border-color 180ms ease;
         }
-        .card:hover,
+        @media (hover: hover) {
+            .card:hover {
+                border-radius: 8px 24px 8px 24px;
+                transform: translateY(-6px);
+            }
+        }
         .card:focus-visible {
             border-radius: 8px 24px 8px 24px;
-            transform: translateY(-8px) scale(1.02) rotate(-.35deg);
+            transform: translateY(-6px);
         }
         body.view-rearranging .card {
             pointer-events: none;
