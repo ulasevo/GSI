@@ -1,23 +1,37 @@
 (() => {
+  const DEFAULT_SECTIONS = [
+    ["Charge", "What state does this song trigger?"],
+    ["Sonical Attraction", "What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence."],
+    ["Lyric/Vocal Detail", "Any line, delivery, breath, pronunciation, or vocal moment worth preserving?"],
+    ["Version of ulaş", "What version of me does this song store? Time period, grind, breakup, desire, motion."],
+    ["Lore", "Any personal history, repeated use, place, habit, person attached to this track?"],
+    ["Reading", "What do I think the song is doing or narrating?"],
+    ["Comment", "Free field. Final take, vibe, joke, conclusion, or whatever does not fit elsewhere."]
+  ];
+
   const TOKEN_KEY = "gsi_local_auth_token";
-  const AUTOSAVE_PREFIX = "gsi_edit_autosave_";
+  const AUTOSAVE_NEW_KEY = "gsi_new_entry_draft";
+  const AUTOSAVE_EDIT_PREFIX = "gsi_edit_autosave_";
 
   const state = {
+    mode: "new", // "new" | "edit"
     sections: [],
+    artworkUrl: "",
     coverFile: "",
-    coverUrl: "",
     signalId: "",
-    artistArtwork: GSIDraftContract.defaultArtistArtwork(),
     autosaveTimer: null
   };
 
   const $ = (id) => document.getElementById(id);
-  const setStatus = (message, kind = "") => {
+  const escapeHtml = (val) => String(val || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function setStatus(message, kind = "") {
+    const card = $("status-card");
     const el = $("status");
-    if (!el) return;
+    if (!el || !card) return;
     el.textContent = message;
-    el.dataset.kind = kind;
-  };
+    card.dataset.kind = kind;
+  }
 
   function getToken() {
     return (localStorage.getItem(TOKEN_KEY) || "").trim();
@@ -64,28 +78,48 @@
     return resp;
   }
 
+  function showArtwork(src, caption = "ARTWORK CHECK", accent = "") {
+    const preview = $("artwork-preview");
+    const image = $("artwork-image");
+    const captionEl = $("artwork-caption");
+    const swatch = $("artwork-swatch");
+    if (!preview || !image) return;
+
+    if (!src) {
+      preview.hidden = true;
+      return;
+    }
+    image.src = src;
+    captionEl.textContent = caption;
+    if (swatch) {
+      swatch.style.background = accent || $("accent").value || "#444";
+    }
+    preview.hidden = false;
+  }
+
   function queueAutosave() {
     clearTimeout(state.autosaveTimer);
     state.autosaveTimer = setTimeout(() => {
-      const slug = $("edit-of") ? $("edit-of").value : "";
-      if (!slug) return;
       try {
-        localStorage.setItem(AUTOSAVE_PREFIX + slug, JSON.stringify(payload()));
+        const payloadData = buildPayload();
+        if (state.mode === "new") {
+          localStorage.setItem(AUTOSAVE_NEW_KEY, JSON.stringify(payloadData));
+        } else {
+          const slug = $("edit-of").value;
+          if (slug) localStorage.setItem(AUTOSAVE_EDIT_PREFIX + slug, JSON.stringify(payloadData));
+        }
       } catch (_) {}
     }, 400);
   }
 
-  function checkAutosave(slug) {
+  function clearCurrentAutosave() {
     try {
-      const raw = localStorage.getItem(AUTOSAVE_PREFIX + slug);
-      if (raw) return JSON.parse(raw);
-    } catch (_) {}
-    return null;
-  }
-
-  function clearAutosave(slug) {
-    try {
-      localStorage.removeItem(AUTOSAVE_PREFIX + slug);
+      if (state.mode === "new") {
+        localStorage.removeItem(AUTOSAVE_NEW_KEY);
+      } else {
+        const slug = $("edit-of").value;
+        if (slug) localStorage.removeItem(AUTOSAVE_EDIT_PREFIX + slug);
+      }
     } catch (_) {}
   }
 
@@ -95,155 +129,403 @@
     state.sections.forEach((section, index) => {
       const card = document.createElement("article");
       card.className = "section-card";
-      const number = document.createElement("span");
-      number.className = "section-number";
-      number.textContent = String(index + 1).padStart(2, "0");
-      const fields = document.createElement("div");
-      const title = document.createElement("input");
-      title.value = section.title;
-      title.setAttribute("aria-label", "Section title");
-      const content = document.createElement("textarea");
-      content.value = section.content;
-      content.setAttribute("aria-label", `Writing for ${section.title}`);
-      title.addEventListener("input", () => {
-        section.title = title.value;
+      card.innerHTML = `
+        <span class="section-number">${String(index + 1).padStart(2, "0")}</span>
+        <div class="section-fields">
+          <input class="section-title" aria-label="Section title" value="${escapeHtml(section.title)}" placeholder="Section title">
+          <textarea aria-label="Writing for ${escapeHtml(section.title || "section")}" placeholder="${escapeHtml(section.prompt || "Write what belongs here...")}">${escapeHtml(section.content || "")}</textarea>
+        </div>
+        <div class="section-actions">
+          <button type="button" data-action="up" aria-label="Move section up" title="Move up">↑</button>
+          <button type="button" data-action="down" aria-label="Move section down" title="Move down">↓</button>
+          <button type="button" class="remove-btn" data-action="remove" aria-label="Remove section" title="Remove">×</button>
+        </div>`;
+
+      const titleInput = card.querySelector(".section-title");
+      const contentInput = card.querySelector("textarea");
+
+      titleInput.addEventListener("input", () => {
+        section.title = titleInput.value;
         queueAutosave();
       });
-      content.addEventListener("input", () => {
-        section.content = content.value;
+      contentInput.addEventListener("input", () => {
+        section.content = contentInput.value;
         queueAutosave();
       });
-      fields.append(title, content);
-      card.append(number, fields);
-      list.append(card);
+
+      card.querySelectorAll("button").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          const action = btn.dataset.action;
+          if (action === "remove") state.sections.splice(index, 1);
+          if (action === "up" && index > 0) [state.sections[index - 1], state.sections[index]] = [state.sections[index], state.sections[index - 1]];
+          if (action === "down" && index < state.sections.length - 1) [state.sections[index + 1], state.sections[index]] = [state.sections[index], state.sections[index + 1]];
+          renderSections();
+          queueAutosave();
+        });
+      });
+
+      list.appendChild(card);
     });
   }
 
-  function record() {
-    return GSIDraftContract.record({
-      signal_id: state.signalId,
-      artist: $("artist").value.trim(),
-      track: $("track").value.trim(),
-      album: $("album").value.trim(),
-      link: $("provider-link").value.trim(),
-      tags: $("tags").value.trim(),
-      accent: $("accent").value.trim(),
-      slug: $("edit-of").value,
-      cover: state.coverFile || `${$("edit-of").value}.jpg`,
-      cover_url: state.coverUrl
-    });
+  function addSection(title = "", prompt = "Write what belongs here.", content = "") {
+    state.sections.push({ title, prompt, content });
+    renderSections();
+    queueAutosave();
   }
 
-  function payload() {
-    return GSIDraftContract.payload({
-      editOf: $("edit-of").value,
-      record: record(),
-      sections: state.sections,
-      p53: {
-        enabled: $("p53-enabled").checked,
-        current: $("p53-current").checked,
-        note: $("p53-note").value.trim()
-      },
-      catalogue: {
-        artist_note: $("artist-note").value.trim(),
-        album_note: $("album-note").value.trim(),
-        artist_artwork: state.artistArtwork
+  function initDefaultSections() {
+    state.sections = DEFAULT_SECTIONS.map(([title, prompt]) => ({ title, prompt, content: "" }));
+    renderSections();
+  }
+
+  function setMode(mode) {
+    state.mode = mode;
+    const tabNew = $("tab-new");
+    const tabEdit = $("tab-edit");
+    const resolverPanel = $("resolver-panel");
+    const chooserSection = $("chooser-section");
+    const heading = $("page-heading");
+    const intro = $("page-intro");
+    const resultContainer = $("result-link-container");
+
+    if (resultContainer) resultContainer.hidden = true;
+
+    if (mode === "new") {
+      tabNew.classList.add("active");
+      tabNew.setAttribute("aria-selected", "true");
+      tabEdit.classList.remove("active");
+      tabEdit.setAttribute("aria-selected", "false");
+      resolverPanel.hidden = false;
+      chooserSection.hidden = true;
+      heading.textContent = "Give a song a place to stay.";
+      intro.textContent = "Paste an Apple Music or Spotify link, shape the review sections, and publish a new entry directly on this machine.";
+      $("edit-of").value = "";
+
+      // Check if we have autosaved new draft
+      const autosaved = localStorage.getItem(AUTOSAVE_NEW_KEY);
+      if (autosaved) {
+        try {
+          const data = JSON.parse(autosaved);
+          restoreFormData(data);
+          setStatus("Restored your unsaved new signal draft.", "success");
+          return;
+        } catch (_) {}
       }
-    });
+
+      // Default blank new state
+      clearFormFields();
+      initDefaultSections();
+      setStatus("Paste an Apple Music or Spotify song link to begin.");
+    } else {
+      tabEdit.classList.add("active");
+      tabEdit.setAttribute("aria-selected", "true");
+      tabNew.classList.remove("active");
+      tabNew.setAttribute("aria-selected", "false");
+      resolverPanel.hidden = true;
+      chooserSection.hidden = false;
+      heading.textContent = "Refine an existing signal.";
+      intro.textContent = "Select any represented track to refine its review sections, artist notes, album takes, or P53 status.";
+      setStatus("Select a signal from the list below.");
+      loadCatalog();
+    }
+  }
+
+  function clearFormFields() {
+    $("edit-of").value = "";
+    $("provider-link").value = "";
+    $("artist").value = "";
+    $("track").value = "";
+    $("album").value = "";
+    $("tags").value = "";
+    $("accent").value = "";
+    $("p53-enabled").checked = false;
+    $("p53-current").checked = false;
+    $("p53-note").value = "";
+    $("artist-note").value = "";
+    $("album-note").value = "";
+    state.artworkUrl = "";
+    state.coverFile = "";
+    state.signalId = "";
+    showArtwork("");
+  }
+
+  function restoreFormData(data) {
+    if (!data || !data.record) return;
+    const r = data.record;
+    $("edit-of").value = data.editOf || "";
+    if (r.link) $("provider-link").value = r.link;
+    if (r.artist) $("artist").value = r.artist;
+    if (r.track) $("track").value = r.track;
+    if (r.album) $("album").value = r.album;
+    if (r.tags) $("tags").value = r.tags;
+    if (r.accent) $("accent").value = r.accent;
+    state.signalId = r.signal_id || "";
+    state.coverFile = r.cover_file || r.cover || "";
+    state.artworkUrl = r.cover_url || "";
+
+    if (state.artworkUrl) {
+      showArtwork(state.artworkUrl, `${r.album || "ARTWORK"} / ARTWORK`, r.accent);
+    } else if (state.coverFile) {
+      showArtwork(`/covers/${state.coverFile}`, `${r.album || "ARTWORK"} / LOCAL COVER`, r.accent);
+    }
+
+    if (data.p53) {
+      $("p53-enabled").checked = Boolean(data.p53.enabled);
+      $("p53-current").checked = Boolean(data.p53.current);
+      $("p53-note").value = data.p53.note || "";
+    }
+    if (data.catalogue) {
+      $("artist-note").value = data.catalogue.artist_note || "";
+      $("album-note").value = data.catalogue.album_note || "";
+    }
+    if (Array.isArray(data.sections) && data.sections.length > 0) {
+      state.sections = data.sections;
+      renderSections();
+    }
+  }
+
+  async function resolveLink() {
+    const raw = ($("provider-link").value || "").trim();
+    if (!raw) return setStatus("Paste an Apple Music or Spotify link first.", "error");
+
+    let url;
+    try { url = new URL(raw); } catch { return setStatus("That is not a valid URL.", "error"); }
+
+    const host = url.hostname.toLowerCase();
+    const isApple = ["music.apple.com", "itunes.apple.com"].includes(host) || host.endsWith(".apple.com");
+    const isSpotify = ["open.spotify.com", "spotify.link"].includes(host) || host.endsWith(".spotify.com");
+
+    if (isApple) {
+      let trackId = url.searchParams.get("i");
+      if (!trackId) {
+        const segments = url.pathname.split("/").filter((s) => /^\d+$/.test(s));
+        if (segments.length > 0) trackId = segments[segments.length - 1];
+      }
+      if (!trackId) return setStatus("Could not find track ID in Apple Music URL. Enter fields manually.", "error");
+
+      setStatus("Resolving Apple Music metadata…");
+      try {
+        const resp = await fetch(`https://itunes.apple.com/lookup?id=${encodeURIComponent(trackId)}`);
+        if (!resp.ok) throw new Error(`Lookup status ${resp.status}`);
+        const payload = await resp.json();
+        const song = (payload.results || []).find((item) => item.kind === "song");
+        if (!song) throw new Error("No song found");
+
+        $("artist").value = song.artistName || "";
+        $("track").value = song.trackName || "";
+        $("album").value = song.collectionName || "";
+        state.artworkUrl = song.artworkUrl100 ? song.artworkUrl100.replace(/\b\d{2,4}x\d{2,4}bb\b/, "1200x1200bb") : "";
+        showArtwork(song.artworkUrl100 || "", `${song.collectionName || "ARTWORK"} / APPLE MUSIC`);
+        setStatus("Metadata resolved from Apple Music. Check details and fill review sections.", "success");
+        queueAutosave();
+      } catch (err) {
+        setStatus("Apple lookup was unavailable. Enter song details manually.", "error");
+      }
+    } else if (isSpotify) {
+      setStatus("Resolving Spotify metadata…");
+      try {
+        const oembedUrl = `https://open.spotify.com/oembed?url=${encodeURIComponent(raw)}`;
+        const oembedResp = await fetch(oembedUrl);
+        if (!oembedResp.ok) throw new Error("Spotify oEmbed error");
+        const oembed = await oembedResp.json();
+        const title = (oembed.title || "").trim();
+        const thumb = (oembed.thumbnail_url || "").replace("ab67616d00001e02", "ab67616d0000b273");
+
+        let resolved = false;
+        if (title) {
+          try {
+            const itunesSearch = await fetch(`https://itunes.apple.com/search?term=${encodeURIComponent(title)}&entity=song&limit=5`);
+            if (itunesSearch.ok) {
+              const data = await itunesSearch.json();
+              const song = (data.results || []).find((item) => item.kind === "song");
+              if (song) {
+                $("artist").value = song.artistName || "";
+                $("track").value = song.trackName || "";
+                $("album").value = song.collectionName || "";
+                state.artworkUrl = song.artworkUrl100 ? song.artworkUrl100.replace(/\b\d{2,4}x\d{2,4}bb\b/, "1200x1200bb") : thumb;
+                showArtwork(song.artworkUrl100 || thumb, `${song.collectionName || title} / SPOTIFY RESOLVE`);
+                resolved = true;
+              }
+            }
+          } catch (_) {}
+        }
+        if (!resolved) {
+          if (title) $("track").value = title;
+          state.artworkUrl = thumb;
+          if (thumb) showArtwork(thumb, `${title || "SPOTIFY ARTWORK"} / SPOTIFY`);
+        }
+        setStatus("Spotify metadata resolved. Check details and fill review sections.", "success");
+        queueAutosave();
+      } catch (err) {
+        setStatus("Spotify lookup unavailable. Fill song details manually.", "error");
+      }
+    } else {
+      setStatus("Please use an Apple Music or Spotify song link.", "error");
+    }
   }
 
   async function loadCatalog() {
     try {
-      const response = await authFetch("/api/local-entry-catalog");
-      const data = await response.json();
-      $("entry-select").replaceChildren(new Option("Choose an entry…", ""));
-      data.entries.forEach((entry) => {
-        $("entry-select").append(new Option(`${entry.artist} — ${entry.track}`, entry.slug));
+      const resp = await authFetch("/api/local-entry-catalog");
+      if (!resp.ok) throw new Error(`Status ${resp.status}`);
+      const data = await resp.json();
+      const select = $("entry-select");
+      select.replaceChildren();
+
+      const defaultOpt = document.createElement("option");
+      defaultOpt.value = "";
+      defaultOpt.textContent = "— Select an existing signal —";
+      select.appendChild(defaultOpt);
+
+      (data.entries || []).forEach((item) => {
+        const opt = document.createElement("option");
+        opt.value = item.slug;
+        opt.textContent = `${item.artist} — ${item.track} (${item.album})`;
+        select.appendChild(opt);
       });
-      setStatus(`${data.entries.length} local entries available.`);
-    } catch (error) {
-      setStatus(`Could not read local entries: ${error.message}`, "error");
+    } catch (err) {
+      setStatus(`Could not load catalogue: ${err.message}`, "error");
     }
   }
 
   async function loadEntry() {
-    const slug = $("entry-select").value;
-    if (!slug) return setStatus("Choose an entry first.", "error");
+    const slug = ($("entry-select").value || "").trim();
+    if (!slug) return setStatus("Select a signal first.", "error");
+
+    setStatus(`Loading ${slug}…`);
     try {
-      const response = await authFetch(`/api/local-entry/${encodeURIComponent(slug)}`);
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || "entry unavailable");
+      const resp = await authFetch(`/api/local-entry/${encodeURIComponent(slug)}`);
+      if (!resp.ok) throw new Error(`Status ${resp.status}`);
+      const data = await resp.json();
 
-      // Check if there was an unsaved local autosave on this device
-      const saved = checkAutosave(slug);
-      const activeData = (saved && saved.record && saved.record.slug === slug) ? saved : data;
+      // Check if there is an autosaved edit draft for this slug
+      let activeData = data;
+      let restored = false;
+      try {
+        const raw = localStorage.getItem(AUTOSAVE_EDIT_PREFIX + slug);
+        if (raw) {
+          activeData = JSON.parse(raw);
+          restored = true;
+        }
+      } catch (_) {}
 
-      $("edit-of").value = slug;
-      state.signalId = activeData.record.signal_id || data.record.signal_id || "";
-      state.coverFile = activeData.record.cover || data.record.cover || `${slug}.jpg`;
-      state.coverUrl = activeData.record.cover_url || data.record.cover_url || "";
-      state.artistArtwork = {
-        ...GSIDraftContract.defaultArtistArtwork(),
-        ...((activeData.catalogue && activeData.catalogue.artist_artwork) || (data.catalogue && data.catalogue.artist_artwork) || {})
-      };
+      activeData.editOf = slug;
+      restoreFormData(activeData);
 
-      for (const field of ["artist", "track", "album", "provider-link", "tags", "accent"]) {
-        $(field).value = field === "provider-link" ? (activeData.record.link || "") : (activeData.record[field] || "");
-      }
-
-      $("p53-enabled").checked = Boolean(activeData.p53 && activeData.p53.enabled);
-      $("p53-current").checked = Boolean(activeData.p53 && activeData.p53.current);
-      $("p53-note").value = (activeData.p53 && activeData.p53.note) || "";
-      $("artist-note").value = (activeData.catalogue && activeData.catalogue.artist_note) || "";
-      $("album-note").value = (activeData.catalogue && activeData.catalogue.album_note) || "";
-
-      state.sections.splice(0, state.sections.length, ...(activeData.sections || []));
-      renderSections();
-      $("edit-form").hidden = false;
-
-      if (saved) {
-        setStatus(`Loaded ${data.record.track} (restored unsaved edits from your device).`, "success");
-      } else {
-        setStatus(`Loaded ${data.record.track}. Changes remain local until you explicitly apply the draft.`, "success");
-      }
-    } catch (error) {
-      setStatus(`Could not load entry: ${error.message}`, "error");
+      setStatus(
+        restored
+          ? `Loaded ${activeData.record.track} (restored unsaved edits from your device).`
+          : `Loaded ${activeData.record.track}. Edit fields and click Save + Build.`,
+        "success"
+      );
+    } catch (err) {
+      setStatus(`Could not load entry: ${err.message}`, "error");
     }
   }
 
-  async function saveDraft(event) {
-    event.preventDefault();
-    const draft = payload();
+  function buildPayload() {
+    const artist = ($("artist").value || "").trim();
+    const track = ($("track").value || "").trim();
+    const album = ($("album").value || "").trim();
+    const link = ($("provider-link").value || "").trim();
+    const tags = ($("tags").value || "").trim();
+    const accent = ($("accent").value || "").trim();
+    const editOf = ($("edit-of").value || "").trim();
+
+    const recordObj = {
+      signal_id: state.signalId || "",
+      artist,
+      track,
+      album,
+      link,
+      tags,
+      accent,
+      cover_file: state.coverFile || "",
+      cover_url: state.artworkUrl || ""
+    };
+
+    return GSIDraftContract.payload({
+      record: recordObj,
+      sections: state.sections,
+      p53: {
+        enabled: $("p53-enabled").checked,
+        current: $("p53-current").checked,
+        note: ($("p53-note").value || "").trim()
+      },
+      catalogue: {
+        artist_note: ($("artist-note").value || "").trim(),
+        album_note: ($("album-note").value || "").trim()
+      },
+      editOf
+    });
+  }
+
+  async function saveDraft() {
+    const payloadData = buildPayload();
+    const issues = GSIDraftContract.validationIssues(payloadData);
+    if (issues.length) {
+      return setStatus(`Missing required fields: ${issues.join(", ")}`, "error");
+    }
+
+    const endpoint = payloadData.editOf ? "/api/local-entry-drafts" : "/api/entry-drafts";
+    setStatus("Saving draft to local inbox…");
     try {
-      const response = await authFetch("/api/local-entry-drafts", {
+      const resp = await authFetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(draft)
+        body: JSON.stringify(payloadData)
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "draft rejected");
-      clearAutosave($("edit-of").value);
-      setStatus(`Saved ${result.filename} to the private draft inbox.`, "success");
-    } catch (error) {
-      setStatus(`Could not save draft: ${error.message}`, "error");
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || "Draft rejected");
+      clearCurrentAutosave();
+      setStatus(`Saved draft (${result.filename || "received"}) to submissions inbox.`, "success");
+    } catch (err) {
+      setStatus(`Could not save draft: ${err.message}`, "error");
     }
   }
 
   async function buildEntry() {
-    const slug = $("edit-of").value;
-    if (!slug) return setStatus("Load an entry before building it.", "error");
+    const payloadData = buildPayload();
+    const issues = GSIDraftContract.validationIssues(payloadData);
+    if (issues.length) {
+      return setStatus(`Missing required fields: ${issues.join(", ")}`, "error");
+    }
+
+    const buildBtn = $("build-entry-btn");
+    const saveBtn = $("save-draft-btn");
+    buildBtn.disabled = true;
+    saveBtn.disabled = true;
+    buildBtn.textContent = "BUILDING ROOMS…";
+    setStatus("Publishing entry, updating catalogue, and generating site…");
+
     try {
-      const response = await authFetch("/api/local-entry-publish", {
+      const resp = await authFetch("/api/local-entry-publish", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload())
+        body: JSON.stringify(payloadData)
       });
-      const result = await response.json();
-      if (!response.ok) throw new Error(result.error || "local build rejected");
-      clearAutosave(slug);
-      setStatus(`Built ${result.slug} and refreshed its catalogue rooms.`, "success");
-    } catch (error) {
-      setStatus(`Could not build entry: ${error.message}`, "error");
+      const result = await resp.json();
+      if (!resp.ok) throw new Error(result.error || "Publish rejected");
+
+      clearCurrentAutosave();
+      const slug = result.slug || GSIDraftContract.slugify(`${payloadData.record.artist}-${payloadData.record.track}`);
+
+      setStatus(`✓ Successfully built ${payloadData.record.track} by ${payloadData.record.artist}!`, "success");
+
+      const linkContainer = $("result-link-container");
+      const resultLink = $("result-link");
+      if (linkContainer && resultLink) {
+        resultLink.href = `/entries/${slug}.html`;
+        resultLink.textContent = `OPEN GENERATED ROOM: /entries/${slug}.html ↗`;
+        linkContainer.hidden = false;
+      }
+    } catch (err) {
+      setStatus(`Build failed: ${err.message}`, "error");
+    } finally {
+      buildBtn.disabled = false;
+      saveBtn.disabled = false;
+      buildBtn.textContent = "SAVE + BUILD ENTRY ↗";
     }
   }
 
@@ -257,11 +539,21 @@
     if (el) el.addEventListener("change", queueAutosave);
   });
 
-  $("load-entry").addEventListener("click", loadEntry);
-  $("edit-form").addEventListener("submit", saveDraft);
-  $("build-entry").addEventListener("click", buildEntry);
+  // Tab listeners
+  $("tab-new").addEventListener("click", () => setMode("new"));
+  $("tab-edit").addEventListener("click", () => setMode("edit"));
 
-  // Auth panel handlers
+  // Resolver & chooser listeners
+  $("resolve-link").addEventListener("click", resolveLink);
+  $("load-entry").addEventListener("click", loadEntry);
+  $("entry-select").addEventListener("change", loadEntry);
+  $("add-section-btn").addEventListener("click", () => addSection("Custom Heading", "Write what belongs here."));
+
+  // Action button listeners
+  $("save-draft-btn").addEventListener("click", saveDraft);
+  $("build-entry-btn").addEventListener("click", buildEntry);
+
+  // Auth toggle & token saving
   const authToggle = $("auth-toggle-btn");
   if (authToggle) {
     authToggle.addEventListener("click", () => {
@@ -276,8 +568,8 @@
       setToken(input ? input.value : "");
       const panel = $("auth-panel");
       if (panel) panel.hidden = true;
-      setStatus("Token updated. Refreshing local catalog…");
-      loadCatalog();
+      setStatus("Token updated.", "success");
+      if (state.mode === "edit") loadCatalog();
     });
   }
   const clearTokenBtn = $("clear-token-btn");
@@ -292,6 +584,7 @@
     });
   }
 
+  // Read URL token param if supplied on initial visit
   const urlParams = new URLSearchParams(window.location.search);
   const tokenFromUrl = urlParams.get("token");
   if (tokenFromUrl) {
@@ -303,5 +596,5 @@
   }
 
   updateAuthUI();
-  loadCatalog();
+  setMode("new");
 })();

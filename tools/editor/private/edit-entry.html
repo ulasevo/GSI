@@ -2,19 +2,23 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Edit signal · local GSI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Authoring Room · GSI</title>
   <link rel="stylesheet" href="private-entry.css">
 </head>
 <body>
   <main class="private-shell">
     <header>
       <div class="header-top">
-        <p class="eyebrow">PRIVATE LOCAL AUTHORING</p>
-        <button id="auth-toggle-btn" class="token-toggle" type="button" aria-label="Configure local authorization token" title="Local auth token">🔑 <span id="auth-indicator">LOCAL</span></button>
+        <a class="crumb" href="/" target="_blank">← GSI WALL</a>
+        <div class="header-right">
+          <p class="eyebrow">LOCAL AUTHORING SUITE</p>
+          <button id="auth-toggle-btn" class="token-toggle" type="button" aria-label="Configure local authorization token" title="Local auth token">🔑 <span id="auth-indicator">LOCAL</span></button>
+        </div>
       </div>
-      <h1>Edit a signal without touching the source.</h1>
-      <p class="intro">This room reads your local entries. Save a reviewable draft, or build the selected edit directly on this machine. It is not copied into the public site.</p>
+      <h1 id="page-heading">Give a song a place to stay.</h1>
+      <p id="page-intro" class="intro">Resolve a provider link for a new song, or select an existing signal to refine its review and catalogue notes. Everything builds directly on this machine.</p>
+
       <div id="auth-panel" class="auth-panel" hidden>
         <label for="auth-token-input">Local Auth Token <span class="field-hint">Required when accessing over phone / LAN</span>
           <div class="auth-row">
@@ -25,41 +29,101 @@
         </label>
       </div>
     </header>
-    <section class="panel chooser" aria-labelledby="chooser-title">
-      <label id="chooser-title">Signal
+
+    <div class="mode-tabs" role="tablist">
+      <button id="tab-new" class="mode-tab active" type="button" role="tab" aria-selected="true">＋ NEW SIGNAL</button>
+      <button id="tab-edit" class="mode-tab" type="button" role="tab" aria-selected="false">✎ EDIT EXISTING</button>
+    </div>
+
+    <!-- Status message -->
+    <div id="status-card" class="status-card" role="status" aria-live="polite">
+      <p id="status">Paste an Apple Music or Spotify song link to begin.</p>
+      <div id="result-link-container" hidden>
+        <a id="result-link" class="view-entry-btn" href="#" target="_blank">OPEN GENERATED ROOM ↗</a>
+      </div>
+    </div>
+
+    <!-- Chooser section for Edit mode -->
+    <section id="chooser-section" class="panel chooser" aria-labelledby="chooser-title" hidden>
+      <label id="chooser-title">Choose Signal to Edit
         <select id="entry-select"><option value="">Loading local entries…</option></select>
       </label>
       <button id="load-entry" type="button">LOAD SIGNAL</button>
-      <p id="status" role="status">Choose an entry to begin.</p>
     </section>
-    <form id="edit-form" class="panel" hidden>
+
+    <!-- Main Authoring Form -->
+    <form id="authoring-form" class="panel" novalidate>
       <input id="edit-of" type="hidden">
+
+      <!-- Link Resolver (prominent in New mode) -->
+      <section id="resolver-panel" class="resolver-panel">
+        <label for="provider-link">Apple Music or Spotify link
+          <div class="link-row">
+            <input id="provider-link" type="url" placeholder="https://music.apple.com/..." autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false">
+            <button id="resolve-link" type="button">RESOLVE ↗</button>
+          </div>
+        </label>
+      </section>
+
+      <!-- Artwork preview & swatch -->
+      <figure id="artwork-preview" class="artwork-preview" hidden>
+        <img id="artwork-image" alt="Artwork preview">
+        <figcaption>
+          <span id="artwork-caption">ARTWORK CHECK</span>
+          <span id="artwork-swatch" aria-hidden="true"></span>
+        </figcaption>
+      </figure>
+
+      <!-- Core Metadata Fields -->
+      <h2>01 / Song Identity</h2>
       <div class="field-grid">
-        <label>Artist<input id="artist" type="text"></label>
-        <label>Track<input id="track" type="text"></label>
-        <label>Album<input id="album" type="text"></label>
-        <label>Provider link<input id="provider-link" type="url"></label>
-        <label>Filters / tags<input id="tags" type="text"></label>
-        <label>Accent<input id="accent" type="text"></label>
+        <label>Artist<input id="artist" type="text" autocomplete="off" required></label>
+        <label>Track<input id="track" type="text" autocomplete="off" required></label>
+        <label>Album<input id="album" type="text" autocomplete="off" required></label>
+        <label>Filters / tags <span class="field-hint">(e.g. dreamy, bite, personal)</span><input id="tags" type="text" autocomplete="off" autocapitalize="none"></label>
+        <label>Accent Hex <span class="field-hint">(e.g. #ff4fa3)</span><input id="accent" type="text" autocomplete="off" autocapitalize="none"></label>
       </div>
-      <div class="p53-row">
-        <label><input id="p53-enabled" type="checkbox"> Radio P53</label>
-        <label><input id="p53-current" type="checkbox"> Current transmission</label>
-        <label class="wide">Transmission notes<textarea id="p53-note" rows="3"></textarea></label>
+
+      <!-- Radio P53 Settings -->
+      <h2>02 / Radio P53 Transmission</h2>
+      <div class="p53-box">
+        <div class="p53-checks">
+          <label><input id="p53-enabled" type="checkbox"> Add this signal to Radio P53</label>
+          <label><input id="p53-current" type="checkbox"> Make this the current transmission</label>
+        </div>
+        <div id="p53-note-container" class="p53-note-container">
+          <label>Transmission notes / context
+            <textarea id="p53-note" rows="3" placeholder="What belongs in the transmission record?"></textarea>
+          </label>
+        </div>
       </div>
-      <h2>Catalogue rooms</h2>
+
+      <!-- Catalogue Rooms Context -->
+      <h2>03 / Catalogue Rooms</h2>
       <div class="catalogue-grid">
-        <label>Artist note<textarea id="artist-note" rows="4" placeholder="Context for the artist room"></textarea></label>
-        <label>Album take<textarea id="album-note" rows="4" placeholder="Your take for the album room"></textarea></label>
+        <label>Artist Note <span class="field-hint">(context for artist shrine)</span>
+          <textarea id="artist-note" rows="3" placeholder="Context for the artist room..."></textarea>
+        </label>
+        <label>Album Take <span class="field-hint">(context for album room)</span>
+          <textarea id="album-note" rows="3" placeholder="Your take for the album room..."></textarea>
+        </label>
       </div>
-      <h2>Reading rooms</h2>
+
+      <!-- Reading Rooms / Review Sections -->
+      <div class="sections-header">
+        <h2>04 / Reading Rooms (Review Sections)</h2>
+        <button id="add-section-btn" class="quiet-btn" type="button">＋ ADD SECTION</button>
+      </div>
       <div id="section-list"></div>
+
+      <!-- Sticky Action Dock -->
       <div class="edit-actions">
-        <button id="save-draft" class="primary" type="submit">SAVE PRIVATE EDIT DRAFT</button>
-        <button id="build-entry" type="button">SAVE + BUILD ENTRY ↗</button>
+        <button id="save-draft-btn" class="secondary" type="button">SAVE DRAFT</button>
+        <button id="build-entry-btn" class="primary" type="button">SAVE + BUILD ENTRY ↗</button>
       </div>
     </form>
   </main>
+
   <script src="/__local/editor/draft-contract.js"></script>
   <script src="private-entry.js"></script>
 </body>

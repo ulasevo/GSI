@@ -87,20 +87,25 @@ Not every song requires an exhaustive 7-section dissertation. GSI welcomes varie
 
 The private authoring suite allows creating or editing entries directly from a browser on your laptop or phone over your home Wi-Fi network.
 
-#### 1. Start the Authenticated Local Server
+#### 1. Start the Local Server (1 Command)
 ```powershell
-python tools/submission_server.py 8021 --auth-token "your-secret-token"
+.\serve.ps1
+# or run `serve.cmd` in cmd / double-click from desktop
+# or: python tools/serve.py
+```
+The server will automatically detect your local Wi-Fi / LAN IP, read or generate your persistent auth token in `.env`, and display a direct clickable link in the terminal:
+```text
+  Desktop:   http://127.0.0.1:8021/__local/editor/
+  Phone LAN: http://192.168.1.6:8021/__local/editor/?token=gsi-author-xxxx
 ```
 
-#### 2. Access the Editor
-- **Desktop**: Open `http://127.0.0.1:8021/__local/editor/edit-entry.html`
-- **Phone / LAN**: Open `http://<your-lan-ip>:8021/__local/editor/edit-entry.html?token=your-secret-token`
-
-#### 3. Authoring Features:
-- **Load Existing Entry**: Dropdown selector to edit existing entries, update tags, or add missing sections.
-- **Paste Apple Music URL**: Automatically queries public metadata to resolve artist, track title, album name, year, and artwork.
-- **Autosave**: Drafts are continuously backed up to your browser's `localStorage`.
-- **Publish Entry**: Atomically writes `tracks.csv`, saves `entries/<slug>.md`, creates an automatic source snapshot in `submissions/snapshots/`, and triggers a site rebuild.
+#### 2. Access the Unified Authoring Room
+- Open the printed link on your desktop or phone browser.
+- **Bookmark on Phone**: On your phone, bookmark the URL or add it to your home screen. The token is saved in your browser cookie and `localStorage`, so future visits authenticate automatically.
+- **Tab 1: ＋ NEW SIGNAL**: Paste any Apple Music or Spotify link, click `RESOLVE ↗`, review the auto-resolved artist/track/album and artwork preview, and fill your review sections.
+- **Tab 2: ✎ EDIT EXISTING**: Select any represented song from the catalogue dropdown to update tags, write missing sections, refine artist notes, or adjust P53 settings.
+- **SAVE DRAFT**: Backs up your work to `submissions/drafts/`.
+- **SAVE + BUILD ENTRY ↗**: Atomically updates `tracks.csv` and `entries/`, captures a recovery snapshot in `submissions/snapshots/`, rebuilds the static site, and provides an immediate button to open your new live room.
 
 ---
 

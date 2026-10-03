@@ -277,14 +277,22 @@ class SubmissionHandler(BaseHTTPRequestHandler):
         if path.startswith("/api/local-entry/"):
             payload, error = local_entry_payload(path.removeprefix("/api/local-entry/"))
             return self._json(404 if error else 200, {"error": error} if error else payload)
+        if path == "/__local/editor":
+            self.send_response(301)
+            self.send_header("Location", "/__local/editor/")
+            self.end_headers()
+            return
         if path.startswith("/__local/editor/"):
-            relative_private = path.removeprefix("/__local/editor/")
+            relative_private = path.removeprefix("/__local/editor/").lstrip("/")
+            if not relative_private:
+                relative_private = "edit-entry.html"
             editor_root = (ROOT / "tools" / "editor").resolve()
             private_root = (editor_root / "private").resolve()
-            source_root = editor_root if relative_private == "draft-contract.js" else private_root
-            candidate = (source_root / relative_private).resolve()
+            candidate = (private_root / relative_private).resolve()
+            if not candidate.is_file():
+                candidate = (editor_root / relative_private).resolve()
             try:
-                candidate.relative_to(source_root)
+                candidate.relative_to(editor_root)
             except ValueError:
                 return self._json(404, {"error": "not found"})
             if not candidate.is_file():
