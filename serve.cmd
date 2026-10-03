@@ -1,4 +1,7 @@
 @echo off
+setlocal
+cd /d "%~dp0"
+set PYTHONPATH=%~dp0;%PYTHONPATH%
 python tools\serve.py %*
 if errorlevel 1 (
     echo.
