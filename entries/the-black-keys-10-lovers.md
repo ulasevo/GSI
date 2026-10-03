@@ -1,21 +1,21 @@
 ---
-artist: "Kendrick Lamar"
-track: "TV Off"
-album: "GNX"
-cover: "../covers/kendrick-lamar-tv-off.jpg"
-accent: "#c7c7c7"
+artist: "The Black Keys"
+track: "10 Lovers"
+album: "Turn Blue"
+cover: "../covers/the-black-keys-10-lovers.jpg"
+accent: "#0175b0"
 ---
 
-# TV Off — Kendrick Lamar
+# 10 Lovers — The Black Keys
 
-![cover](../covers/kendrick-lamar-tv-off.jpg)
+![cover](../covers/the-black-keys-10-lovers.jpg)
 
-**Album:** GNX
-**Accent:** `#c7c7c7`
+**Album:** Turn Blue
+**Accent:** `#0175b0`
 
 ## Charge
 
-solidarity, especially when the anthem kicks in
+<!-- What state does this song trigger? -->
 
 ## Sonical Attraction
 

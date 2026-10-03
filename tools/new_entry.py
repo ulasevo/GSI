@@ -265,7 +265,8 @@ def _replace_track(root: Path, record: dict) -> None:
         None,
     )
     if target is None:
-        raise DraftMetadataError(f"tracks.csv does not contain this edit target: {record['slug']}")
+        _append_tracks_row(root, record)
+        return
     original_cover = target.get("cover_file", "")
     target.update({column: record.get(column, "") for column in TRACK_COLUMNS if column != "order"})
     target["cover_file"] = original_cover or record.get("cover_file", "")
@@ -422,19 +423,39 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
     # unavailable on the local server, while keeping the canonical identity.
     record["cover_url"] = record_data.get("cover_url") or record.get("cover_url", "")
     record["cover_file"] = record_data.get("cover_file") or record["cover_file"]
+    covers_dir = root / "covers"
+    covers_dir.mkdir(exist_ok=True)
     if edit_of:
-        if edit_of != record["slug"]:
-            raise DraftMetadataError("private edits cannot change artist/track route slugs")
-        if not (root / "entries" / f"{edit_of}.md").is_file():
+        record["slug"] = edit_of
+        target_cover = record_data.get("cover_file") or record.get("cover_file") or f"{edit_of}.jpg"
+        if not (covers_dir / target_cover).is_file() and (covers_dir / f"{edit_of}.jpg").is_file():
+            record["cover_file"] = f"{edit_of}.jpg"
+        else:
+            record["cover_file"] = target_cover
+        existing_row = next((row for row in read_tracks(root / "tracks.csv") if slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == edit_of or (record.get("signal_id") and row.get("signal_id") == record.get("signal_id"))), None)
+        has_entry = (root / "entries" / f"{edit_of}.md").is_file()
+        config = load_config(root / "config.json")
+        p53_records = [item for item in config.get("p53_history", []) if isinstance(item, dict)]
+        p53_match = next((item for item in p53_records if item.get("slug") == edit_of), None)
+        if not has_entry and not existing_row and not p53_match:
             raise DraftMetadataError(f"edit target does not exist: {edit_of}")
-        existing_row = next((row for row in read_tracks(root / "tracks.csv") if slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == edit_of), None)
+        if existing_row and existing_row.get("artist"):
+            if slugify(existing_row["artist"]) != slugify(record["artist"]):
+                raise DraftMetadataError(f"private edits cannot change artist from {existing_row['artist']} to {record['artist']}")
+            if slugify(f"{existing_row['artist']}-{record['track']}") != edit_of:
+                record["track"] = existing_row["track"]
+        elif p53_match and p53_match.get("artist"):
+            if slugify(p53_match["artist"]) != slugify(record["artist"]):
+                raise DraftMetadataError(f"private edits cannot change artist from {p53_match['artist']} to {record['artist']}")
+            if slugify(f"{p53_match['artist']}-{record['track']}") != edit_of:
+                record["track"] = p53_match["track"]
         if existing_row and existing_row.get("signal_id"):
             record["signal_id"] = existing_row["signal_id"]
+        elif p53_match and p53_match.get("signal_id"):
+            record["signal_id"] = p53_match["signal_id"]
     else:
         _assert_new_slug(root, record["slug"])
 
-    covers_dir = root / "covers"
-    covers_dir.mkdir(exist_ok=True)
     cover_path = covers_dir / record["cover_file"]
     entry_path = root / "entries" / f"{record['slug']}.md"
     artist_artwork = clean["catalogue"].get("artist_artwork")
@@ -630,13 +651,20 @@ def main() -> int:
             _flatten_sections(args.section, args.sections),
         )
         if edit_of:
-            if edit_of != record["slug"]:
-                raise DraftMetadataError("private edits cannot change artist/track route slugs")
-            if not (root / "entries" / f"{edit_of}.md").exists():
+            record["slug"] = edit_of
+            existing_row = next((row for row in read_tracks(root / "tracks.csv") if slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == edit_of or (record.get("signal_id") and row.get("signal_id") == record.get("signal_id"))), None)
+            has_entry = (root / "entries" / f"{edit_of}.md").exists()
+            p53_records = [item for item in config.get("p53_history", []) if isinstance(item, dict)]
+            p53_match = next((item for item in p53_records if item.get("slug") == edit_of), None)
+            if not has_entry and not existing_row and not p53_match:
                 raise DraftMetadataError(f"edit target does not exist: {edit_of}")
-            existing_row = next((row for row in read_tracks(root / "tracks.csv") if slugify(f"{row.get('artist', '')}-{row.get('track', '')}") == edit_of), None)
+            if existing_row and existing_row.get("artist"):
+                if slugify(existing_row["artist"]) != slugify(record["artist"]):
+                    raise DraftMetadataError(f"private edits cannot change artist from {existing_row['artist']} to {record['artist']}")
             if existing_row and existing_row.get("signal_id"):
                 record["signal_id"] = existing_row["signal_id"]
+            elif p53_match and p53_match.get("signal_id"):
+                record["signal_id"] = p53_match["signal_id"]
         else:
             _assert_new_slug(root, record["slug"])
         if args.p53_current and not args.p53:

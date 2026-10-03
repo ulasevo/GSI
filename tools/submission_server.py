@@ -12,6 +12,7 @@ import os
 import re
 import sys
 import csv
+import colorsys
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -113,19 +114,82 @@ def _entry_sections(body: str) -> list[dict]:
     return sections
 
 
+def extract_palette(image_path: Path, count: int = 5) -> list[str]:
+    """Extract distinct vibrant/notable colors from a local cover image."""
+    try:
+        from PIL import Image
+        image = Image.open(image_path).convert("RGB")
+        image = image.resize((80, 80))
+        reduced = image.quantize(colors=16).convert("RGB")
+        colors = reduced.getcolors(80 * 80)
+        if not colors:
+            return []
+        scored = []
+        for freq, (r, g, b) in colors:
+            h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+            score = (s * 2.2 + v * 0.8) * (freq ** 0.5) if (0.15 < v < 0.95 and s > 0.12) else freq * 0.2
+            scored.append((score, (r, g, b)))
+        scored.sort(key=lambda x: x[0], reverse=True)
+        palette = []
+        for _, (r, g, b) in scored:
+            hex_code = f"#{r:02x}{g:02x}{b:02x}"
+            if not any(
+                abs(r - int(p[1:3], 16)) + abs(g - int(p[3:5], 16)) + abs(b - int(p[5:7], 16)) < 65
+                for p in palette
+            ):
+                palette.append(hex_code)
+            if len(palette) >= count:
+                break
+        return palette
+    except Exception:
+        return []
+
+
 def local_entry_catalog() -> list[dict]:
     catalog = []
+    seen_slugs = set()
     for row in _tracks():
         slug = slugify(f"{row.get('artist', '')}-{row.get('track', '')}")
-        if not slug or not (ROOT / "entries" / f"{slug}.md").is_file():
+        if not slug or slug in seen_slugs:
             continue
+        seen_slugs.add(slug)
+        has_entry = (ROOT / "entries" / f"{slug}.md").is_file()
+        tags = [t.strip().lower() for t in (row.get("tags") or "").split(",") if t.strip()]
+        is_p53 = "p53" in tags
         catalog.append({
             "signal_id": row.get("signal_id", ""),
             "slug": slug,
             "artist": row.get("artist", ""),
             "track": row.get("track", ""),
             "album": row.get("album", ""),
+            "has_entry": has_entry,
+            "is_p53": is_p53,
         })
+
+    config_path = ROOT / "config.json"
+    if config_path.is_file():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            for item in config.get("p53_history", []):
+                if not isinstance(item, dict):
+                    continue
+                slug = item.get("slug") or slugify(f"{item.get('artist', '')}-{item.get('track', '')}")
+                if not slug or slug in seen_slugs:
+                    continue
+                seen_slugs.add(slug)
+                has_entry = (ROOT / "entries" / f"{slug}.md").is_file()
+                catalog.append({
+                    "signal_id": item.get("signal_id", ""),
+                    "slug": slug,
+                    "artist": item.get("artist", ""),
+                    "track": item.get("track", ""),
+                    "album": item.get("album", ""),
+                    "has_entry": has_entry,
+                    "is_p53": True,
+                })
+        except Exception:
+            pass
+
     return catalog
 
 
@@ -133,33 +197,63 @@ def local_entry_payload(slug: str) -> tuple[dict | None, str | None]:
     if not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug):
         return None, "invalid entry slug"
     entry_path = ROOT / "entries" / f"{slug}.md"
-    if not entry_path.is_file():
-        return None, "entry not found"
-    frontmatter, body = _frontmatter_and_body(entry_path.read_text(encoding="utf-8"))
     row = next((item for item in _tracks() if slugify(f"{item.get('artist', '')}-{item.get('track', '')}") == slug), {})
     config = json.loads((ROOT / "config.json").read_text(encoding="utf-8"))
     p53_records = [item for item in config.get("p53_history", []) if isinstance(item, dict)]
     p53_history = {item.get("slug"): item for item in p53_records}
     p53_record = next((item for item in p53_records if item.get("slug") == slug), None)
-    p53_enabled = slug in p53_history
-    artist_name = str(frontmatter.get("artist") or row.get("artist") or "").strip()
-    album_name = str(frontmatter.get("album") or row.get("album") or "").strip()
+
+    if not entry_path.is_file() and not row and not p53_record:
+        return None, "entry not found"
+
+    frontmatter = {}
+    body = ""
+    if entry_path.is_file():
+        frontmatter, body = _frontmatter_and_body(entry_path.read_text(encoding="utf-8"))
+
+    source = row or p53_record or {}
+    artist_name = str(frontmatter.get("artist") or source.get("artist") or "").strip()
+    track_name = str(frontmatter.get("track") or source.get("track") or "").strip()
+    album_name = str(frontmatter.get("album") or source.get("album") or "").strip()
+    signal_id = str(source.get("signal_id") or "").strip()
+    tags = str(source.get("tags") or "").strip()
+    link = str(source.get("apple_url") or source.get("spotify_url") or "").strip()
+    cover_file = str(frontmatter.get("cover") or source.get("cover_file") or f"{slug}.jpg").split("/")[-1]
+    cover_url = str(source.get("cover_url") or "").strip()
+    accent = str(frontmatter.get("accent") or source.get("accent") or "").strip()
+
+    sections = _entry_sections(body) if body else []
+
+    # Extract distinct palette from cover image
+    palette = []
+    cover_candidates = [
+        ROOT / "covers" / cover_file,
+        ROOT / "site" / "covers" / cover_file,
+    ]
+    cover_path = next((p for p in cover_candidates if p.is_file()), None)
+    if cover_path:
+        palette = extract_palette(cover_path)
+
+    p53_enabled = slug in p53_history or "p53" in [t.strip().lower() for t in tags.split(",") if t.strip()]
     artist_notes = config.get("artist_notes", {})
     album_notes = config.get("album_notes", {})
     return {
         "schema": 1,
         "record": {
-            "signal_id": str(row.get("signal_id") or "").strip(),
-            "artist": str(frontmatter.get("artist") or row.get("artist") or "").strip(),
-            "track": str(frontmatter.get("track") or row.get("track") or "").strip(),
-            "album": str(frontmatter.get("album") or row.get("album") or "").strip(),
-            "tags": str(row.get("tags") or "").strip(),
-            "link": str(row.get("apple_url") or row.get("spotify_url") or "").strip(),
+            "signal_id": signal_id,
+            "artist": artist_name,
+            "track": track_name,
+            "album": album_name,
+            "tags": tags,
+            "link": link,
             "slug": slug,
-            "cover": str(frontmatter.get("cover") or row.get("cover_file") or "").split("/")[-1],
-            "accent": str(frontmatter.get("accent") or row.get("accent") or "").strip(),
+            "cover": cover_file,
+            "cover_file": cover_file,
+            "cover_url": cover_url,
+            "accent": accent,
         },
-        "sections": _entry_sections(body),
+        "sections": sections,
+        "palette": palette,
         "p53": {
             "enabled": p53_enabled,
             "current": bool(p53_record and p53_record is current_p53_record(config, p53_records)),
@@ -315,6 +409,14 @@ class SubmissionHandler(BaseHTTPRequestHandler):
             return self._json(404, {"error": "not found"})
         if candidate.is_dir():
             candidate = candidate / "index.html"
+        if not candidate.is_file() and relative.startswith("covers/"):
+            direct_cover = (ROOT / relative).resolve()
+            try:
+                direct_cover.relative_to(ROOT.resolve())
+                if direct_cover.is_file():
+                    candidate = direct_cover
+            except ValueError:
+                pass
         if not candidate.is_file():
             return self._json(404, {"error": "not found"})
         payload = candidate.read_bytes()

@@ -1,3 +1,7 @@
+[hidden] {
+  display: none !important;
+}
+
 :root {
   color-scheme: dark;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
@@ -375,6 +379,43 @@ button.quiet-btn:hover {
   border-radius: 6px;
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
+
+.accent-palette-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  min-height: 32px;
+}
+
+.palette-chip {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  cursor: pointer;
+  padding: 0;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+  transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+  flex-shrink: 0;
+}
+
+.palette-chip:hover {
+  transform: scale(1.15);
+  border-color: #ffffff;
+}
+
+.palette-chip:active {
+  transform: scale(0.95);
+}
+
+.palette-chip.active {
+  border-color: #ffffff;
+  box-shadow: 0 0 0 2px #ff70bd, 0 4px 12px rgba(0, 0, 0, 0.6);
+  transform: scale(1.1);
+}
+
 
 h2 {
   font-size: 1.05rem;

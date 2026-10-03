@@ -78,6 +78,88 @@
     return resp;
   }
 
+  function renderPalette(colors) {
+    const container = $("accent-palette");
+    if (!container) return;
+    container.replaceChildren();
+    if (!Array.isArray(colors) || colors.length === 0) return;
+
+    const currentAccent = ($("accent").value || "").trim().toLowerCase();
+    colors.forEach((hex) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "palette-chip";
+      chip.style.backgroundColor = hex;
+      chip.title = `Use accent ${hex}`;
+      chip.setAttribute("aria-label", `Select accent color ${hex}`);
+      if (hex.toLowerCase() === currentAccent) {
+        chip.classList.add("active");
+      }
+      chip.addEventListener("click", () => {
+        $("accent").value = hex;
+        const swatch = $("artwork-swatch");
+        if (swatch) swatch.style.background = hex;
+        container.querySelectorAll(".palette-chip").forEach((c) => c.classList.remove("active"));
+        chip.classList.add("active");
+        queueAutosave();
+      });
+      container.appendChild(chip);
+    });
+  }
+
+  function extractCanvasPalette(imgEl) {
+    try {
+      const canvas = document.createElement("canvas");
+      canvas.width = 40;
+      canvas.height = 40;
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      if (!ctx) return;
+      ctx.drawImage(imgEl, 0, 0, 40, 40);
+      const imgData = ctx.getImageData(0, 0, 40, 40).data;
+      const buckets = {};
+      for (let i = 0; i < imgData.length; i += 16) {
+        const r = imgData[i];
+        const g = imgData[i + 1];
+        const b = imgData[i + 2];
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const sat = max === 0 ? 0 : (max - min) / max;
+        const val = max / 255;
+        if (val < 0.18 || (val > 0.92 && sat < 0.15)) continue;
+        const qr = Math.round(r / 32) * 32;
+        const qg = Math.round(g / 32) * 32;
+        const qb = Math.round(b / 32) * 32;
+        const key = `${Math.min(255, qr)},${Math.min(255, qg)},${Math.min(255, qb)}`;
+        buckets[key] = (buckets[key] || 0) + (1 + sat * 2);
+      }
+      const sorted = Object.entries(buckets).sort((a, b) => b[1] - a[1]);
+      const colors = [];
+      for (const [key] of sorted) {
+        const [r, g, b] = key.split(",").map(Number);
+        const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+        if (!colors.some((c) => {
+          const cr = parseInt(c.slice(1, 3), 16);
+          const cg = parseInt(c.slice(3, 5), 16);
+          const cb = parseInt(c.slice(5, 7), 16);
+          return Math.abs(r - cr) + Math.abs(g - cg) + Math.abs(b - cb) < 60;
+        })) {
+          colors.push(hex);
+        }
+        if (colors.length >= 5) break;
+      }
+      if (colors.length > 0) {
+        renderPalette(colors);
+        if (!$("accent").value && colors[0]) {
+          $("accent").value = colors[0];
+          const swatch = $("artwork-swatch");
+          if (swatch) swatch.style.background = colors[0];
+        }
+      }
+    } catch (_) {
+      // CORS safe: ignore if tainted
+    }
+  }
+
   function showArtwork(src, caption = "ARTWORK CHECK", accent = "") {
     const preview = $("artwork-preview");
     const image = $("artwork-image");
@@ -87,8 +169,17 @@
 
     if (!src) {
       preview.hidden = true;
+      image.src = "";
+      renderPalette([]);
       return;
     }
+    image.crossOrigin = "anonymous";
+    image.onload = () => {
+      const paletteContainer = $("accent-palette");
+      if (paletteContainer && paletteContainer.children.length === 0) {
+        extractCanvasPalette(image);
+      }
+    };
     image.src = src;
     captionEl.textContent = caption;
     if (swatch) {
@@ -248,6 +339,7 @@
     state.coverFile = "";
     state.signalId = "";
     showArtwork("");
+    renderPalette([]);
   }
 
   function restoreFormData(data) {
@@ -261,13 +353,20 @@
     if (r.tags) $("tags").value = r.tags;
     if (r.accent) $("accent").value = r.accent;
     state.signalId = r.signal_id || "";
-    state.coverFile = r.cover_file || r.cover || "";
+    state.coverFile = r.cover_file || r.cover || (data.editOf ? `${data.editOf}.jpg` : "");
     state.artworkUrl = r.cover_url || "";
 
-    if (state.artworkUrl) {
-      showArtwork(state.artworkUrl, `${r.album || "ARTWORK"} / ARTWORK`, r.accent);
-    } else if (state.coverFile) {
-      showArtwork(`/covers/${state.coverFile}`, `${r.album || "ARTWORK"} / LOCAL COVER`, r.accent);
+    if (Array.isArray(data.palette) && data.palette.length > 0) {
+      renderPalette(data.palette);
+    } else {
+      renderPalette([]);
+    }
+
+    const coverSrc = state.artworkUrl || (state.coverFile ? `/covers/${state.coverFile}` : "");
+    if (coverSrc) {
+      showArtwork(coverSrc, `${r.album || r.track || "SIGNAL"} / ARTWORK`, r.accent);
+    } else {
+      showArtwork("");
     }
 
     if (data.p53) {
@@ -381,7 +480,8 @@
       (data.entries || []).forEach((item) => {
         const opt = document.createElement("option");
         opt.value = item.slug;
-        opt.textContent = `${item.artist} — ${item.track} (${item.album})`;
+        const tag = item.has_entry ? "" : (item.is_p53 ? " [Radio P53]" : " [Signal]");
+        opt.textContent = `${item.artist} — ${item.track} (${item.album})${tag}`;
         select.appendChild(opt);
       });
     } catch (err) {
@@ -431,7 +531,7 @@
     const link = ($("provider-link").value || "").trim();
     const tags = ($("tags").value || "").trim();
     const accent = ($("accent").value || "").trim();
-    const editOf = ($("edit-of").value || "").trim();
+    const editOf = state.mode === "edit" ? ($("edit-of").value || "").trim() : "";
 
     const recordObj = {
       signal_id: state.signalId || "",
@@ -538,6 +638,21 @@
     const el = $(id);
     if (el) el.addEventListener("change", queueAutosave);
   });
+
+  const accentInput = $("accent");
+  if (accentInput) {
+    accentInput.addEventListener("input", () => {
+      const val = accentInput.value.trim();
+      const swatch = $("artwork-swatch");
+      if (swatch) swatch.style.background = val || "#444";
+      const paletteContainer = $("accent-palette");
+      if (paletteContainer) {
+        paletteContainer.querySelectorAll(".palette-chip").forEach((chip) => {
+          chip.classList.toggle("active", chip.style.backgroundColor.toLowerCase() === val.toLowerCase());
+        });
+      }
+    });
+  }
 
   // Tab listeners
   $("tab-new").addEventListener("click", () => setMode("new"));

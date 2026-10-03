@@ -315,7 +315,8 @@
     "Metric": "Their discography has a ring that feels like home, there is an Ulaş to discover in every metric song you may listen to.",
     "Matt Maeson": "I think the only one of the handful of artists that I listen to for years that have not lost their trajectory. Songs all carry personal depth, with minimal fluff. I'd describe him as being alike Lana Del Ray if I was asked, but I'll leave the scene before her fans get their rakes up",
     "Royal Blood": "perhaps I should give their other albums a listen, their debut is quite simple yet strong.",
-    "James Blake": "this man is in a lot of great songs, like seriously. His features are generally more consistent than his own work though, I'd say."
+    "James Blake": "this man is in a lot of great songs, like seriously. His features are generally more consistent than his own work though, I'd say.",
+    "Kendrick Lamar": "might be my favorite off of the genre"
   },
   "artist_assets": {
     "Metric": {
@@ -484,6 +485,12 @@
       "alt": "Yeah Yeah Yeahs artist image",
       "source": "deezer",
       "source_url": "https://cdn-images.dzcdn.net/images/artist/ed15ccc9eb592fd5452c4fba244c58c3/1000x1000-000000-80-0-0.jpg"
+    },
+    "The Black Keys": {
+      "image_file": "the-black-keys.jpg",
+      "alt": "The Black Keys artist image",
+      "source": "deezer",
+      "source_url": "https://cdn-images.dzcdn.net/images/artist/3b27055c39125c3e3133a595990e86a1/1000x1000-000000-80-0-0.jpg"
     }
   },
   "album_notes": {
@@ -498,6 +505,12 @@
     },
     "James Blake": {
       "Assume Form (Deluxe)": "half of this album is really good and coherent and the other half is dull and much weaker."
+    },
+    "The Black Keys": {
+      "Turn Blue": "I wish they did more of whatever this was. Yeah it combines cosmic sounds, melancholia, and many misses into a single album but some of these songs are just wonderful."
+    },
+    "Kendrick Lamar": {
+      "GNX": "very fitting of its color scheme, just a cool and gray album"
     }
   }
 }
