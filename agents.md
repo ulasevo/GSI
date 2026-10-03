@@ -71,6 +71,7 @@ The likely post-1.0 refactor will:
 
 ## Current priority
 
-First audit the repository and reconcile it with `PROJECT_STATE.md`.
-
-Do not immediately refactor or redesign.
+Focus on Horizon 2 (Authoring Workflow & Archive Expansion):
+- Polish mobile/LAN authoring reliability and phone-friendly curation.
+- Author new entries and expand the song catalogue.
+- Refer to `ROADMAP.md` for active horizons.
