@@ -151,12 +151,18 @@ venv.bak/
 scratch/
 audit/backups/
 
-# Local recommendation intake; keep pending submissions out of source control.
-submissions/inbox/*.json
-submissions/drafts/*.md
-submissions/drafts/*.json
-# Local source snapshots are recoverability data, not public site content.
-submissions/snapshots/*
+# Local recommendation intake and authoring snapshots; keep pending submissions out of source control.
+submissions/
+archive/
+*.zip
+*.tar.gz
+*.mp4
+*.mov
+.Rhistory
+overnight.audit.notes.md
+*.token
+.env*
+audit/*.json
 
 # mypy
 .mypy_cache/
