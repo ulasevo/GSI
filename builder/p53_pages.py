@@ -62,6 +62,9 @@ def build_p53_page(
         f'<a class="artist-link" href="../artists/{artist_slug}.html">{html.escape(item["artist"])}</a>'
         if has_artist_room else html.escape(item["artist"])
     )
+    about_text = (config.get("p53_about") or "").strip()
+    transmission_note = str((config.get("p53_transmission_notes") or {}).get(item["slug"], "")).strip()
+    cover_src = f'../covers/{item["cover_file"]}' if item.get("cover_file") else ""
     p53_context_json = json.dumps({
         "filterLabels": {key: settings.get("label", key) for key, settings in config.get("filters", {}).items()},
         "expectedArtistRoute": slugify(item["artist"]),
@@ -70,6 +73,11 @@ def build_p53_page(
         "shareTitle": f"Radio P53 — {item['track']}",
         "accent": str(p53_palette.get("primary") or item.get("accent") or "#ff65ad"),
         "signalLabel": signal_label,
+        "track": item["track"],
+        "album": item["album"],
+        "slug": item["slug"],
+        "coverSrc": cover_src,
+        "transmissionNote": transmission_note,
     }, ensure_ascii=False).replace("</", "<\\/")
     site_url = (config.get("site_url") or "").rstrip("/")
     p53_permalink = f"{site_url}/p53/{item['slug']}.html" if site_url else ""
@@ -84,9 +92,6 @@ def build_p53_page(
     <meta property="og:description" content="{html.escape(p53_description, quote=True)}">
     <meta property="og:image" content="{html.escape(site_url + '/covers/P53_cover.jpg', quote=True)}">
     <meta name="twitter:card" content="summary_large_image">'''
-    about_text = (config.get("p53_about") or "").strip()
-    transmission_note = str((config.get("p53_transmission_notes") or {}).get(item["slug"], "")).strip()
-    cover_src = f'../covers/{item["cover_file"]}' if item.get("cover_file") else ""
     art_style = html.escape(p53_style, quote=True)
     cover_html = f'<img class="signal-cover" src="{cover_src}" alt="{html.escape(item["album"], quote=True)} cover" loading="eager" fetchpriority="high" decoding="async">' if cover_src else ""
     note_html = (

@@ -24,7 +24,7 @@
                 <a id="p53-trace-artist" class="hidden" href="../index.html"></a><span id="p53-trace-artist-separator" class="trace-separator hidden">→</span>
                 <a id="p53-radio-index" href="index.html">RADIO P53</a><span class="trace-separator">→</span><span class="trace-current" aria-current="page">@@SIGNAL_LABEL@@</span>
             </nav>
-            <button class="share-transmission" id="share-transmission" type="button">SHARE</button>
+            <button class="share-transmission" id="share-transmission" type="button" aria-haspopup="dialog">SHARE</button>
         </header>
         <section class="transmission">
             <div class="protein-panel"><img src="../covers/P53_cover-runtime.webp" alt="Expressive P53 protein artwork" loading="eager" decoding="async"></div>
@@ -42,6 +42,27 @@
             @@NOTE_HTML@@
         </div>
     </main>
+    <dialog id="story-modal" class="story-modal" aria-labelledby="story-modal-title">
+        <div class="story-modal-shell">
+            <header class="story-modal-header">
+                <div class="story-modal-heading">
+                    <span class="story-modal-kicker">RADIO P53 // SIGNAL RECEIPT</span>
+                    <h2 id="story-modal-title" class="story-modal-title">STORY CARD (9:16)</h2>
+                </div>
+                <button type="button" class="story-modal-close" id="story-modal-close" aria-label="Close transmission card generator">✕</button>
+            </header>
+            <div class="story-modal-body">
+                <div class="story-card-preview-wrap">
+                    <canvas id="story-card-canvas" width="1080" height="1920" class="story-card-canvas" aria-label="Radio P53 transmission story card preview"></canvas>
+                </div>
+                <div class="story-modal-actions">
+                    <button type="button" class="story-btn story-btn-share" id="story-btn-share">SHARE TO STORY / APP ↗</button>
+                    <button type="button" class="story-btn story-btn-download" id="story-btn-download">DOWNLOAD CARD (PNG)</button>
+                    <button type="button" class="story-btn story-btn-copy" id="story-btn-copy">COPY LINK</button>
+                </div>
+            </div>
+        </div>
+    </dialog>
     <script id="p53-transmission-context" type="application/json">@@P53_CONTEXT_JSON@@</script>
     <script src="../scripts/gsi-context.js"></script>
     <script src="../scripts/p53-transmission.js"></script>

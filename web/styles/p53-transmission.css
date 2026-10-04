@@ -418,3 +418,206 @@ body.signal-auditioning .cover-frame {
         transform: scale(1);
     }
 }
+
+/* Instagram Story Card Modal */
+.story-modal {
+    position: fixed;
+    inset: 0;
+    margin: auto;
+    padding: 0;
+    width: min(460px, calc(100vw - 28px));
+    max-height: min(92vh, 840px);
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 18px 4px 18px 4px;
+    background: rgba(14, 10, 19, .96);
+    color: #faf6ee;
+    box-shadow:
+        0 24px 70px rgba(0, 0, 0, .82),
+        0 0 45px color-mix(in srgb, var(--accent, #ff65ad) 25%, transparent);
+    overflow: hidden;
+    z-index: 1000;
+}
+
+.story-modal::backdrop {
+    background: rgba(5, 3, 8, .84);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.story-modal[open] {
+    display: flex;
+    flex-direction: column;
+    animation: story-modal-in 240ms cubic-bezier(.2, .8, .2, 1);
+}
+
+@keyframes story-modal-in {
+    from {
+        opacity: 0;
+        transform: scale(.96) translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.story-modal-shell {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.story-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255, 255, 255, .1);
+    background: rgba(22, 16, 30, .6);
+}
+
+.story-modal-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.story-modal-kicker {
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .16em;
+    color: var(--accent, #ff65ad);
+}
+
+.story-modal-title {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 900;
+    letter-spacing: .1em;
+    color: #fff;
+}
+
+.story-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, .2);
+    border-radius: 8px 2px 8px 2px;
+    color: rgba(255, 255, 255, .7);
+    font-size: 14px;
+    font-weight: 900;
+    cursor: pointer;
+    transition: all 180ms ease;
+}
+
+.story-modal-close:hover,
+.story-modal-close:focus-visible {
+    color: #fff;
+    border-color: var(--accent, #ff65ad);
+    transform: scale(1.08);
+}
+
+.story-modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 14px 18px 18px;
+    gap: 14px;
+    overflow-y: auto;
+    min-height: 0;
+}
+
+.story-card-preview-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-height: min(50vh, 420px);
+    aspect-ratio: 9 / 16;
+    background: #08060b;
+    border: 1px solid rgba(255, 255, 255, .14);
+    border-radius: 12px 4px 12px 4px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .55);
+}
+
+.story-card-canvas {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+}
+
+.story-modal-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.story-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 11px 14px;
+    font: 900 11px/1 Arial, sans-serif;
+    letter-spacing: .12em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: transform 180ms cubic-bezier(.2, .8, .2, 1), background 180ms ease, color 180ms ease, border-color 180ms ease;
+}
+
+.story-btn:hover,
+.story-btn:focus-visible {
+    transform: translateY(-1px);
+}
+
+.story-btn-share {
+    background: var(--accent, #ff65ad);
+    color: #0d0a11;
+    border: 1px solid var(--accent, #ff65ad);
+    border-radius: 10px 2px 10px 2px;
+}
+
+.story-btn-share:hover,
+.story-btn-share:focus-visible {
+    background: #fff;
+    border-color: #fff;
+    color: #000;
+}
+
+.story-btn-download {
+    background: rgba(255, 255, 255, .06);
+    color: #faf6ee;
+    border: 1px solid rgba(255, 255, 255, .24);
+    border-radius: 10px 2px 10px 2px;
+}
+
+.story-btn-download:hover,
+.story-btn-download:focus-visible {
+    background: rgba(255, 255, 255, .14);
+    border-color: rgba(255, 255, 255, .4);
+    color: #fff;
+}
+
+.story-btn-copy {
+    background: transparent;
+    color: rgba(255, 255, 255, .64);
+    border: 1px dashed rgba(255, 255, 255, .2);
+    border-radius: 10px 2px 10px 2px;
+}
+
+.story-btn-copy:hover,
+.story-btn-copy:focus-visible {
+    color: #fff;
+    border-color: var(--accent, #ff65ad);
+    background: rgba(255, 255, 255, .04);
+}
