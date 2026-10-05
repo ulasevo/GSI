@@ -65,18 +65,37 @@ def build_p53_page(
     about_text = (config.get("p53_about") or "").strip()
     transmission_note = str((config.get("p53_transmission_notes") or {}).get(item["slug"], "")).strip()
     cover_src = f'../covers/{item["cover_file"]}' if item.get("cover_file") else ""
+    track_cover_file = item.get("cover_file")
+    track_cover_path = base / "covers" / track_cover_file if track_cover_file else None
+    track_palette = (
+        artwork_palette(track_cover_path, fallback=item.get("accent") or "#ff65ad")
+        if track_cover_path and track_cover_path.is_file()
+        else {"primary": item.get("accent") or "#ff65ad", "secondary": "#8a8292", "glow": "#6d6475", "field": "#120c18"}
+    )
+    track_accent = str(item.get("accent") or track_palette.get("primary") or "#ff65ad")
+    p53_accent = str(p53_palette.get("primary") or "#ff65ad")
     p53_context_json = json.dumps({
         "filterLabels": {key: settings.get("label", key) for key, settings in config.get("filters", {}).items()},
         "expectedArtistRoute": slugify(item["artist"]),
         "artistName": item["artist"],
         "hasArtistRoom": has_artist_room,
         "shareTitle": f"Radio P53 — {item['track']}",
-        "accent": str(p53_palette.get("primary") or item.get("accent") or "#ff65ad"),
+        "accent": track_accent,
+        "trackAccent": track_accent,
+        "p53Accent": p53_accent,
+        "cyanAccent": "#35c9e9",
+        "trackPalette": {
+            "primary": track_palette.get("primary", track_accent),
+            "secondary": track_palette.get("secondary", "#8a8292"),
+            "glow": track_palette.get("glow", "#6d6475"),
+            "field": track_palette.get("field", "#120c18"),
+        },
         "signalLabel": signal_label,
         "track": item["track"],
         "album": item["album"],
         "slug": item["slug"],
         "coverSrc": cover_src,
+        "p53CoverSrc": "../covers/P53_cover-runtime.webp",
         "transmissionNote": transmission_note,
     }, ensure_ascii=False).replace("</", "<\\/")
     site_url = (config.get("site_url") or "").rstrip("/")

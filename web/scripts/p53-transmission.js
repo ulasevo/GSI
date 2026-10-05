@@ -107,6 +107,20 @@
     ctx.closePath();
   }
 
+  function drawAsymmRoundRect(ctx, x, y, width, height, rTL, rTR, rBR, rBL) {
+    ctx.beginPath();
+    ctx.moveTo(x + rTL, y);
+    ctx.lineTo(x + width - rTR, y);
+    ctx.arcTo(x + width, y, x + width, y + rTR, rTR);
+    ctx.lineTo(x + width, y + height - rBR);
+    ctx.arcTo(x + width, y + height, x + width - rBR, y + height, rBR);
+    ctx.lineTo(x + rBL, y + height);
+    ctx.arcTo(x, y + height, x, y + height - rBL, rBL);
+    ctx.lineTo(x, y + rTL);
+    ctx.arcTo(x, y, x + rTL, y, rTL);
+    ctx.closePath();
+  }
+
   function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
     const words = (text || "").split(/\s+/);
     let line = "";
@@ -141,7 +155,8 @@
 
   async function loadCoverImage(src) {
     if (!src) return null;
-    const existing = document.querySelector(".signal-cover");
+    const existing = document.querySelector(`.signal-cover[src*="${src.split('/').pop()}"]`) ||
+      (src.includes("P53_cover") ? document.querySelector(".protein-panel img") : document.querySelector(".signal-cover"));
     if (existing && existing.complete && existing.naturalWidth > 0) {
       return existing;
     }
@@ -159,7 +174,14 @@
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    const accent = context.accent || "#ff65ad";
+    const trackAccent = context.trackAccent || context.accent || "#ff65ad";
+    const p53Accent = context.p53Accent || "#ff65ad";
+    const cyanAccent = context.cyanAccent || "#35c9e9";
+    const trackPalette = context.trackPalette || {};
+    const primaryColor = trackPalette.primary || trackAccent;
+    const glowColor = trackPalette.glow || trackAccent;
+    const fieldColor = trackPalette.field || "#0c0812";
+
     const trackTitle = (context.track || "SIGNAL").trim();
     const artist = (artistName || context.artistName || "GSI ARCHIVE").trim();
     const album = (context.album || "").trim();
@@ -167,229 +189,301 @@
     const transmissionNote = (context.transmissionNote || "").trim();
     const slug = (context.slug || "signal").trim();
 
-    // 1. Background Obsidian Gradient
+    // 1. Base Atmospheric Obsidian Gradient (tinted with track field color)
     const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
-    bgGrad.addColorStop(0, "#09060d");
-    bgGrad.addColorStop(0.48, "#140c1a");
-    bgGrad.addColorStop(1, "#070509");
+    bgGrad.addColorStop(0, fieldColor);
+    bgGrad.addColorStop(0.32, "#130a1b");
+    bgGrad.addColorStop(0.78, "#070409");
+    bgGrad.addColorStop(1, "#040206");
     ctx.fillStyle = bgGrad;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    // 2. Ambient Chromatic Spheres
-    const auraAccent = ctx.createRadialGradient(540, 640, 40, 540, 640, 680);
-    auraAccent.addColorStop(0, hexToRgba(accent, 0.38));
-    auraAccent.addColorStop(0.65, hexToRgba(accent, 0.1));
-    auraAccent.addColorStop(1, "transparent");
-    ctx.fillStyle = auraAccent;
+    // 2. Expressive P53 Protein Artwork Fusion Layer
+    const p53Img = await loadCoverImage(context.p53CoverSrc || "../covers/P53_cover-runtime.webp");
+    if (p53Img) {
+      ctx.save();
+      ctx.globalAlpha = 0.28;
+      ctx.drawImage(p53Img, -50, -20, 1180, 940);
+      ctx.restore();
+
+      // Atmospheric gradient fade over protein art to merge into the dark room
+      const fadeGrad = ctx.createLinearGradient(0, 80, 0, 960);
+      fadeGrad.addColorStop(0, "transparent");
+      fadeGrad.addColorStop(0.6, "rgba(9, 6, 13, 0.62)");
+      fadeGrad.addColorStop(1, "rgba(7, 4, 9, 0.98)");
+      ctx.fillStyle = fadeGrad;
+      ctx.fillRect(0, 0, 1080, 960);
+    }
+
+    // 3. Colored Ambient Lighting Halos
+    // Hero artwork center glow (using track's primary & glow color)
+    const heroGlow = ctx.createRadialGradient(540, 680, 60, 540, 680, 640);
+    heroGlow.addColorStop(0, hexToRgba(primaryColor, 0.44));
+    heroGlow.addColorStop(0.52, hexToRgba(glowColor, 0.16));
+    heroGlow.addColorStop(1, "transparent");
+    ctx.fillStyle = heroGlow;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    const auraCyan = ctx.createRadialGradient(260, 1540, 20, 260, 1540, 480);
-    auraCyan.addColorStop(0, "rgba(53, 201, 233, 0.16)");
-    auraCyan.addColorStop(0.7, "rgba(53, 201, 233, 0.03)");
-    auraCyan.addColorStop(1, "transparent");
-    ctx.fillStyle = auraCyan;
+    // Bottom cyan counter-glow (P53 signature electric hue)
+    const cyanGlow = ctx.createRadialGradient(180, 1500, 20, 180, 1500, 480);
+    cyanGlow.addColorStop(0, "rgba(53, 201, 233, 0.15)");
+    cyanGlow.addColorStop(1, "transparent");
+    ctx.fillStyle = cyanGlow;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    // 3. Cybernetic Scanlines
-    ctx.fillStyle = "rgba(255, 255, 255, 0.018)";
-    for (let y = 0; y < 1920; y += 12) {
+    // 4. Subtle Scanlines
+    ctx.fillStyle = "rgba(255, 255, 255, 0.016)";
+    for (let y = 0; y < 1920; y += 14) {
       ctx.fillRect(0, y, 1080, 1.5);
     }
 
-    // 4. Perimeter Frame & Corner Crosshairs
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
-    ctx.lineWidth = 1;
-    ctx.strokeRect(56, 56, 968, 1808);
-
-    // Corner bracket marks
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 3;
-    const cornerSize = 28;
-    // Top-Left
+    // 5. Minimalist Corner Alignment Ticks (within Story safe bounds)
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
+    ctx.lineWidth = 1.5;
+    const tickLen = 18;
+    // Top-Left (72, 140)
     ctx.beginPath();
-    ctx.moveTo(56, 56 + cornerSize);
-    ctx.lineTo(56, 56);
-    ctx.lineTo(56 + cornerSize, 56);
+    ctx.moveTo(72, 140 + tickLen);
+    ctx.lineTo(72, 140);
+    ctx.lineTo(72 + tickLen, 140);
     ctx.stroke();
-    // Top-Right
+    // Top-Right (1008, 140)
     ctx.beginPath();
-    ctx.moveTo(1024 - cornerSize, 56);
-    ctx.lineTo(1024, 56);
-    ctx.lineTo(1024, 56 + cornerSize);
+    ctx.moveTo(1008 - tickLen, 140);
+    ctx.lineTo(1008, 140);
+    ctx.lineTo(1008, 140 + tickLen);
     ctx.stroke();
-    // Bottom-Left
+    // Bottom-Left (72, 1780)
     ctx.beginPath();
-    ctx.moveTo(56, 1864 - cornerSize);
-    ctx.lineTo(56, 1864);
-    ctx.lineTo(56 + cornerSize, 1864);
+    ctx.moveTo(72, 1780 - tickLen);
+    ctx.lineTo(72, 1780);
+    ctx.lineTo(72 + tickLen, 1780);
     ctx.stroke();
-    // Bottom-Right
+    // Bottom-Right (1008, 1780)
     ctx.beginPath();
-    ctx.moveTo(1024 - cornerSize, 1864);
-    ctx.lineTo(1024, 1864);
-    ctx.lineTo(1024, 1864 - cornerSize);
+    ctx.moveTo(1008 - tickLen, 1780);
+    ctx.lineTo(1008, 1780);
+    ctx.lineTo(1008, 1780 - tickLen);
     ctx.stroke();
 
-    // 5. Header Area
-    ctx.fillStyle = hexToRgba(accent, 0.95);
-    ctx.font = "900 20px Arial, sans-serif";
+    // 6. Header: Pure Radio P53 Identity
+    ctx.font = "900 18px Arial, sans-serif";
+    ctx.fillStyle = "rgba(250, 246, 238, 0.65)";
     ctx.textAlign = "left";
-    ctx.fillText("GENOME STABILITY INDUCERS // ARCHIVE", 96, 136);
+    ctx.fillText("GENOME STABILITY INDUCERS", 96, 156);
 
-    ctx.font = "950 68px Impact, Haettenschweiler, 'Arial Black', sans-serif";
+    // Chromatic Aberration Title
+    ctx.font = "950 64px Impact, Haettenschweiler, 'Arial Black', sans-serif";
+    // Cyan shift
+    ctx.fillStyle = cyanAccent;
+    ctx.fillText("RADIO P53", 96 + 4, 226);
+    // Magenta shift
+    ctx.fillStyle = p53Accent;
+    ctx.fillText("RADIO P53", 96 - 3, 226);
+    // Foreground crisp white
     ctx.fillStyle = "#ffffff";
-    ctx.fillText("RADIO P53", 96, 210);
+    ctx.fillText("RADIO P53", 96, 226);
 
-    // Status Pill
+    // Status Pill (Right aligned)
     const pillText = (signalLabel === "CURRENT TRANSMISSION" ? "CURRENT SIGNAL" : "ARCHIVED SIGNAL");
-    ctx.font = "900 16px Arial, sans-serif";
-    const pillWidth = ctx.measureText(pillText).width + 48;
+    ctx.font = "900 15px Arial, sans-serif";
+    const pillWidth = ctx.measureText(pillText).width + 46;
     const pillX = 984 - pillWidth;
-    ctx.fillStyle = "rgba(255, 255, 255, 0.08)";
-    drawRoundRect(ctx, pillX, 168, pillWidth, 36, 18);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.07)";
+    drawRoundRect(ctx, pillX, 182, pillWidth, 38, 19);
     ctx.fill();
     ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    ctx.fillStyle = accent;
+    ctx.fillStyle = primaryColor;
     ctx.beginPath();
-    ctx.arc(pillX + 20, 186, 5, 0, Math.PI * 2);
+    ctx.arc(pillX + 18, 201, 5, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText(pillText, pillX + 34, 192);
+    ctx.fillStyle = "#faf6ee";
+    ctx.fillText(pillText, pillX + 32, 207);
 
-    // 6. Cover Artwork
-    const coverSize = 700;
-    const coverX = 190;
-    const coverY = 270;
-    const coverRadius = 14;
+    // 7. Center Hero Cover Art with Asymmetric Brutalist Framing
+    const coverSize = 760;
+    const coverX = 160;
+    const coverY = 280;
+    // GSI's signature asymmetrical brutalist corners (18px 56px 18px 56px)
+    const rTL = 18, rTR = 56, rBR = 18, rBL = 56;
 
-    // Offset chromatic shadows
-    ctx.fillStyle = "rgba(53, 201, 233, 0.42)";
-    drawRoundRect(ctx, coverX + 10, coverY + 10, coverSize, coverSize, coverRadius);
+    // Offset Chromatic Shadows
+    ctx.fillStyle = "rgba(53, 201, 233, 0.44)";
+    drawAsymmRoundRect(ctx, coverX + 12, coverY + 12, coverSize, coverSize, rTL, rTR, rBR, rBL);
     ctx.fill();
 
-    ctx.fillStyle = hexToRgba(accent, 0.38);
-    drawRoundRect(ctx, coverX - 8, coverY - 6, coverSize, coverSize, coverRadius);
+    ctx.fillStyle = hexToRgba(primaryColor, 0.42);
+    drawAsymmRoundRect(ctx, coverX - 8, coverY - 6, coverSize, coverSize, rTL, rTR, rBR, rBL);
     ctx.fill();
 
-    // Load and draw cover image
+    // Draw Cover Art
     const coverImg = await loadCoverImage(context.coverSrc);
     if (coverImg) {
       ctx.save();
-      drawRoundRect(ctx, coverX, coverY, coverSize, coverSize, coverRadius);
+      drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, rTL, rTR, rBR, rBL);
       ctx.clip();
       ctx.drawImage(coverImg, coverX, coverY, coverSize, coverSize);
       ctx.restore();
     } else {
-      ctx.fillStyle = "#191220";
-      drawRoundRect(ctx, coverX, coverY, coverSize, coverSize, coverRadius);
+      ctx.fillStyle = "#16111f";
+      drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, rTL, rTR, rBR, rBL);
       ctx.fill();
       ctx.font = "950 160px Impact, sans-serif";
       ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
       ctx.textAlign = "center";
-      ctx.fillText("P53", 540, 680);
+      ctx.fillText("P53", 540, 700);
       ctx.textAlign = "left";
     }
 
-    // Rim stroke
-    ctx.strokeStyle = accent;
-    ctx.lineWidth = 3;
-    drawRoundRect(ctx, coverX, coverY, coverSize, coverSize, coverRadius);
+    // Outer Rim Stroke
+    ctx.strokeStyle = primaryColor;
+    ctx.lineWidth = 2.5;
+    drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, rTL, rTR, rBR, rBL);
     ctx.stroke();
 
-    // 7. Track & Artist Typography
-    let textY = 1045;
+    // 8. Track, Artist & Album Core
+    let textY = 1115;
     ctx.textAlign = "left";
 
-    // Adaptive font size for Track Title
-    let trackFontSize = 66;
+    // Dynamic Adaptive Title Sizing
+    let trackFontSize = 72;
     ctx.font = `950 ${trackFontSize}px Impact, Haettenschweiler, 'Arial Black', sans-serif`;
-    while (ctx.measureText(trackTitle).width > 888 && trackFontSize > 44) {
+    while (ctx.measureText(trackTitle).width > 860 && trackFontSize > 46) {
       trackFontSize -= 4;
       ctx.font = `950 ${trackFontSize}px Impact, Haettenschweiler, 'Arial Black', sans-serif`;
     }
     ctx.fillStyle = "#ffffff";
-    const heightDrawn = wrapText(ctx, trackTitle, 96, textY, 888, trackFontSize * 1.15, 2);
+    const heightDrawn = wrapText(ctx, trackTitle, 160, textY, 760, trackFontSize * 1.12, 2);
     textY += (heightDrawn > 0 ? heightDrawn : trackFontSize) + 24;
 
-    // Artist
+    // Artist in vibrant cover accent
     ctx.font = "900 38px Arial, sans-serif";
-    ctx.fillStyle = accent;
-    ctx.fillText(artist.toUpperCase(), 96, textY);
+    ctx.fillStyle = primaryColor;
+    ctx.fillText(artist.toUpperCase(), 160, textY);
     textY += 46;
 
-    // Album
+    // Album in soft muted italic
     if (album) {
-      ctx.font = "italic 28px Arial, sans-serif";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.68)";
-      ctx.fillText(album, 96, textY);
-      textY += 48;
+      ctx.font = "italic 26px Arial, sans-serif";
+      ctx.fillStyle = "rgba(250, 246, 238, 0.68)";
+      ctx.fillText(album, 160, textY);
+      textY += 44;
     }
 
-    // 8. Transmission Note Box
-    const boxY = Math.max(textY + 10, 1260);
-    const boxHeight = 220;
-    ctx.fillStyle = "rgba(255, 255, 255, 0.045)";
-    drawRoundRect(ctx, 96, boxY, 888, boxHeight, 10);
+    // 9. Soulful Transmission Thought / Note (Expressive Quote, zero clinical boilerplate)
+    const quoteY = Math.max(textY + 12, 1310);
+    const quoteBoxW = 760;
+    const noteText = transmissionNote || "An essential signal held in genome stability. Listening shrine available on GSI.";
+
+    // Measure quote text height
+    ctx.font = "500 27px Arial, sans-serif";
+    const lines = [];
+    const words = noteText.split(/\s+/);
+    let curLine = "";
+    for (const w of words) {
+      const test = curLine ? `${curLine} ${w}` : w;
+      if (ctx.measureText(test).width > quoteBoxW - 84 && curLine) {
+        lines.push(curLine);
+        curLine = w;
+        if (lines.length >= 2) break;
+      } else {
+        curLine = test;
+      }
+    }
+    if (curLine && lines.length < 3) lines.push(curLine);
+    const quoteBoxH = Math.max(104, lines.length * 40 + 36);
+
+    // Frosted Quote Card
+    ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+    drawRoundRect(ctx, 160, quoteY, quoteBoxW, quoteBoxH, 12);
     ctx.fill();
 
     // Accent line on left edge
-    ctx.fillStyle = accent;
-    ctx.fillRect(96, boxY, 6, boxHeight);
+    ctx.fillStyle = primaryColor;
+    drawRoundRect(ctx, 160, quoteY, 5, quoteBoxH, 2.5);
+    ctx.fill();
 
-    ctx.font = "900 18px monospace, Arial, sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.48)";
-    ctx.fillText("TRANSMISSION LOG // INTERCEPT", 124, boxY + 38);
+    // Expressive quote mark
+    ctx.font = "950 50px Impact, sans-serif";
+    ctx.fillStyle = hexToRgba(primaryColor, 0.5);
+    ctx.fillText("“", 184, quoteY + 48);
 
-    const noteBody = transmissionNote
-      ? `“${transmissionNote}”`
-      : "Induced audio signal archived in the GSI core. Lossless listening counterpart available.";
-    ctx.font = "500 24px Arial, sans-serif";
+    // Quote body
+    ctx.font = "500 26px Arial, sans-serif";
     ctx.fillStyle = "#faf6ee";
-    wrapText(ctx, noteBody, 124, boxY + 84, 820, 36, 3);
-
-    // 9. Waveform Barcode Graphic
-    const barCount = 44;
-    const barWidth = 9;
-    const totalWaveWidth = 888;
-    const barSpacing = (totalWaveWidth - (barCount * barWidth)) / (barCount - 1);
-    const waveBaseY = 1600;
-
-    for (let i = 0; i < barCount; i++) {
-      const charCode = trackTitle.charCodeAt(i % trackTitle.length) || 64;
-      const barH = 14 + Math.abs(Math.sin((i + 1) * 0.45 + (charCode % 7)) * 58);
-      const bx = 96 + i * (barWidth + barSpacing);
-      const by = waveBaseY - (barH / 2);
-
-      if (i % 6 === 0) {
-        ctx.fillStyle = accent;
-      } else if (i % 5 === 0) {
-        ctx.fillStyle = "#35c9e9";
-      } else {
-        ctx.fillStyle = "rgba(255, 255, 255, 0.35)";
-      }
-      drawRoundRect(ctx, bx, by, barWidth, barH, 2);
-      ctx.fill();
+    for (let i = 0; i < lines.length; i++) {
+      ctx.fillText(lines[i], 224, quoteY + 42 + (i * 38));
     }
 
-    // 10. Footer Archive Stamp & Link
+    // 10. Designated Instagram Link Sticker Zone
+    const dockY = 1515;
+    const dockH = 88;
+    const dockW = 760;
+    const dockX = 160;
+
+    // Interactive Pill Container (Exact shape & target for Instagram's Link Sticker)
+    ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
+    drawRoundRect(ctx, dockX, dockY, dockW, dockH, 44);
+    ctx.fill();
+
+    ctx.strokeStyle = hexToRgba(primaryColor, 0.72);
+    ctx.lineWidth = 2;
+    ctx.setLineDash([8, 6]);
+    drawRoundRect(ctx, dockX, dockY, dockW, dockH, 44);
+    ctx.stroke();
+    ctx.setLineDash([]); // reset
+
+    // Left indicator chip
+    ctx.fillStyle = primaryColor;
+    ctx.beginPath();
+    ctx.arc(dockX + 44, dockY + 44, 16, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#070509";
+    ctx.font = "900 16px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("♫", dockX + 44, dockY + 49);
+
+    // Center Call-To-Action Text
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 24px Arial, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("TAP TO LISTEN // GSI.FM", 540, dockY + 52);
+
+    // Right Arrow Badge
+    ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
+    ctx.beginPath();
+    ctx.arc(dockX + dockW - 44, dockY + 44, 20, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.font = "900 22px Arial, sans-serif";
+    ctx.fillText("↗", dockX + dockW - 44, dockY + 51);
+
+    // Instructional guidance for the creator underneath the dock
+    ctx.font = "900 13px monospace, Arial, sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.40)";
+    ctx.textAlign = "center";
+    ctx.fillText("[ PLACE INSTAGRAM LINK STICKER HERE ]", 540, dockY + dockH + 24);
+    ctx.textAlign = "left";
+
+    // 11. Bottom Archival Rule & Watermark
     ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(96, 1720);
-    ctx.lineTo(984, 1720);
+    ctx.moveTo(96, 1710);
+    ctx.lineTo(984, 1710);
     ctx.stroke();
 
-    ctx.font = "900 19px monospace, Arial, sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.45)";
-    ctx.fillText("GSI // SIGNAL ID: " + slug.toUpperCase(), 96, 1775);
+    ctx.font = "900 18px monospace, Arial, sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.42)";
+    ctx.fillText("RADIO P53 // GENOME STABILITY INDUCERS", 96, 1756);
 
     ctx.textAlign = "right";
-    ctx.fillStyle = hexToRgba(accent, 0.9);
-    ctx.fillText("GSI.FM/P53", 984, 1775);
+    ctx.fillStyle = hexToRgba(primaryColor, 0.88);
+    ctx.fillText("/P53/" + slug.toUpperCase(), 984, 1756);
     ctx.textAlign = "left";
 
     cardRendered = true;
