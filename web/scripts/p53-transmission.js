@@ -374,102 +374,74 @@
       textY += 44;
     }
 
-    // 9. Soulful Transmission Thought / Note (Expressive Quote, zero clinical boilerplate)
-    const quoteY = Math.max(textY + 12, 1310);
-    const quoteBoxW = 760;
-    const noteText = transmissionNote || "An essential signal held in genome stability. Listening shrine available on GSI.";
+    // 9. Transmission Note (only rendered if user wrote a note)
+    if (transmissionNote) {
+      const quoteY = Math.max(textY + 14, 1310);
+      const quoteBoxW = 760;
+      ctx.font = "500 27px Arial, sans-serif";
+      const lines = [];
+      const words = transmissionNote.split(/\s+/);
+      let curLine = "";
+      for (const w of words) {
+        const test = curLine ? `${curLine} ${w}` : w;
+        if (ctx.measureText(test).width > quoteBoxW - 84 && curLine) {
+          lines.push(curLine);
+          curLine = w;
+          if (lines.length >= 2) break;
+        } else {
+          curLine = test;
+        }
+      }
+      if (curLine && lines.length < 3) lines.push(curLine);
+      const quoteBoxH = Math.max(100, lines.length * 40 + 36);
 
-    // Measure quote text height
-    ctx.font = "500 27px Arial, sans-serif";
-    const lines = [];
-    const words = noteText.split(/\s+/);
-    let curLine = "";
-    for (const w of words) {
-      const test = curLine ? `${curLine} ${w}` : w;
-      if (ctx.measureText(test).width > quoteBoxW - 84 && curLine) {
-        lines.push(curLine);
-        curLine = w;
-        if (lines.length >= 2) break;
-      } else {
-        curLine = test;
+      // Frosted Quote Card
+      ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
+      drawRoundRect(ctx, 160, quoteY, quoteBoxW, quoteBoxH, 12);
+      ctx.fill();
+
+      // Accent line on left edge
+      ctx.fillStyle = primaryColor;
+      drawRoundRect(ctx, 160, quoteY, 5, quoteBoxH, 2.5);
+      ctx.fill();
+
+      // Expressive quote mark
+      ctx.font = "950 50px Impact, sans-serif";
+      ctx.fillStyle = hexToRgba(primaryColor, 0.5);
+      ctx.fillText("“", 184, quoteY + 48);
+
+      // Quote body
+      ctx.font = "500 26px Arial, sans-serif";
+      ctx.fillStyle = "#faf6ee";
+      for (let i = 0; i < lines.length; i++) {
+        ctx.fillText(lines[i], 224, quoteY + 42 + (i * 38));
       }
     }
-    if (curLine && lines.length < 3) lines.push(curLine);
-    const quoteBoxH = Math.max(104, lines.length * 40 + 36);
 
-    // Frosted Quote Card
-    ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
-    drawRoundRect(ctx, 160, quoteY, quoteBoxW, quoteBoxH, 12);
-    ctx.fill();
-
-    // Accent line on left edge
-    ctx.fillStyle = primaryColor;
-    drawRoundRect(ctx, 160, quoteY, 5, quoteBoxH, 2.5);
-    ctx.fill();
-
-    // Expressive quote mark
-    ctx.font = "950 50px Impact, sans-serif";
-    ctx.fillStyle = hexToRgba(primaryColor, 0.5);
-    ctx.fillText("“", 184, quoteY + 48);
-
-    // Quote body
-    ctx.font = "500 26px Arial, sans-serif";
-    ctx.fillStyle = "#faf6ee";
-    for (let i = 0; i < lines.length; i++) {
-      ctx.fillText(lines[i], 224, quoteY + 42 + (i * 38));
-    }
-
-    // 10. Designated Instagram Link Sticker Zone
-    const dockY = 1515;
-    const dockH = 88;
+    // 10. Reserved link zone: clean pill dock for the user's Instagram link sticker
+    const dockY = transmissionNote ? 1530 : 1480;
+    const dockH = 80;
     const dockW = 760;
     const dockX = 160;
 
-    // Interactive Pill Container (Exact shape & target for Instagram's Link Sticker)
-    ctx.fillStyle = "rgba(255, 255, 255, 0.06)";
-    drawRoundRect(ctx, dockX, dockY, dockW, dockH, 44);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
+    drawRoundRect(ctx, dockX, dockY, dockW, dockH, 40);
     ctx.fill();
 
-    ctx.strokeStyle = hexToRgba(primaryColor, 0.72);
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = hexToRgba(primaryColor, 0.6);
+    ctx.lineWidth = 1.5;
     ctx.setLineDash([8, 6]);
-    drawRoundRect(ctx, dockX, dockY, dockW, dockH, 44);
+    drawRoundRect(ctx, dockX, dockY, dockW, dockH, 40);
     ctx.stroke();
-    ctx.setLineDash([]); // reset
+    ctx.setLineDash([]);
 
-    // Left indicator chip
-    ctx.fillStyle = primaryColor;
-    ctx.beginPath();
-    ctx.arc(dockX + 44, dockY + 44, 16, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#070509";
-    ctx.font = "900 16px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("♫", dockX + 44, dockY + 49);
-
-    // Center Call-To-Action Text
-    ctx.fillStyle = "#ffffff";
-    ctx.font = "900 24px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("TAP TO LISTEN // GSI.FM", 540, dockY + 52);
-
-    // Right Arrow Badge
-    ctx.fillStyle = "rgba(255, 255, 255, 0.16)";
-    ctx.beginPath();
-    ctx.arc(dockX + dockW - 44, dockY + 44, 20, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#ffffff";
+    ctx.fillStyle = "rgba(250, 246, 238, 0.85)";
     ctx.font = "900 22px Arial, sans-serif";
-    ctx.fillText("↗", dockX + dockW - 44, dockY + 51);
-
-    // Instructional guidance for the creator underneath the dock
-    ctx.font = "900 13px monospace, Arial, sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.40)";
     ctx.textAlign = "center";
-    ctx.fillText("[ PLACE INSTAGRAM LINK STICKER HERE ]", 540, dockY + dockH + 24);
+    ctx.fillText("LISTEN TO TRANSMISSION ↗", 540, dockY + 49);
     ctx.textAlign = "left";
 
-    // 11. Bottom Archival Rule & Watermark
+    // 11. Bottom Archival Rule
     ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
     ctx.lineWidth = 1;
     ctx.beginPath();
@@ -477,13 +449,13 @@
     ctx.lineTo(984, 1710);
     ctx.stroke();
 
-    ctx.font = "900 18px monospace, Arial, sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.42)";
-    ctx.fillText("RADIO P53 // GENOME STABILITY INDUCERS", 96, 1756);
+    ctx.font = "900 16px Arial, sans-serif";
+    ctx.fillStyle = "rgba(255, 255, 255, 0.38)";
+    ctx.fillText("RADIO P53", 96, 1754);
 
     ctx.textAlign = "right";
-    ctx.fillStyle = hexToRgba(primaryColor, 0.88);
-    ctx.fillText("/P53/" + slug.toUpperCase(), 984, 1756);
+    ctx.fillStyle = hexToRgba(primaryColor, 0.85);
+    ctx.fillText(slug.toUpperCase(), 984, 1754);
     ctx.textAlign = "left";
 
     cardRendered = true;

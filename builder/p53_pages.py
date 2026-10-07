@@ -80,7 +80,7 @@ def build_p53_page(
         "artistName": item["artist"],
         "hasArtistRoom": has_artist_room,
         "shareTitle": f"Radio P53 — {item['track']}",
-        "accent": track_accent,
+        "accent": str(p53_palette.get("primary") or item.get("accent") or "#ff65ad"),
         "trackAccent": track_accent,
         "p53Accent": p53_accent,
         "cyanAccent": "#35c9e9",
