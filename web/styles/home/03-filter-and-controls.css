@@ -1,62 +1,125 @@
 /* Filter descriptions, playlist rail, and layout/format controls. */
         .filter-panel {
             margin-bottom: 12px;
-            padding: clamp(14px, 2vw, 22px);
-            border: 1px solid rgba(255,255,255,.12);
-            border-radius: 28px 8px 28px 8px;
-            background: rgba(12,12,14,.82);
+            padding: 12px 14px;
+            border: 1px solid rgba(255,255,255,.1);
+            border-radius: 18px;
+            background: rgba(14,14,18,.78);
+        }
+        .filter-panel-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 0 0 9px 2px;
+        }
+        .filter-guide-label {
+            color: rgba(255, 255, 255, .58);
+            font-family: var(--gsi-ui-font, "Space Grotesk", sans-serif);
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: .1em;
+            text-transform: uppercase;
         }
         .filter-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 5px;
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 7px;
             margin-bottom: 0;
         }
         .filter-btn {
-            flex: 1 1 112px;
-            min-height: 52px;
-            padding: 12px 16px;
-            border-radius: 20px 7px 20px 7px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            width: 100%;
+            min-width: 0;
+            height: 42px;
+            min-height: 42px;
+            padding: 0 12px;
+            border-radius: 11px;
+            border: 1px solid color-mix(in srgb, var(--filter-color, #ffffff), rgba(255, 255, 255, .24) 76%);
+            background:
+                linear-gradient(135deg, color-mix(in srgb, var(--filter-color, #ffffff), transparent 90%), rgba(22, 22, 28, .86));
+            color: #f0ede6;
+            font-family: var(--gsi-ui-font, "Space Grotesk", sans-serif);
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+            text-transform: none;
+            text-align: left;
             transform: none;
             box-shadow: none;
             transition:
-                flex-grow 200ms cubic-bezier(.2,.8,.2,1),
-                border-radius 200ms cubic-bezier(.2,.8,.2,1),
-                transform 180ms cubic-bezier(.2,.8,.2,1),
+                border-color 180ms ease,
+                transform 160ms cubic-bezier(.2,.8,.2,1),
                 color 160ms ease,
-                background 180ms ease;
+                background 180ms ease,
+                box-shadow 180ms ease;
         }
-        .filter-btn span {
-            display: inline-block;
-            transition: transform 200ms cubic-bezier(.2,.8,.2,1);
+        .filter-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 999px;
+            flex: 0 0 8px;
+            background: var(--filter-color, #ffffff);
+            box-shadow: 0 0 8px color-mix(in srgb, var(--filter-color, #ffffff), transparent 40%);
+        }
+        .filter-btn.filter-ulas .filter-dot {
+            display: none;
+        }
+        .filter-icon {
+            flex: 0 0 13px;
+            width: 13px;
+            height: 13px;
+            color: var(--filter-color, #ff6b35);
+        }
+        .filter-name {
+            min-width: 0;
+            flex: 1 1 auto;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        .filter-pill-count {
+            flex-shrink: 0;
+            color: rgba(255, 255, 255, .44);
+            font-size: 11px;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
         }
         @media (hover: hover) {
             .filter-btn:hover {
-                transform: translateY(-3px);
-                border-radius: 7px 20px 7px 20px;
+                transform: translateY(-1.5px);
+                border-color: color-mix(in srgb, var(--filter-color, #ffffff), white 24%);
+                background: linear-gradient(135deg, color-mix(in srgb, var(--filter-color, #ffffff), transparent 74%), rgba(24, 24, 31, .94));
             }
         }
         .filter-btn:focus-visible {
-            transform: translateY(-3px);
-            border-radius: 7px 20px 7px 20px;
+            transform: translateY(-1.5px);
+            border-color: color-mix(in srgb, var(--filter-color, #ffffff), white 32%);
         }
         .filter-btn:active {
-            transform: scale(0.96) translateY(1px);
+            transform: scale(0.98);
             transition: transform 80ms ease-out;
         }
         .filter-btn.active {
-            flex-grow: 2.25;
-            border-radius: 32px 8px 32px 8px;
-            transform: translateY(-2px);
+            border-color: color-mix(in srgb, var(--filter-color, #ffffff), white 42%);
+            background: linear-gradient(135deg, color-mix(in srgb, var(--filter-color, #ffffff), transparent 56%), rgba(22, 22, 29, .96));
+            color: #ffffff;
+            box-shadow: 0 0 20px color-mix(in srgb, var(--filter-color, #ffffff), transparent 64%);
         }
-        .filter-btn.active span {
-            transform: scale(1.08);
-            letter-spacing: .14em;
+        .filter-btn.active .filter-pill-count {
+            color: rgba(255, 255, 255, .86);
         }
-        .filter-btn.filter-p53 {
-            color: #160d18;
+        .filter-btn.filter-p53 .filter-dot {
+            background: linear-gradient(135deg, #ff4fa3, #35c9e9);
+            box-shadow: 0 0 8px rgba(255, 79, 163, .45);
+        }
+        .filter-btn.filter-p53:hover,
+        .filter-btn.filter-p53:focus-visible,
+        .filter-btn.filter-p53.active {
             border-color: #ff78b9;
-            background: linear-gradient(110deg, #ff64aa, #57d6e9);
+            background: linear-gradient(120deg, rgba(255, 79, 163, .28), rgba(53, 201, 233, .24) 70%, rgba(22, 22, 29, .95));
+            box-shadow: 0 0 22px rgba(255, 79, 163, .24);
         }
         .filter-description {
             position: relative;
@@ -225,10 +288,12 @@
             letter-spacing: .2em;
         }
         .filter-description h2 {
-            margin: 0 0 14px;
-            font-size: clamp(44px, 8vw, 104px);
-            line-height: .82;
-            letter-spacing: -.055em;
+            margin: 0 0 10px;
+            font-family: var(--gsi-display-font, "Space Grotesk", sans-serif);
+            font-size: clamp(36px, 6vw, 72px);
+            font-weight: 700;
+            line-height: .9;
+            letter-spacing: -.04em;
             text-wrap: balance;
             overflow-wrap: anywhere;
         }
@@ -431,16 +496,28 @@
             letter-spacing: 0.08em;
             text-align: left;
         }
-        .view-cycle-arrow,
-        .format-cycle-arrow {
-            color: color-mix(in srgb, var(--page-tint, #ff4fa3), white 38%);
-            font-size: 11px;
-            line-height: 1;
-            transition: transform 320ms cubic-bezier(.2,.8,.2,1);
+        .cycle-dots {
+            display: inline-flex;
+            align-items: center;
+            gap: 3px;
+            flex-shrink: 0;
         }
-        .view-cycle-btn:hover .view-cycle-arrow,
-        .format-cycle-btn:hover .format-cycle-arrow {
-            transform: rotate(120deg);
+        .cycle-dots span {
+            display: block;
+            width: 5px;
+            height: 5px;
+            border-radius: 999px;
+            background: color-mix(in srgb, currentColor, transparent 66%);
+            transition: width 180ms cubic-bezier(.2,.8,.2,1), background-color 180ms ease, box-shadow 180ms ease;
+        }
+        .view-cycle-btn[data-current-view="wall"] .cycle-dots span:nth-child(1),
+        .view-cycle-btn[data-current-view="gallery"] .cycle-dots span:nth-child(2),
+        .view-cycle-btn[data-current-view="poster"] .cycle-dots span:nth-child(3),
+        .format-cycle-btn[data-current-format="songs"] .cycle-dots span:nth-child(1),
+        .format-cycle-btn[data-current-format="albums"] .cycle-dots span:nth-child(2) {
+            width: 9px;
+            background: color-mix(in srgb, var(--page-tint, #ff4fa3), white 38%);
+            box-shadow: 0 0 8px color-mix(in srgb, var(--page-tint, #ff4fa3), transparent 36%);
         }
         .recommend-link .recommend-label {
             color: rgba(255, 255, 255, 0.6);

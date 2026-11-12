@@ -16,17 +16,25 @@ main {
 }
 nav {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 10px;
+  gap: 6px 10px;
+  max-width: 100%;
   padding: 13px 16px;
   border: 1px solid color-mix(in srgb, var(--art-primary, #ff4fa3), white 20%);
   border-radius: 20px 6px;
   background: rgba(13, 13, 15, .85);
   font-size: 11px;
   font-weight: 900;
+  line-height: 1.45;
   letter-spacing: .14em;
 }
+nav [hidden] {
+  display: none;
+}
 nav a {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: color-mix(in srgb, var(--art-primary, #ff4fa3), white 35%);
   text-decoration: none;
 }
@@ -34,6 +42,8 @@ nav span {
   color: rgba(255, 255, 255, .35);
 }
 nav strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
   color: rgba(255, 255, 255, .72);
   font-size: 11px;
   letter-spacing: .14em;
@@ -41,12 +51,12 @@ nav strong {
 
 /* Header & Artist Artwork Hero */
 .artist-heading {
-  padding: clamp(48px, 9vw, 100px) 0 32px;
+  padding: clamp(28px, 5vw, 56px) 0 32px;
 }
 .artist-heading > span,
 .artist-heading-copy > span {
   display: block;
-  color: color-mix(in srgb, var(--art-primary, #ff4fa3), white 28%);
+  color: color-mix(in srgb, var(--art-control, var(--art-primary, #ff4fa3)), #f8f5ef 40%);
   font-size: 10px;
   font-weight: 950;
   letter-spacing: .18em;
@@ -64,7 +74,7 @@ nav strong {
   grid-template-columns: minmax(280px, 420px) minmax(0, 1fr);
   gap: clamp(32px, 5vw, 56px);
   align-items: center;
-  padding: clamp(40px, 6vw, 72px) 0 36px;
+  padding: clamp(24px, 4vw, 52px) 0 36px;
 }
 .artist-image-header {
   position: relative;
@@ -101,10 +111,10 @@ nav strong {
   max-width: 700px;
   margin: 22px 0 0;
   padding: 18px 22px;
-  border-left: 3px solid color-mix(in srgb, var(--art-primary, #ff4fa3), white 24%);
+  border-left: 3px solid color-mix(in srgb, var(--art-control, var(--art-primary, #ff4fa3)), #f8f5ef 30%);
   border-radius: 4px 20px 20px 4px;
-  background: linear-gradient(100deg, color-mix(in srgb, var(--art-primary, #ff4fa3), transparent 90%), rgba(13, 13, 15, .5));
-  color: rgba(255, 255, 255, .82);
+  background: linear-gradient(100deg, color-mix(in srgb, var(--art-primary, #ff4fa3), #0d0d12 76%), color-mix(in srgb, var(--art-dark-surface, #17151b), transparent 12%));
+  color: rgba(255, 255, 255, .92);
   font-size: clamp(15px, 2vw, 18px);
   line-height: 1.5;
 }
@@ -134,11 +144,21 @@ nav strong {
   object-fit: cover;
   border-radius: 14px 4px 14px 4px;
 }
+.album-stack-kicker,
+.album-stack > header span {
+  display: block;
+  margin-bottom: 6px;
+  color: color-mix(in srgb, var(--accent, var(--art-control, #ff4fa3)), #f8f5ef 65%);
+  font-size: 9.5px;
+  font-weight: 950;
+  letter-spacing: .18em;
+}
 .album-stack > header h2 {
   margin: 0;
   font-size: clamp(28px, 4.5vw, 52px);
-  line-height: .9;
+  line-height: .94;
   letter-spacing: -.04em;
+  overflow-wrap: anywhere;
 }
 .album-stack > div {
   display: grid;
@@ -261,7 +281,8 @@ nav strong {
   margin: 0;
   font-size: clamp(20px, 3vw, 30px);
   font-weight: 850;
-  line-height: .96;
+  line-height: .98;
+  overflow-wrap: anywhere;
 }
 .artist-signal p {
   margin: 0;
@@ -291,10 +312,16 @@ nav strong {
   background: linear-gradient(110deg, color-mix(in srgb, var(--accent, #ff4fa3), transparent 76%), rgba(13, 13, 15, .88));
 }
 
+@media (max-width: 760px) {
+  main {
+    padding-top: calc(70px + env(safe-area-inset-top, 0px));
+  }
+}
+
 @media (max-width: 700px) {
   main {
     width: min(100% - 24px, 580px);
-    padding-top: 14px;
+    padding-top: calc(70px + env(safe-area-inset-top, 0px));
   }
   .artist-heading.has-artist-image {
     grid-template-columns: 1fr;

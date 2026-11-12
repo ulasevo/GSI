@@ -76,7 +76,17 @@
 
         const firstImage = first.querySelector("img");
         const summary = document.createElement("a");
-        summary.className = "filter-album-summary";
+        summary.className = "card filter-album-summary";
+        for (let i = 0; i < first.style.length; i += 1) {
+          const prop = first.style[i];
+          if (prop === "--accent" || prop.startsWith("--art-")) {
+            summary.style.setProperty(prop, first.style.getPropertyValue(prop));
+          }
+        }
+        summary.setAttribute(
+          "aria-label",
+          `${first.dataset.album || ""} — ${first.dataset.artist || ""}`.trim(),
+        );
         summary.dataset.baseHref = first.dataset.albumHref || "";
         summary.href = contextHref(first.dataset.albumHref);
         const summaryImage = document.createElement("img");
@@ -87,10 +97,10 @@
 
         // Metadata is inserted as text, never interpolated as HTML.
         const summaryCopy = document.createElement("div");
-        summaryCopy.className = "filter-album-summary-copy";
-        const summaryTitle = document.createElement("strong");
+        summaryCopy.className = "info filter-album-summary-copy";
+        const summaryTitle = document.createElement("h2");
         summaryTitle.textContent = first.dataset.album || "";
-        const summaryArtist = document.createElement("em");
+        const summaryArtist = document.createElement("p");
         summaryArtist.textContent = first.dataset.artist || "";
         const summaryCount = document.createElement("span");
         summaryCount.textContent = homeState.albumLabel(groupCards.length);

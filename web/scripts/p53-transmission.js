@@ -14,14 +14,12 @@
     return;
   }
 
-  // Apply the per-page accent and watermark label at runtime so the template
-  // stays free of page-specific style attributes.
+  // Apply the per-page accent at runtime so the template stays free of
+  // page-specific style attributes.
   if (context.accent) document.body.style.setProperty("--accent", context.accent);
-  if (context.signalLabel) document.body.style.setProperty("--signal-label", JSON.stringify(context.signalLabel));
 
   const archiveState = GSIContext.read();
   const filterLabels = context.filterLabels || {};
-  const filter = archiveState.get("filter");
   const artistRoute = archiveState.get("artist");
   const expectedArtistRoute = context.expectedArtistRoute || "";
   const artistName = context.artistName || "";
@@ -37,16 +35,8 @@
     p53IndexLink.href = `index.html${p53IndexParams.size ? `?${p53IndexParams}` : ""}`;
   }
 
-  if (filter && Object.hasOwn(filterLabels, filter)) {
-    const traceFilter = document.querySelector("#p53-trace-filter");
-    if (traceFilter) {
-      traceFilter.textContent = filterLabels[filter];
-      traceFilter.href = archiveHref;
-      traceFilter.classList.remove("hidden");
-      document.querySelector("#p53-trace-filter-separator")?.classList.remove("hidden");
-    }
-  }
-
+  // Filter context stays in #p53-trace-archive and #p53-radio-index links while
+  // omitting the filter segment from the factor breadcrumb bar.
   if (artistRoute === expectedArtistRoute) {
     const traceArtist = document.querySelector("#p53-trace-artist");
     if (traceArtist) {
@@ -57,12 +47,18 @@
     }
   }
 
-  const entryCounterpart = document.querySelector(".entry-counterpart");
-  if (entryCounterpart) {
-    const entryParams = new URLSearchParams(archiveParams);
-    if (artistRoute === expectedArtistRoute) entryParams.set("artist", artistRoute);
-    entryCounterpart.href = `${entryCounterpart.href}${entryParams.size ? `?${entryParams}` : ""}`;
+  const routeParams = new URLSearchParams(archiveParams);
+  if (artistRoute === expectedArtistRoute) routeParams.set("artist", artistRoute);
+  function appendRouteParams(selector, params) {
+    if (!params.size) return;
+    document.querySelectorAll(selector).forEach(link => {
+      if (!link || !link.href) return;
+      const sep = link.href.includes("?") ? "&" : "?";
+      link.href = `${link.href}${sep}${params}`;
+    });
   }
+  appendRouteParams(".artist-link", archiveParams);
+  appendRouteParams(".entry-counterpart, .album-link", routeParams);
 
   // Story Card generator & native mobile sharing controller.
   const shareButton = document.querySelector("#share-transmission");
@@ -71,21 +67,106 @@
   const btnShare = document.querySelector("#story-btn-share");
   const btnDownload = document.querySelector("#story-btn-download");
   const btnCopy = document.querySelector("#story-btn-copy");
+  const storyStatus = document.querySelector("#story-status");
   const canvas = document.querySelector("#story-card-canvas");
 
   let cardRendered = false;
 
-  function hexToRgba(hex, alpha) {
-    if (!hex || typeof hex !== "string") return `rgba(255, 101, 173, ${alpha})`;
+  function parseHex(hex, fallback = [255, 101, 173]) {
+    if (Array.isArray(hex) && hex.length === 3) return hex;
+    if (!hex || typeof hex !== "string") return fallback;
     let clean = hex.replace("#", "").trim();
-    if (clean.length === 3) {
-      clean = clean.split("").map(c => c + c).join("");
-    }
-    if (clean.length !== 6) return `rgba(255, 101, 173, ${alpha})`;
-    const r = parseInt(clean.substring(0, 2), 16);
-    const g = parseInt(clean.substring(2, 4), 16);
-    const b = parseInt(clean.substring(4, 6), 16);
+    if (clean.length === 3) clean = clean.split("").map(c => c + c).join("");
+    if (!/^[0-9a-fA-F]{6}$/.test(clean)) return fallback;
+    return [
+      parseInt(clean.substring(0, 2), 16),
+      parseInt(clean.substring(2, 4), 16),
+      parseInt(clean.substring(4, 6), 16),
+    ];
+  }
+
+  function toHex(rgb) {
+    return "#" + rgb.map(v => Math.max(0, Math.min(255, Math.round(v))).toString(16).padStart(2, "0")).join("");
+  }
+
+  function hexToRgba(hex, alpha) {
+    const [r, g, b] = parseHex(hex);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function mixRgb(first, second, amount) {
+    return first.map((channel, index) => Math.round(channel + (second[index] - channel) * amount));
+  }
+
+  function relativeLuminance(rgb) {
+    const [r, g, b] = rgb.map(value => {
+      const channel = value / 255;
+      return channel <= 0.04045 ? channel / 12.92 : Math.pow((channel + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  function contrastRatio(first, second) {
+    const l1 = relativeLuminance(first);
+    const l2 = relativeLuminance(second);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+
+  function ensureContrast(fgRgb, bgRgb, targetRgb, minRatio) {
+    if (contrastRatio(fgRgb, bgRgb) >= minRatio) return fgRgb;
+    for (let step = 1; step <= 10; step++) {
+      const candidate = mixRgb(fgRgb, targetRgb, step / 10);
+      if (contrastRatio(candidate, bgRgb) >= minRatio) return candidate;
+    }
+    return targetRgb;
+  }
+
+  function deriveSleevePalette(ctxData) {
+    const palette = ctxData.trackPalette || {};
+    const primary = parseHex(palette.primary || ctxData.trackAccent || "#ff65ad");
+    const secondary = parseHex(palette.secondary || toHex(mixRgb(primary, [86, 74, 102], 0.45)));
+    const glow = parseHex(palette.glow || toHex(mixRgb(primary, secondary, 0.35)));
+    const field = parseHex(palette.field || toHex(mixRgb(primary, [24, 18, 30], 0.68)));
+    const soft = parseHex(palette.soft || toHex(mixRgb(primary, [245, 239, 226], 0.52)));
+    const surface = parseHex(palette.surface || toHex(mixRgb(primary, [16, 12, 22], 0.78)));
+    const rawInk = palette.ink ? parseHex(palette.ink, [25, 19, 30]) : null;
+
+    // Tactile archival paper stock gently warmed by the artwork's soft/field tones.
+    const paperTopRgb = mixRgb([245, 239, 226], soft, 0.14);
+    const paperMidRgb = mixRgb([241, 233, 218], mixRgb(soft, field, 0.32), 0.13);
+    const paperBottomRgb = mixRgb([234, 223, 205], field, 0.11);
+    const noteBgRgb = mixRgb([251, 247, 239], soft, 0.16);
+
+    // Track palettes supply `ink` for dark room backdrops (`#f8f5ef`), so check
+    // contrast against the warm paper surface before adopting it directly.
+    const darkFallback = [23, 17, 29];
+    const tintedDark = mixRgb(surface, darkFallback, 0.78);
+    const inkPrimaryRgb = (rawInk && contrastRatio(rawInk, paperMidRgb) >= 7.0)
+      ? rawInk
+      : ensureContrast(tintedDark, paperMidRgb, darkFallback, 8.5);
+    const inkMutedRgb = ensureContrast(mixRgb(inkPrimaryRgb, primary, 0.28), paperMidRgb, inkPrimaryRgb, 5.2);
+    const accentRuleRgb = ensureContrast(primary, paperMidRgb, inkPrimaryRgb, 3.2);
+
+    return {
+      primary: toHex(primary),
+      secondary: toHex(secondary),
+      glow: toHex(glow),
+      field: toHex(field),
+      soft: toHex(soft),
+      surface: toHex(surface),
+      outerTop: toHex(mixRgb(surface, [16, 12, 21], 0.48)),
+      outerBottom: toHex(mixRgb(field, [11, 8, 16], 0.76)),
+      spineBg: toHex(mixRgb(surface, [32, 20, 40], 0.45)),
+      paperTop: toHex(paperTopRgb),
+      paperMid: toHex(paperMidRgb),
+      paperBottom: toHex(paperBottomRgb),
+      noteBg: toHex(noteBgRgb),
+      inkPrimary: toHex(inkPrimaryRgb),
+      inkMuted: toHex(inkMutedRgb),
+      accentRule: toHex(accentRuleRgb),
+      p53Accent: toHex(parseHex(ctxData.p53Accent || "#ff58a6")),
+      cyanAccent: toHex(parseHex(ctxData.cyanAccent || "#35c9e9")),
+    };
   }
 
   function drawRoundRect(ctx, x, y, width, height, radius) {
@@ -121,42 +202,66 @@
     ctx.closePath();
   }
 
-  function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
-    const words = (text || "").split(/\s+/);
+  function measureWrappedLines(ctx, text, maxWidth, maxLines) {
+    const words = (text || "").trim().split(/\s+/).filter(Boolean);
+    const lines = [];
     let line = "";
-    let linesDrawn = 0;
-
-    for (let n = 0; n < words.length; n++) {
-      const testLine = line + (line ? " " : "") + words[n];
-      const metrics = ctx.measureText(testLine);
-      if (metrics.width > maxWidth && n > 0) {
-        ctx.fillText(line, x, y + (linesDrawn * lineHeight));
-        line = words[n];
-        linesDrawn++;
-        if (linesDrawn >= maxLines - 1) {
-          let remaining = words.slice(n).join(" ");
-          while (ctx.measureText(remaining + "...").width > maxWidth && remaining.length > 0) {
-            remaining = remaining.substring(0, remaining.lastIndexOf(" ") || remaining.length - 1);
-          }
-          ctx.fillText(remaining + "...", x, y + (linesDrawn * lineHeight));
-          linesDrawn++;
-          return linesDrawn * lineHeight;
+    for (const word of words) {
+      let remaining = word;
+      while (remaining) {
+        const candidate = line ? line + " " + remaining : remaining;
+        if (ctx.measureText(candidate).width <= maxWidth) {
+          line = candidate;
+          break;
         }
-      } else {
-        line = testLine;
+        if (line) {
+          lines.push(line);
+          line = "";
+          continue;
+        }
+        let piece = "";
+        const chars = Array.from(remaining);
+        while (chars.length && ctx.measureText(piece + chars[0]).width <= maxWidth) {
+          piece += chars.shift();
+        }
+        if (!piece) piece = chars.shift() || "";
+        lines.push(piece);
+        remaining = chars.join("");
       }
     }
-    if (line && linesDrawn < maxLines) {
-      ctx.fillText(line, x, y + (linesDrawn * lineHeight));
-      linesDrawn++;
+    if (line) lines.push(line);
+    const truncated = lines.length > maxLines;
+    const visible = lines.slice(0, maxLines);
+    if (truncated && visible.length) {
+      let last = visible[visible.length - 1];
+      while (last && ctx.measureText(last + "…").width > maxWidth) last = Array.from(last).slice(0, -1).join("");
+      visible[visible.length - 1] = last + "…";
     }
-    return linesDrawn * lineHeight;
+    return { lines: visible, truncated };
   }
 
-  async function loadCoverImage(src) {
+  function paintLines(ctx, lines, x, y, lineHeight) {
+    lines.forEach((value, index) => ctx.fillText(value, x, y + index * lineHeight));
+    return lines.length * lineHeight;
+  }
+
+  // Keep the original words visible where possible, including unusually long
+  // titles; if a note will not fit the story card, end it with an ellipsis.
+  function wrapText(ctx, text, x, y, maxWidth, lineHeight, maxLines) {
+    const { lines } = measureWrappedLines(ctx, text, maxWidth, maxLines);
+    return paintLines(ctx, lines, x, y, lineHeight);
+  }
+
+  async function loadCoverImage(src, kind = "cover") {
     if (!src) return null;
-    const existing = document.querySelector(`.signal-cover[src*="${src.split('/').pop()}"]`) ||
-      (src.includes("P53_cover") ? document.querySelector(".protein-panel img") : document.querySelector(".signal-cover"));
+    let existing = null;
+    if (kind === "protein") {
+      existing = document.querySelector(".protein-panel img");
+    } else {
+      const filePart = src.startsWith("data:") ? "" : src.split("/").pop().split("?")[0];
+      existing = (filePart && document.querySelector(`.signal-cover[src*="${filePart}"]`)) ||
+        document.querySelector(".signal-cover");
+    }
     if (existing && existing.complete && existing.naturalWidth > 0) {
       return existing;
     }
@@ -169,313 +274,368 @@
     });
   }
 
-  async function renderStoryCard() {
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
+  function drawP53SpineStrip(ctx, protein, sleeve, spineW, colors) {
+    ctx.save();
+    drawRoundRect(ctx, sleeve.x, sleeve.y, spineW, sleeve.h, 0);
+    ctx.clip();
 
-    const trackAccent = context.trackAccent || context.accent || "#ff65ad";
-    const p53Accent = context.p53Accent || "#ff65ad";
-    const cyanAccent = context.cyanAccent || "#35c9e9";
-    const trackPalette = context.trackPalette || {};
-    const primaryColor = trackPalette.primary || trackAccent;
-    const glowColor = trackPalette.glow || trackAccent;
-    const fieldColor = trackPalette.field || "#0c0812";
+    ctx.fillStyle = colors.spineBg;
+    ctx.fillRect(sleeve.x, sleeve.y, spineW, sleeve.h);
 
-    const trackTitle = (context.track || "SIGNAL").trim();
-    const artist = (artistName || context.artistName || "GSI ARCHIVE").trim();
-    const album = (context.album || "").trim();
-    const signalLabel = (context.signalLabel || "CURRENT TRANSMISSION").trim();
-    const transmissionNote = (context.transmissionNote || "").trim();
-    const slug = (context.slug || "signal").trim();
+    if (protein) {
+      const iw = protein.naturalWidth || protein.width || 600;
+      const ih = protein.naturalHeight || protein.height || 600;
+      const sliceCount = 4;
+      const sliceH = Math.ceil(sleeve.h / sliceCount);
+      const sy = Math.round(ih * 0.045);
+      const cropH = Math.max(1, Math.round(ih * 0.91));
+      const cropW = Math.max(1, Math.min(iw, Math.round(cropH * (spineW / sliceH))));
+      const offsets = [0.12, 0.36, 0.58, 0.24];
 
-    // 1. Base Atmospheric Obsidian Gradient (tinted with track field color)
-    const bgGrad = ctx.createLinearGradient(0, 0, 1080, 1920);
-    bgGrad.addColorStop(0, fieldColor);
-    bgGrad.addColorStop(0.32, "#130a1b");
-    bgGrad.addColorStop(0.78, "#070409");
-    bgGrad.addColorStop(1, "#040206");
-    ctx.fillStyle = bgGrad;
-    ctx.fillRect(0, 0, 1080, 1920);
-
-    // 2. Expressive P53 Protein Artwork Fusion Layer
-    const p53Img = await loadCoverImage(context.p53CoverSrc || "../covers/P53_cover-runtime.webp");
-    if (p53Img) {
-      ctx.save();
-      ctx.globalAlpha = 0.28;
-      ctx.drawImage(p53Img, -50, -20, 1180, 940);
-      ctx.restore();
-
-      // Atmospheric gradient fade over protein art to merge into the dark room
-      const fadeGrad = ctx.createLinearGradient(0, 80, 0, 960);
-      fadeGrad.addColorStop(0, "transparent");
-      fadeGrad.addColorStop(0.6, "rgba(9, 6, 13, 0.62)");
-      fadeGrad.addColorStop(1, "rgba(7, 4, 9, 0.98)");
-      ctx.fillStyle = fadeGrad;
-      ctx.fillRect(0, 0, 1080, 960);
-    }
-
-    // 3. Colored Ambient Lighting Halos
-    // Hero artwork center glow (using track's primary & glow color)
-    const heroGlow = ctx.createRadialGradient(540, 680, 60, 540, 680, 640);
-    heroGlow.addColorStop(0, hexToRgba(primaryColor, 0.44));
-    heroGlow.addColorStop(0.52, hexToRgba(glowColor, 0.16));
-    heroGlow.addColorStop(1, "transparent");
-    ctx.fillStyle = heroGlow;
-    ctx.fillRect(0, 0, 1080, 1920);
-
-    // Bottom cyan counter-glow (P53 signature electric hue)
-    const cyanGlow = ctx.createRadialGradient(180, 1500, 20, 180, 1500, 480);
-    cyanGlow.addColorStop(0, "rgba(53, 201, 233, 0.15)");
-    cyanGlow.addColorStop(1, "transparent");
-    ctx.fillStyle = cyanGlow;
-    ctx.fillRect(0, 0, 1080, 1920);
-
-    // 4. Subtle Scanlines
-    ctx.fillStyle = "rgba(255, 255, 255, 0.016)";
-    for (let y = 0; y < 1920; y += 14) {
-      ctx.fillRect(0, y, 1080, 1.5);
-    }
-
-    // 5. Minimalist Corner Alignment Ticks (within Story safe bounds)
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
-    ctx.lineWidth = 1.5;
-    const tickLen = 18;
-    // Top-Left (72, 140)
-    ctx.beginPath();
-    ctx.moveTo(72, 140 + tickLen);
-    ctx.lineTo(72, 140);
-    ctx.lineTo(72 + tickLen, 140);
-    ctx.stroke();
-    // Top-Right (1008, 140)
-    ctx.beginPath();
-    ctx.moveTo(1008 - tickLen, 140);
-    ctx.lineTo(1008, 140);
-    ctx.lineTo(1008, 140 + tickLen);
-    ctx.stroke();
-    // Bottom-Left (72, 1780)
-    ctx.beginPath();
-    ctx.moveTo(72, 1780 - tickLen);
-    ctx.lineTo(72, 1780);
-    ctx.lineTo(72 + tickLen, 1780);
-    ctx.stroke();
-    // Bottom-Right (1008, 1780)
-    ctx.beginPath();
-    ctx.moveTo(1008 - tickLen, 1780);
-    ctx.lineTo(1008, 1780);
-    ctx.lineTo(1008, 1780 - tickLen);
-    ctx.stroke();
-
-    // 6. Header: Pure Radio P53 Identity
-    ctx.font = "900 18px Arial, sans-serif";
-    ctx.fillStyle = "rgba(250, 246, 238, 0.65)";
-    ctx.textAlign = "left";
-    ctx.fillText("GENOME STABILITY INDUCERS", 96, 156);
-
-    // Chromatic Aberration Title
-    ctx.font = "950 64px Impact, Haettenschweiler, 'Arial Black', sans-serif";
-    // Cyan shift
-    ctx.fillStyle = cyanAccent;
-    ctx.fillText("RADIO P53", 96 + 4, 226);
-    // Magenta shift
-    ctx.fillStyle = p53Accent;
-    ctx.fillText("RADIO P53", 96 - 3, 226);
-    // Foreground crisp white
-    ctx.fillStyle = "#ffffff";
-    ctx.fillText("RADIO P53", 96, 226);
-
-    // Status Pill (Right aligned)
-    const pillText = (signalLabel === "CURRENT TRANSMISSION" ? "CURRENT SIGNAL" : "ARCHIVED SIGNAL");
-    ctx.font = "900 15px Arial, sans-serif";
-    const pillWidth = ctx.measureText(pillText).width + 46;
-    const pillX = 984 - pillWidth;
-    ctx.fillStyle = "rgba(255, 255, 255, 0.07)";
-    drawRoundRect(ctx, pillX, 182, pillWidth, 38, 19);
-    ctx.fill();
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.22)";
-    ctx.lineWidth = 1;
-    ctx.stroke();
-
-    ctx.fillStyle = primaryColor;
-    ctx.beginPath();
-    ctx.arc(pillX + 18, 201, 5, 0, Math.PI * 2);
-    ctx.fill();
-
-    ctx.fillStyle = "#faf6ee";
-    ctx.fillText(pillText, pillX + 32, 207);
-
-    // 7. Center Hero Cover Art with Asymmetric Brutalist Framing
-    const coverSize = 760;
-    const coverX = 160;
-    const coverY = 280;
-    // GSI's signature asymmetrical brutalist corners (18px 56px 18px 56px)
-    const rTL = 18, rTR = 56, rBR = 18, rBL = 56;
-
-    // Offset Chromatic Shadows
-    ctx.fillStyle = "rgba(53, 201, 233, 0.44)";
-    drawAsymmRoundRect(ctx, coverX + 12, coverY + 12, coverSize, coverSize, rTL, rTR, rBR, rBL);
-    ctx.fill();
-
-    ctx.fillStyle = hexToRgba(primaryColor, 0.42);
-    drawAsymmRoundRect(ctx, coverX - 8, coverY - 6, coverSize, coverSize, rTL, rTR, rBR, rBL);
-    ctx.fill();
-
-    // Draw Cover Art
-    const coverImg = await loadCoverImage(context.coverSrc);
-    if (coverImg) {
-      ctx.save();
-      drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, rTL, rTR, rBR, rBL);
-      ctx.clip();
-      ctx.drawImage(coverImg, coverX, coverY, coverSize, coverSize);
-      ctx.restore();
-    } else {
-      ctx.fillStyle = "#16111f";
-      drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, rTL, rTR, rBR, rBL);
-      ctx.fill();
-      ctx.font = "950 160px Impact, sans-serif";
-      ctx.fillStyle = "rgba(255, 255, 255, 0.25)";
-      ctx.textAlign = "center";
-      ctx.fillText("P53", 540, 700);
-      ctx.textAlign = "left";
-    }
-
-    // Outer Rim Stroke
-    ctx.strokeStyle = primaryColor;
-    ctx.lineWidth = 2.5;
-    drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, rTL, rTR, rBR, rBL);
-    ctx.stroke();
-
-    // 8. Track, Artist & Album Core
-    let textY = 1115;
-    ctx.textAlign = "left";
-
-    // Dynamic Adaptive Title Sizing
-    let trackFontSize = 72;
-    ctx.font = `950 ${trackFontSize}px Impact, Haettenschweiler, 'Arial Black', sans-serif`;
-    while (ctx.measureText(trackTitle).width > 860 && trackFontSize > 46) {
-      trackFontSize -= 4;
-      ctx.font = `950 ${trackFontSize}px Impact, Haettenschweiler, 'Arial Black', sans-serif`;
-    }
-    ctx.fillStyle = "#ffffff";
-    const heightDrawn = wrapText(ctx, trackTitle, 160, textY, 760, trackFontSize * 1.12, 2);
-    textY += (heightDrawn > 0 ? heightDrawn : trackFontSize) + 24;
-
-    // Artist in vibrant cover accent
-    ctx.font = "900 38px Arial, sans-serif";
-    ctx.fillStyle = primaryColor;
-    ctx.fillText(artist.toUpperCase(), 160, textY);
-    textY += 46;
-
-    // Album in soft muted italic
-    if (album) {
-      ctx.font = "italic 26px Arial, sans-serif";
-      ctx.fillStyle = "rgba(250, 246, 238, 0.68)";
-      ctx.fillText(album, 160, textY);
-      textY += 44;
-    }
-
-    // 9. Transmission Note (only rendered if user wrote a note)
-    if (transmissionNote) {
-      const quoteY = Math.max(textY + 14, 1310);
-      const quoteBoxW = 760;
-      ctx.font = "500 27px Arial, sans-serif";
-      const lines = [];
-      const words = transmissionNote.split(/\s+/);
-      let curLine = "";
-      for (const w of words) {
-        const test = curLine ? `${curLine} ${w}` : w;
-        if (ctx.measureText(test).width > quoteBoxW - 84 && curLine) {
-          lines.push(curLine);
-          curLine = w;
-          if (lines.length >= 2) break;
-        } else {
-          curLine = test;
+      for (let i = 0; i < sliceCount; i++) {
+        const sx = Math.round((iw - cropW) * offsets[i]);
+        const dy = sleeve.y + i * sliceH;
+        ctx.drawImage(protein, sx, sy, cropW, cropH, sleeve.x, dy, spineW, sliceH);
+        if (i > 0) {
+          ctx.strokeStyle = "rgba(250, 244, 232, 0.22)";
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(sleeve.x, dy);
+          ctx.lineTo(sleeve.x + spineW, dy);
+          ctx.stroke();
         }
       }
-      if (curLine && lines.length < 3) lines.push(curLine);
-      const quoteBoxH = Math.max(100, lines.length * 40 + 36);
 
-      // Frosted Quote Card
-      ctx.fillStyle = "rgba(255, 255, 255, 0.04)";
-      drawRoundRect(ctx, 160, quoteY, quoteBoxW, quoteBoxH, 12);
-      ctx.fill();
-
-      // Accent line on left edge
-      ctx.fillStyle = primaryColor;
-      drawRoundRect(ctx, 160, quoteY, 5, quoteBoxH, 2.5);
-      ctx.fill();
-
-      // Expressive quote mark
-      ctx.font = "950 50px Impact, sans-serif";
-      ctx.fillStyle = hexToRgba(primaryColor, 0.5);
-      ctx.fillText("“", 184, quoteY + 48);
-
-      // Quote body
-      ctx.font = "500 26px Arial, sans-serif";
-      ctx.fillStyle = "#faf6ee";
-      for (let i = 0; i < lines.length; i++) {
-        ctx.fillText(lines[i], 224, quoteY + 42 + (i * 38));
-      }
+      ctx.fillStyle = hexToRgba(colors.primary, 0.14);
+      ctx.fillRect(sleeve.x, sleeve.y, spineW, sleeve.h);
+    } else {
+      const fallbackSpine = ctx.createLinearGradient(sleeve.x, sleeve.y, sleeve.x, sleeve.y + sleeve.h);
+      fallbackSpine.addColorStop(0, colors.p53Accent);
+      fallbackSpine.addColorStop(0.5, colors.primary);
+      fallbackSpine.addColorStop(1, colors.cyanAccent);
+      ctx.fillStyle = fallbackSpine;
+      ctx.fillRect(sleeve.x, sleeve.y, spineW, sleeve.h);
     }
 
-    // 10. Reserved link zone: clean pill dock for the user's Instagram link sticker
-    const dockY = transmissionNote ? 1530 : 1480;
-    const dockH = 80;
-    const dockW = 760;
-    const dockX = 160;
+    // Subtle left edge depth + inner spine fold shadow
+    const edgeShade = ctx.createLinearGradient(sleeve.x, 0, sleeve.x + spineW, 0);
+    edgeShade.addColorStop(0, "rgba(10, 6, 14, 0.22)");
+    edgeShade.addColorStop(0.18, "rgba(0, 0, 0, 0)");
+    edgeShade.addColorStop(0.84, "rgba(0, 0, 0, 0)");
+    edgeShade.addColorStop(1, "rgba(16, 10, 22, 0.28)");
+    ctx.fillStyle = edgeShade;
+    ctx.fillRect(sleeve.x, sleeve.y, spineW, sleeve.h);
+    ctx.restore();
 
-    ctx.fillStyle = "rgba(255, 255, 255, 0.05)";
-    drawRoundRect(ctx, dockX, dockY, dockW, dockH, 40);
+    // Spine fold crease + P53 cyan/magenta registration trim on the paper face
+    const foldX = sleeve.x + spineW;
+    ctx.fillStyle = "rgba(255, 252, 246, 0.72)";
+    ctx.fillRect(foldX, sleeve.y, 2, sleeve.h);
+    ctx.fillStyle = hexToRgba(colors.cyanAccent, 0.8);
+    ctx.fillRect(foldX + 3, sleeve.y, 3, sleeve.h);
+    ctx.fillStyle = hexToRgba(colors.p53Accent, 0.85);
+    ctx.fillRect(foldX + 6, sleeve.y, 3, sleeve.h);
+  }
+
+  function drawAlbumWindow(ctx, cover, box, colors) {
+    ctx.fillStyle = hexToRgba(colors.cyanAccent, 0.48);
+    drawAsymmRoundRect(ctx, box.x + 9, box.y + 9, box.size, box.size, 10, 36, 10, 36);
     ctx.fill();
 
-    ctx.strokeStyle = hexToRgba(primaryColor, 0.6);
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([8, 6]);
-    drawRoundRect(ctx, dockX, dockY, dockW, dockH, 40);
+    ctx.fillStyle = hexToRgba(colors.p53Accent, 0.54);
+    drawAsymmRoundRect(ctx, box.x - 7, box.y - 7, box.size, box.size, 10, 36, 10, 36);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(18, 12, 24, 0.22)";
+    drawAsymmRoundRect(ctx, box.x + 4, box.y + 12, box.size, box.size, 10, 36, 10, 36);
+    ctx.fill();
+
+    if (cover) {
+      ctx.save();
+      drawAsymmRoundRect(ctx, box.x, box.y, box.size, box.size, 10, 36, 10, 36);
+      ctx.clip();
+      const imageWidth = cover.naturalWidth || cover.width || box.size;
+      const imageHeight = cover.naturalHeight || cover.height || box.size;
+      const crop = Math.min(imageWidth, imageHeight);
+      ctx.drawImage(
+        cover,
+        (imageWidth - crop) / 2,
+        (imageHeight - crop) / 2,
+        crop,
+        crop,
+        box.x,
+        box.y,
+        box.size,
+        box.size
+      );
+      ctx.restore();
+    } else {
+      ctx.fillStyle = colors.surface;
+      drawAsymmRoundRect(ctx, box.x, box.y, box.size, box.size, 10, 36, 10, 36);
+      ctx.fill();
+    }
+
+    ctx.strokeStyle = hexToRgba(colors.inkPrimary, 0.18);
+    ctx.lineWidth = 2;
+    drawAsymmRoundRect(ctx, box.x, box.y, box.size, box.size, 10, 36, 10, 36);
     ctx.stroke();
-    ctx.setLineDash([]);
+  }
 
-    ctx.fillStyle = "rgba(250, 246, 238, 0.85)";
-    ctx.font = "900 22px Arial, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("LISTEN TO TRANSMISSION ↗", 540, dockY + 49);
-    ctx.textAlign = "left";
+  function drawDirectionalCue(ctx, centerX, y, inkHex) {
+    ctx.strokeStyle = hexToRgba(inkHex, 0.34);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(centerX - 11, y + 8);
+    ctx.lineTo(centerX, y - 3);
+    ctx.lineTo(centerX + 11, y + 8);
+    ctx.stroke();
 
-    // 11. Bottom Archival Rule
-    ctx.strokeStyle = "rgba(255, 255, 255, 0.12)";
+    ctx.strokeStyle = hexToRgba(inkHex, 0.14);
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(96, 1710);
-    ctx.lineTo(984, 1710);
+    ctx.moveTo(centerX - 52, y + 4);
+    ctx.lineTo(centerX - 24, y + 4);
+    ctx.moveTo(centerX + 24, y + 4);
+    ctx.lineTo(centerX + 52, y + 4);
+    ctx.stroke();
+  }
+
+  async function renderStoryCard() {
+    if (!canvas) return false;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return false;
+
+    const colors = deriveSleevePalette(context);
+    const track = (context.track || "").trim();
+    const artist = (artistName || "").trim();
+    const album = (context.album || "").trim();
+    const note = (context.transmissionNote || "").trim();
+    const rawSignal = String(context.signalLabel || "").trim().toUpperCase();
+    const isActive = rawSignal === "ACTIVE" || rawSignal === "CURRENT TRANSMISSION";
+    const status = isActive ? "Active" : "Previous";
+
+    // Paper sleeve story card: warm archival sleeve harmonized with artwork
+    // palette, expressive P53 spine strip, header above cover, legible note,
+    // and open bottom room for an Instagram link sticker.
+    ctx.clearRect(0, 0, 1080, 1920);
+    const outerBg = ctx.createLinearGradient(0, 0, 1080, 1920);
+    outerBg.addColorStop(0, colors.outerTop);
+    outerBg.addColorStop(1, colors.outerBottom);
+    ctx.fillStyle = outerBg;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    const glowWash = ctx.createRadialGradient(600, 660, 80, 600, 660, 860);
+    glowWash.addColorStop(0, hexToRgba(colors.glow, 0.28));
+    glowWash.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = glowWash;
+    ctx.fillRect(0, 0, 1080, 1920);
+
+    const p53Mist = ctx.createRadialGradient(140, 260, 40, 140, 260, 560);
+    p53Mist.addColorStop(0, hexToRgba(colors.p53Accent, 0.14));
+    p53Mist.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = p53Mist;
+    ctx.fillRect(0, 0, 1080, 1080);
+
+    const sleeve = { x: 54, y: 76, w: 972, h: 1768 };
+
+    // Offset P53 cyan/magenta registration plates + shadow behind the sleeve
+    ctx.fillStyle = "rgba(6, 4, 10, 0.44)";
+    drawAsymmRoundRect(ctx, sleeve.x + 12, sleeve.y + 18, sleeve.w, sleeve.h, 18, 44, 18, 44);
+    ctx.fill();
+
+    ctx.fillStyle = hexToRgba(colors.cyanAccent, 0.56);
+    drawAsymmRoundRect(ctx, sleeve.x + 10, sleeve.y + 10, sleeve.w, sleeve.h, 18, 44, 18, 44);
+    ctx.fill();
+
+    ctx.fillStyle = hexToRgba(colors.p53Accent, 0.64);
+    drawAsymmRoundRect(ctx, sleeve.x - 8, sleeve.y - 8, sleeve.w, sleeve.h, 18, 44, 18, 44);
+    ctx.fill();
+
+    const [protein, cover] = await Promise.all([
+      loadCoverImage(context.p53CoverSrc || "../covers/P53_cover-runtime.webp", "protein"),
+      loadCoverImage(context.coverSrc, "cover"),
+    ]);
+
+    ctx.save();
+    drawAsymmRoundRect(ctx, sleeve.x, sleeve.y, sleeve.w, sleeve.h, 18, 44, 18, 44);
+    ctx.clip();
+
+    // Tactile paper sleeve surface
+    const paperGrad = ctx.createLinearGradient(sleeve.x, sleeve.y, sleeve.x + sleeve.w, sleeve.y + sleeve.h);
+    paperGrad.addColorStop(0, colors.paperTop);
+    paperGrad.addColorStop(0.55, colors.paperMid);
+    paperGrad.addColorStop(1, colors.paperBottom);
+    ctx.fillStyle = paperGrad;
+    ctx.fillRect(sleeve.x, sleeve.y, sleeve.w, sleeve.h);
+
+    const sheen = ctx.createRadialGradient(900, 220, 30, 900, 220, 760);
+    sheen.addColorStop(0, "rgba(255, 253, 248, 0.45)");
+    sheen.addColorStop(1, "rgba(255, 253, 248, 0)");
+    ctx.fillStyle = sheen;
+    ctx.fillRect(sleeve.x, sleeve.y, sleeve.w, sleeve.h);
+
+    // Subtle laid-paper horizontal grain lines
+    ctx.strokeStyle = "rgba(45, 32, 24, 0.025)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let gy = sleeve.y + 16; gy < sleeve.y + sleeve.h; gy += 16) {
+      ctx.moveTo(sleeve.x, gy);
+      ctx.lineTo(sleeve.x + sleeve.w, gy);
+    }
     ctx.stroke();
 
-    ctx.font = "900 16px Arial, sans-serif";
-    ctx.fillStyle = "rgba(255, 255, 255, 0.38)";
-    ctx.fillText("RADIO P53", 96, 1754);
+    const spineW = 132;
+    drawP53SpineStrip(ctx, protein, sleeve, spineW, colors);
+
+    const contentX = sleeve.x + spineW + 54;
+    const contentRight = sleeve.x + sleeve.w - 54;
+    const contentW = contentRight - contentX;
+
+    // Sleeve header: Radio P53 mark + transmission status
+    ctx.fillStyle = colors.cyanAccent;
+    ctx.fillRect(contentX, 141, 5, 25);
+    ctx.fillStyle = colors.p53Accent;
+    ctx.fillRect(contentX + 8, 141, 5, 25);
+
+    ctx.textAlign = "left";
+    ctx.fillStyle = colors.inkPrimary;
+    ctx.font = "700 32px Arial, sans-serif";
+    ctx.fillText("Radio P53", contentX + 24, 165);
 
     ctx.textAlign = "right";
-    ctx.fillStyle = hexToRgba(primaryColor, 0.85);
-    ctx.fillText(slug.toUpperCase(), 984, 1754);
+    ctx.fillStyle = colors.inkMuted;
+    ctx.font = "600 24px Arial, sans-serif";
+    ctx.fillText(status, contentRight, 163);
     ctx.textAlign = "left";
 
+    ctx.fillStyle = hexToRgba(colors.inkPrimary, 0.16);
+    ctx.fillRect(contentX, 192, contentW, 2);
+    ctx.fillStyle = colors.accentRule;
+    ctx.fillRect(contentX, 191, 108, 4);
+
+    // Track title (original casing), artist, and album anchored ABOVE the cover
+    let y = 266;
+    const trackLen = Array.from(track).length;
+    const trackSize = trackLen <= 20 ? 74 : (trackLen <= 34 ? 62 : 54);
+    const trackLineHeight = trackSize + 8;
+
+    ctx.fillStyle = colors.inkPrimary;
+    ctx.font = `800 ${trackSize}px Arial, sans-serif`;
+    const trackMeasured = measureWrappedLines(ctx, track, contentW, 2);
+    paintLines(ctx, trackMeasured.lines, contentX, y, trackLineHeight);
+    y += Math.max(1, trackMeasured.lines.length) * trackLineHeight - 4;
+
+    ctx.fillStyle = colors.inkPrimary;
+    ctx.font = "700 38px Arial, sans-serif";
+    const artistMeasured = measureWrappedLines(ctx, artist, contentW, 2);
+    paintLines(ctx, artistMeasured.lines, contentX, y, 46);
+    y += Math.max(1, artistMeasured.lines.length) * 46 + 2;
+
+    if (album) {
+      ctx.fillStyle = colors.inkMuted;
+      ctx.font = "500 29px Arial, sans-serif";
+      const albumMeasured = measureWrappedLines(ctx, album, contentW, 2);
+      paintLines(ctx, albumMeasured.lines, contentX, y, 38);
+      y += Math.max(1, albumMeasured.lines.length) * 38;
+    }
+
+    // Album cover framed below the header inside the sleeve window
+    const coverY = y + 24;
+    const coverMaxBottom = note ? 1054 : 1340;
+    const coverSize = Math.min(note ? 560 : 680, Math.max(note ? 410 : 500, coverMaxBottom - coverY));
+    const coverX = contentX + Math.round((contentW - coverSize) / 2);
+    drawAlbumWindow(ctx, cover, { x: coverX, y: coverY, size: coverSize }, colors);
+
+    // Generous, high-legibility transmission note below cover
+    if (note) {
+      const noteTop = coverY + coverSize + 40;
+      const noteMaxBottom = 1464;
+      const availH = Math.max(150, noteMaxBottom - noteTop);
+      const isLongNote = Array.from(note).length > 165;
+      const noteFontSize = isLongNote ? 40 : 44;
+      const noteLineHeight = isLongNote ? 54 : 58;
+      const maxNoteLines = Math.max(3, Math.floor((availH - 40) / noteLineHeight));
+      const noteTextX = contentX + 30;
+      const noteTextW = contentW - 56;
+
+      ctx.font = `500 ${noteFontSize}px Arial, sans-serif`;
+      const noteMeasured = measureWrappedLines(ctx, note, noteTextW, maxNoteLines);
+      const noteBoxH = noteMeasured.lines.length * noteLineHeight + 40;
+
+      ctx.fillStyle = colors.noteBg;
+      drawRoundRect(ctx, contentX, noteTop, contentW, noteBoxH, 12);
+      ctx.fill();
+
+      ctx.strokeStyle = hexToRgba(colors.inkPrimary, 0.1);
+      ctx.lineWidth = 1.5;
+      drawRoundRect(ctx, contentX, noteTop, contentW, noteBoxH, 12);
+      ctx.stroke();
+
+      ctx.fillStyle = colors.accentRule;
+      drawRoundRect(ctx, contentX + 12, noteTop + 14, 5, noteBoxH - 28, 2.5);
+      ctx.fill();
+
+      ctx.fillStyle = colors.inkPrimary;
+      paintLines(ctx, noteMeasured.lines, noteTextX, noteTop + 22 + Math.round(noteFontSize * 0.78), noteLineHeight);
+    }
+
+    // Quiet open breathing room near the bottom for the Instagram link sticker,
+    // anchored by a subtle directional cue and authentic GSI footer.
+    drawDirectionalCue(ctx, contentX + Math.round(contentW / 2), 1712, colors.inkPrimary);
+
+    ctx.fillStyle = hexToRgba(colors.inkPrimary, 0.18);
+    ctx.fillRect(contentX, 1744, contentW, 1.5);
+
+    ctx.font = "600 24px Arial, sans-serif";
+    ctx.fillStyle = colors.inkMuted;
+    ctx.textAlign = "left";
+    ctx.fillText("Radio P53", contentX, 1790);
+
+    ctx.font = "700 24px Arial, sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText("Chaperone", contentRight, 1790);
+    ctx.textAlign = "left";
+
+    ctx.restore();
+
+    ctx.strokeStyle = hexToRgba(colors.inkPrimary, 0.14);
+    ctx.lineWidth = 2;
+    drawAsymmRoundRect(ctx, sleeve.x, sleeve.y, sleeve.w, sleeve.h, 18, 44, 18, 44);
+    ctx.stroke();
+
+    canvas.setAttribute("aria-label", "Radio P53 card: " + track + " by " + artist);
     cardRendered = true;
+    return true;
   }
 
   function flashButton(btn, text) {
     if (!btn) return;
-    const original = btn.textContent;
+    if (storyStatus) storyStatus.textContent = text;
+    if (!btn.dataset) btn.dataset = {};
+    if (!btn.dataset.defaultLabel) btn.dataset.defaultLabel = btn.textContent;
+    if (btn._flashTimer) window.clearTimeout?.(btn._flashTimer);
+    const original = btn.dataset.defaultLabel;
     btn.textContent = text;
-    window.setTimeout(() => { btn.textContent = original; }, 2200);
+    btn._flashTimer = window.setTimeout(() => {
+      btn.textContent = original;
+      btn._flashTimer = null;
+    }, 2200);
   }
 
   function triggerDownload() {
-    if (!canvas) return;
-    const slug = context.slug || "signal";
-    const dataUrl = canvas.toDataURL("image/png");
-    const link = document.createElement("a");
-    link.download = `p53-${slug}-story.png`;
-    link.href = dataUrl;
-    link.click();
+    if (!canvas) return false;
+    try {
+      const slug = context.slug || "signal";
+      const dataUrl = canvas.toDataURL("image/png");
+      const link = document.createElement("a");
+      link.download = `p53-${slug}-story.png`;
+      link.href = dataUrl;
+      link.click();
+      return true;
+    } catch {
+      if (storyStatus) storyStatus.textContent = "The card couldn't be saved. You can still copy the link.";
+      return false;
+    }
   }
 
   if (shareButton) {
@@ -483,7 +643,15 @@
       if (storyModal && typeof storyModal.showModal === "function") {
         storyModal.showModal();
         if (!cardRendered) {
-          await renderStoryCard();
+          if (storyStatus) storyStatus.textContent = "Preparing the card…";
+          try {
+            const ready = await renderStoryCard();
+            if (btnShare) btnShare.disabled = !ready;
+            if (btnDownload) btnDownload.disabled = !ready;
+            if (storyStatus) storyStatus.textContent = ready ? "" : "The card couldn't be prepared. You can still copy the link.";
+          } catch {
+            if (storyStatus) storyStatus.textContent = "The card couldn't be prepared. You can still copy the link.";
+          }
         }
         return;
       }
@@ -505,11 +673,13 @@
     });
   }
 
-  modalClose?.addEventListener("click", () => {
-    storyModal?.close();
+  modalClose?.addEventListener?.("click", () => {
+    storyModal?.close?.();
   });
 
-  storyModal?.addEventListener("click", event => {
+  storyModal?.addEventListener?.("click", event => {
+    if (event.target !== storyModal) return;
+    if (event.clientX === 0 && event.clientY === 0) return;
     const rect = storyModal.getBoundingClientRect();
     const isInDialog = (
       rect.top <= event.clientY &&
@@ -522,37 +692,45 @@
 
   btnShare?.addEventListener("click", async () => {
     if (!canvas) return;
-    canvas.toBlob(async blob => {
-      if (!blob) {
-        triggerDownload();
-        flashButton(btnShare, "SAVED TO DEVICE ✓");
-        return;
-      }
-      const slug = context.slug || "signal";
-      const fileName = `p53-${slug}-transmission.png`;
-      const file = new File([blob], fileName, { type: "image/png" });
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-          await navigator.share({
-            files: [file],
-            title: context.shareTitle || `Radio P53 — ${context.track || "Transmission"}`,
-            text: `Radio P53 transmission: ${context.track || ""} by ${artistName} on GSI`,
-          });
-          flashButton(btnShare, "SHARED TO APP ✓");
+    try {
+      canvas.toBlob(async blob => {
+        if (!blob) {
+          if (triggerDownload()) flashButton(btnShare, "Card downloaded");
           return;
-        } catch (err) {
-          if (err.name === "AbortError") return;
         }
-      }
-      triggerDownload();
-      flashButton(btnShare, "CARD DOWNLOADED ✓");
-    }, "image/png");
+        const slug = context.slug || "signal";
+        const fileName = `p53-${slug}-transmission.png`;
+        const file = new File([blob], fileName, { type: "image/png" });
+
+        const shareData = {
+          files: [file],
+          title: context.shareTitle || `Radio P53 — ${context.track || "Transmission"}`,
+          text: `Radio P53: ${context.track || ""} by ${artistName}`,
+          url: GSIContext.canonicalHref(),
+        };
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            // Some share targets support image files but reject a URL in the
+            // payload. Keep the existing image-only option for those devices.
+            const supportedData = navigator.canShare(shareData)
+              ? shareData
+              : { files: [file], title: shareData.title, text: shareData.text };
+            await navigator.share(supportedData);
+            flashButton(btnShare, "Share opened");
+            return;
+          } catch (err) {
+            if (err && err.name === "AbortError") return;
+          }
+        }
+        if (triggerDownload()) flashButton(btnShare, "Card downloaded");
+      }, "image/png");
+    } catch {
+      if (storyStatus) storyStatus.textContent = "The card couldn't be shared. You can still copy the link.";
+    }
   });
 
   btnDownload?.addEventListener("click", () => {
-    triggerDownload();
-    flashButton(btnDownload, "CARD DOWNLOADED ✓");
+    if (triggerDownload()) flashButton(btnDownload, "Card downloaded");
   });
 
   btnCopy?.addEventListener("click", async () => {
@@ -567,12 +745,13 @@
         fallback.style.cssText = "position:fixed;opacity:0;pointer-events:none";
         document.body.append(fallback);
         fallback.select();
-        document.execCommand("copy");
+        const copied = document.execCommand("copy");
         fallback.remove();
+        if (!copied) throw new Error("Copy unavailable");
       }
-      flashButton(btnCopy, "LINK COPIED ✓");
+      flashButton(btnCopy, "Link copied");
     } catch {
-      flashButton(btnCopy, "COPY FAILED");
+      flashButton(btnCopy, "Couldn't copy link");
     }
   });
 
@@ -580,44 +759,172 @@
   (() => {
     const btn = document.querySelector(".audition-trigger");
     if (!btn) return;
-    const url = btn.dataset.previewUrl;
+    const url = btn.dataset?.previewUrl;
     if (!url) return;
+
+    const initialLabel = (btn.getAttribute?.("aria-label") || "").trim();
+    const labelMatch = initialLabel.match(/^Peek signal of\s+(.+)$/i);
+    const trackName = labelMatch ? labelMatch[1].trim() : (context.track || "").trim();
+
+    function labelFor(state) {
+      const target = trackName ? ` of ${trackName}` : "";
+      if (state === "playing") return `Pause 30-second preview${target}`;
+      if (state === "paused") return `Resume 30-second preview${target}`;
+      if (state === "ended") return `Replay 30-second preview${target}`;
+      if (state === "unavailable") return trackName ? `Preview unavailable for ${trackName}` : "Preview unavailable";
+      if (state === "blocked") return trackName ? `Playback blocked for ${trackName}; activate to retry` : "Playback blocked; activate to retry";
+      return `Peek 30-second preview${target}`;
+    }
+
+    let statusNode = btn.closest?.(".stream-block")?.querySelector(".audition-status") || null;
+    if (!statusNode && typeof document.createElement === "function") {
+      statusNode = document.createElement("span");
+      statusNode.className = "sr-only audition-status";
+      statusNode.setAttribute?.("role", "status");
+      statusNode.setAttribute?.("aria-live", "polite");
+      statusNode.setAttribute?.("aria-atomic", "true");
+      (btn.closest?.(".stream-block") || btn.parentElement || document.body).append?.(statusNode);
+    }
+
+    let currentState = "";
+    function setButtonState(state, announcement = "") {
+      if (currentState === state) return;
+      currentState = state;
+      btn.classList?.remove("is-playing", "is-paused", "is-error");
+      if (state === "playing") {
+        btn.disabled = false;
+        btn.removeAttribute?.("aria-disabled");
+        btn.classList?.add("is-playing");
+        btn.setAttribute?.("aria-pressed", "true");
+        btn.setAttribute?.("aria-label", labelFor("playing"));
+        btn.innerHTML = 'PEEKING <span class="peek-icon" aria-hidden="true">⏸</span>';
+        document.body.classList?.add("signal-auditioning");
+      } else if (state === "paused") {
+        btn.disabled = false;
+        btn.removeAttribute?.("aria-disabled");
+        btn.classList?.add("is-paused");
+        btn.setAttribute?.("aria-pressed", "false");
+        btn.setAttribute?.("aria-label", labelFor("paused"));
+        btn.innerHTML = 'PAUSED <span class="peek-icon" aria-hidden="true">▶</span>';
+        document.body.classList?.remove("signal-auditioning");
+      } else if (state === "unavailable") {
+        btn.classList?.add("is-error");
+        btn.setAttribute?.("aria-pressed", "false");
+        btn.disabled = true;
+        btn.setAttribute?.("aria-disabled", "true");
+        btn.textContent = "Preview unavailable";
+        btn.setAttribute?.("aria-label", labelFor("unavailable"));
+        document.body.classList?.remove("signal-auditioning");
+      } else if (state === "blocked") {
+        btn.disabled = false;
+        btn.removeAttribute?.("aria-disabled");
+        btn.classList?.add("is-error");
+        btn.setAttribute?.("aria-pressed", "false");
+        btn.textContent = "Playback blocked";
+        btn.setAttribute?.("aria-label", labelFor("blocked"));
+        document.body.classList?.remove("signal-auditioning");
+      } else {
+        btn.disabled = false;
+        btn.removeAttribute?.("aria-disabled");
+        btn.setAttribute?.("aria-pressed", "false");
+        btn.setAttribute?.("aria-label", labelFor(state === "ended" ? "ended" : "idle"));
+        btn.innerHTML = 'PEEK <span class="peek-icon" aria-hidden="true">▶</span>';
+        document.body.classList?.remove("signal-auditioning");
+      }
+      if (announcement && statusNode) statusNode.textContent = announcement;
+    }
+
+    setButtonState("idle");
+
     let audio = null;
+    let isStarting = false;
+
+    function onPlay() {
+      isStarting = false;
+      btn.removeAttribute?.("aria-busy");
+      setButtonState("playing", trackName ? `Playing 30-second preview of ${trackName}.` : "Playing 30-second preview.");
+    }
+
+    function onPause() {
+      isStarting = false;
+      btn.removeAttribute?.("aria-busy");
+      if (!audio || audio.ended) return;
+      setButtonState("paused", "Preview paused.");
+    }
+
+    function onEnded() {
+      isStarting = false;
+      btn.removeAttribute?.("aria-busy");
+      if (audio) {
+        try { audio.currentTime = 0; } catch { /* ignore seek errors on teardown */ }
+      }
+      setButtonState("ended", "Preview ended.");
+    }
+
+    function cleanupAudio() {
+      isStarting = false;
+      if (!audio) return;
+      const target = audio;
+      audio = null;
+      target.removeEventListener?.("play", onPlay);
+      target.removeEventListener?.("pause", onPause);
+      target.removeEventListener?.("ended", onEnded);
+      target.removeEventListener?.("error", onError);
+      try {
+        target.pause();
+        target.removeAttribute?.("src");
+        target.load?.();
+      } catch { /* media cleanup optional in stub environments */ }
+    }
+
+    function onError() {
+      cleanupAudio();
+      btn.removeAttribute?.("aria-busy");
+      setButtonState("unavailable", "Audio preview unavailable.");
+    }
 
     btn.addEventListener("click", () => {
+      if (isStarting || btn.disabled) return;
       if (!audio) {
         audio = new Audio(url);
-        audio.addEventListener("ended", () => {
-          btn.classList.remove("is-playing");
-          btn.innerHTML = 'PEEK <span class="peek-icon">▶</span>';
-          document.body.classList.remove("signal-auditioning");
-        });
-        audio.addEventListener("error", () => {
-          btn.textContent = "Preview unavailable";
-          btn.disabled = true;
-          document.body.classList.remove("signal-auditioning");
-        });
+        audio.addEventListener?.("play", onPlay);
+        audio.addEventListener?.("pause", onPause);
+        audio.addEventListener?.("ended", onEnded);
+        audio.addEventListener?.("error", onError);
       }
       if (audio.paused) {
-        audio.play().then(() => {
-          btn.classList.add("is-playing");
-          btn.innerHTML = 'PEEKING <span class="peek-icon">⏸</span>';
-          document.body.classList.add("signal-auditioning");
-        }).catch(() => {
-          btn.textContent = "Playback blocked";
+        isStarting = true;
+        btn.setAttribute?.("aria-busy", "true");
+        Promise.resolve(audio.play()).then(() => {
+          isStarting = false;
+          btn.removeAttribute?.("aria-busy");
+          if (audio && !audio.paused) {
+            setButtonState("playing", trackName ? `Playing 30-second preview of ${trackName}.` : "Playing 30-second preview.");
+          }
+        }).catch(err => {
+          isStarting = false;
+          btn.removeAttribute?.("aria-busy");
+          if (err && err.name === "AbortError") return;
+          if (err && err.name === "NotSupportedError") {
+            cleanupAudio();
+            setButtonState("unavailable", "Audio preview unavailable.");
+            return;
+          }
+          setButtonState("blocked", "Audio playback blocked by browser.");
         });
       } else {
         audio.pause();
-        btn.classList.remove("is-playing");
-        btn.innerHTML = 'PEEK <span class="peek-icon">▶</span>';
-        document.body.classList.remove("signal-auditioning");
+        setButtonState("paused", "Preview paused.");
       }
     });
 
-    window.addEventListener("pagehide", () => {
-      if (audio) {
-        audio.pause();
-        audio = null;
+    window.addEventListener?.("pagehide", () => {
+      cleanupAudio();
+      btn.removeAttribute?.("aria-busy");
+      if (!btn.classList?.contains("is-error")) {
+        setButtonState("idle");
+      } else {
+        document.body.classList?.remove("signal-auditioning");
       }
     });
   })();

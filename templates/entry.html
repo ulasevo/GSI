@@ -7,7 +7,7 @@
     <meta name="description" content="@@SAFE_PAGE_DESCRIPTION@@">
     <meta name="theme-color" content="@@ACCENT@@">
     <meta property="og:type" content="article">
-    <meta property="og:site_name" content="GSI">
+    <meta property="og:site_name" content="Chaperone">
     <meta property="og:title" content="@@SAFE_PAGE_TITLE@@">
     <meta property="og:description" content="@@SAFE_PAGE_DESCRIPTION@@">@@SHARING_META@@
     <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
@@ -21,14 +21,12 @@
 <body class="art-room entry-room" style="--accent:@@ACCENT@@;@@ART_STYLE@@;@@BG_STYLE@@">
     <main class="page">
         <header class="entry-nav">
-            <nav class="signal-trace" aria-label="GSI path">
-                <a id="trace-archive" href="../index.html">GSI</a>
+            <nav class="signal-trace floating-path" aria-label="Chaperone path">
+                <a id="trace-archive" href="../index.html" aria-label="Chaperone home" title="Chaperone"><span class="gsi-home-mark" data-gsi-mark="favicon-slot"><span class="gsi-home-mark-icon" aria-hidden="true"><img src="../covers/GSI_favicon.svg" alt=""></span></span></a>
                 <span id="trace-context-separator" class="trace-separator hidden">→</span>
                 <a id="trace-filter" class="hidden" href="../index.html"></a>
                 <span id="trace-filter-separator" class="trace-separator hidden">→</span>
                 <a id="trace-artist" class="hidden" href="../index.html"></a>
-                <span class="trace-entry-separator trace-separator">→</span>
-                <span class="trace-current">@@TRACK@@</span>
             </nav>
         </header>
 
@@ -39,10 +37,11 @@
                 <h1>@@TRACK@@</h1>
                 <p>@@ARTIST_DISPLAY@@</p>
                 <p class="album">@@ALBUM_DISPLAY@@</p>
-                @@P53_COUNTERPART_HTML@@
                 @@STREAMING_LINKS_HTML@@
             </div>
         </section>
+
+        @@P53_COUNTERPART_HTML@@
 
         <div class="@@ENTRY_LAYOUT_CLASS@@">
             @@ENTRY_INDEX_HTML@@

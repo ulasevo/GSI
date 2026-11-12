@@ -65,7 +65,7 @@ def build_404_page(
             "not_found_title": not_found_title,
             "protein_drops": protein_drops,
             "eyebrow": html.escape(copy.get("eyebrow", "SIGNAL LOST / 404")),
-            "message": html.escape(copy.get("message", "The page slipped out of GSI.")),
+            "message": html.escape(copy.get("message", "The page slipped out of Chaperone.")),
             "recommendation_label": html.escape(copy.get("recommendation_label", "INTERCEPTED SIGNAL")),
         },
     )

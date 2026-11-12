@@ -38,7 +38,7 @@ body::before {
   z-index: 1;
   width: min(var(--gsi-content-max), calc(100% - 48px));
   margin: 0 auto;
-  padding: 20px 0 clamp(48px, 8vw, 108px);
+  padding: 28px 0 clamp(84px, 9vw, 128px);
 }
 
 .p53-path {
@@ -60,8 +60,21 @@ body::before {
 }
 
 .p53-path a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
   color: #ff86bd;
   text-decoration: none;
+}
+
+.p53-path .gsi-home-mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.p53-path .gsi-home-mark-icon:empty {
+  display: none;
 }
 
 .p53-path span {
@@ -93,7 +106,7 @@ body::before {
 }
 
 .p53-landing h1 {
-  margin: 0;
+  margin: 0 0 0 -0.04em;
   font-family: var(--gsi-reading-font, Arial, sans-serif);
   font-size: clamp(62px, 10.5vw, 146px);
   font-weight: 950;
@@ -135,8 +148,8 @@ body::before {
 }
 
 .transmission-card {
-  width: min(100%, 1120px);
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   scroll-margin-top: 28px;
   content-visibility: auto;
   contain-intrinsic-size: 220px;
@@ -152,17 +165,24 @@ body::before {
   color: #fff;
   text-decoration: none;
   border: 1px solid color-mix(in srgb, var(--accent), white 20%);
-  border-radius: 22px 8px 22px 8px;
+  border-radius: 22px 10px 22px 10px;
   background: linear-gradient(118deg, color-mix(in srgb, var(--accent), transparent 86%), rgba(10, 9, 13, .95));
-  box-shadow: 0 18px 42px rgba(0, 0, 0, .28);
-  transition: border-radius 320ms var(--gsi-motion), box-shadow 260ms ease, border-color 220ms ease;
+  box-shadow:
+    0 18px 42px rgba(0, 0, 0, .30),
+    0 0 22px color-mix(in srgb, #35c9e9, transparent 82%),
+    0 0 18px color-mix(in srgb, #ff58a6, transparent 84%);
+  transition: transform 320ms var(--gsi-motion), border-radius 320ms var(--gsi-motion), box-shadow 260ms ease, border-color 220ms ease;
 }
 
 .transmission-card.is-current .transmission-card-link {
   grid-template-columns: minmax(320px, .8fr) minmax(0, 1.2fr);
   min-height: clamp(430px, 43vw, 510px);
   border-width: 2px;
-  border-radius: 28px 72px 28px 72px;
+  border-radius: 24px 36px 24px 36px;
+  box-shadow:
+    0 24px 56px rgba(0, 0, 0, .36),
+    0 0 28px color-mix(in srgb, #35c9e9, transparent 74%),
+    0 0 24px color-mix(in srgb, #ff58a6, transparent 76%);
 }
 
 .transmission-card.is-focused {
@@ -171,8 +191,9 @@ body::before {
 
 .transmission-card.is-focused .transmission-card-link {
   box-shadow:
-    0 22px 52px color-mix(in srgb, var(--accent), transparent 72%),
-    0 0 0 1px color-mix(in srgb, var(--accent), white 20%);
+    0 24px 54px rgba(0, 0, 0, .38),
+    0 0 34px color-mix(in srgb, #35c9e9, transparent 66%),
+    0 0 28px color-mix(in srgb, #ff58a6, transparent 68%);
 }
 
 .transmission-art {
@@ -180,6 +201,7 @@ body::before {
   z-index: 1;
   min-width: 0;
   min-height: 100%;
+  overflow: hidden;
   background: rgba(0, 0, 0, .26);
 }
 
@@ -189,6 +211,7 @@ body::before {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 420ms var(--gsi-motion), filter 320ms ease;
 }
 
 .cover-missing {
@@ -206,7 +229,7 @@ body::before {
   align-items: center;
   min-width: 0;
   overflow: hidden;
-  padding: 24px 30px;
+  padding: 24px 66px 24px 30px;
   background: linear-gradient(112deg, rgba(12, 11, 15, .72), rgba(12, 11, 15, .9));
 }
 
@@ -224,6 +247,17 @@ body::before {
   font-size: 10px;
   font-weight: 950;
   letter-spacing: .2em;
+}
+
+.transmission-card.is-current .signal-state {
+  display: inline-flex;
+  align-items: center;
+  width: max-content;
+  padding: 5px 12px;
+  border: 1px solid color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), white 34%);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), transparent 84%);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), transparent 64%);
 }
 
 .transmission-copy h2 {
@@ -264,6 +298,63 @@ body::before {
 .transmission-card.is-current .transmission-copy {
   align-items: end;
   padding: clamp(28px, 5vw, 62px);
+  padding-right: clamp(72px, 8vw, 96px);
+}
+
+.transmission-copy::after {
+  content: "↗";
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), white 28%);
+  border-radius: 10px 3px 10px 3px;
+  background: color-mix(in srgb, var(--art-surface, #17151b), transparent 18%);
+  color: color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), white 40%);
+  font-family: var(--gsi-ui-font, Arial, sans-serif);
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1;
+  opacity: .8;
+  transition: transform 280ms var(--gsi-motion), opacity 220ms ease, border-color 220ms ease, color 220ms ease, background 220ms ease, border-radius 280ms var(--gsi-motion);
+}
+
+.transmission-card.is-current .transmission-copy::after {
+  top: 22px;
+  right: 22px;
+}
+
+.transmission-card-link:hover,
+.transmission-card-link:focus-visible {
+  transform: translateY(-4px);
+  border-color: color-mix(in srgb, #35c9e9, var(--art-primary, #ff65ad) 48%);
+  box-shadow:
+    0 24px 56px rgba(0, 0, 0, .38),
+    0 0 36px color-mix(in srgb, #35c9e9, transparent 60%),
+    0 0 30px color-mix(in srgb, #ff58a6, transparent 62%);
+}
+
+.transmission-card-link:hover .transmission-art img,
+.transmission-card-link:focus-visible .transmission-art img {
+  transform: scale(1.075) rotate(-1.6deg);
+}
+
+.transmission-card.is-current .transmission-card-link:hover .transmission-art img,
+.transmission-card.is-current .transmission-card-link:focus-visible .transmission-art img {
+  transform: scale(1.055) rotate(-1.1deg);
+}
+
+.transmission-card-link:hover .transmission-copy::after,
+.transmission-card-link:focus-visible .transmission-copy::after {
+  opacity: 1;
+  transform: translate(2px, -2px);
+  border-color: #35c9e9;
+  color: #fff;
+  background: color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), #35c9e9 34%);
 }
 
 .transmission-card.is-current .transmission-copy::before {
@@ -325,10 +416,10 @@ body::before {
 
   .p53-landing {
     width: min(calc(100% - 24px), 620px);
-    padding-top: 12px;
+    padding-top: calc(64px + env(safe-area-inset-top, 0px));
   }
 
-  .p53-path {
+  .p53-path:not(.floating-path) {
     width: 100%;
     justify-content: center;
     min-height: 44px;
@@ -337,7 +428,7 @@ body::before {
   }
 
   .p53-landing > header {
-    padding: 44px 0 26px;
+    padding: 26px 0 24px;
     row-gap: 15px;
   }
 
@@ -359,17 +450,17 @@ body::before {
   .transmission-card.is-current .transmission-card-link {
     grid-template-columns: 1fr;
     min-height: 0;
-    border-radius: 18px 42px 18px 42px;
+    border-radius: 18px 28px 18px 28px;
   }
 
   .transmission-card.is-current .transmission-card-link {
-    border-radius: 20px 52px 20px 52px;
+    border-radius: 20px 32px 20px 32px;
   }
 
   .transmission-card:not(.is-current) .transmission-card-link {
     grid-template-columns: 82px minmax(0, 1fr);
     min-height: 142px;
-    border-radius: 16px 6px 16px 6px;
+    border-radius: 16px 8px 16px 8px;
   }
 
   .transmission-art,
@@ -386,12 +477,21 @@ body::before {
   .transmission-copy,
   .transmission-card.is-current .transmission-copy {
     align-items: flex-start;
-    padding: 22px 20px 26px;
+    padding: 22px 58px 26px 20px;
   }
 
   .transmission-card:not(.is-current) .transmission-copy {
     align-items: center;
-    padding: 14px 14px 16px;
+    padding: 16px 52px 16px 14px;
+  }
+
+  .transmission-copy::after {
+    top: 12px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+    opacity: .9;
   }
 
   .transmission-copy h2,
@@ -529,4 +629,60 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
   font-size: clamp(14px, 1.4vw, 17px);
   padding: 10px 18px;
   margin-top: 18px;
+}
+
+/* Light-mode P53 factor card character, active beacon, and corner arrow contrast. */
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card.is-current .signal-state {
+  color: var(--art-light-ink, #211823);
+  border-color: color-mix(in srgb, var(--art-primary, #b84093), var(--art-light-ink, #211823) 34%);
+  background: rgba(255, 255, 255, .64);
+  box-shadow: 0 0 18px color-mix(in srgb, var(--art-primary, #b84093), transparent 76%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-copy::after {
+  border-color: color-mix(in srgb, var(--art-primary, #b84093), var(--art-light-ink, #211823) 28%);
+  background: rgba(255, 255, 255, .68);
+  color: color-mix(in srgb, var(--art-primary, #b84093), var(--art-light-ink, #211823) 40%);
+  opacity: .92;
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card .transmission-card-link {
+  box-shadow:
+    0 18px 42px color-mix(in srgb, var(--art-primary, #8c5de8), transparent 80%),
+    0 0 22px color-mix(in srgb, #35c9e9, transparent 78%),
+    0 0 18px color-mix(in srgb, #ff58a6, transparent 80%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card.is-current .transmission-card-link {
+  box-shadow:
+    0 24px 56px color-mix(in srgb, var(--art-primary, #8c5de8), transparent 74%),
+    0 0 28px color-mix(in srgb, #35c9e9, transparent 72%),
+    0 0 24px color-mix(in srgb, #ff58a6, transparent 74%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover,
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:focus-visible {
+  border-color: color-mix(in srgb, #0287ac, var(--art-primary, #b84093) 48%);
+  box-shadow:
+    0 24px 54px color-mix(in srgb, var(--art-primary, #8c5de8), transparent 70%),
+    0 0 34px color-mix(in srgb, #35c9e9, transparent 62%),
+    0 0 28px color-mix(in srgb, #ff58a6, transparent 64%);
+}
+
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover .transmission-copy::after,
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:focus-visible .transmission-copy::after {
+  color: #1f1420;
+  border-color: #1f1420;
+  background: linear-gradient(120deg, color-mix(in srgb, var(--art-primary, #b84093), white 46%), color-mix(in srgb, #35c9e9, white 52%));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transmission-card-link:hover,
+  .transmission-card-link:focus-visible,
+  .transmission-card-link:hover .transmission-art img,
+  .transmission-card-link:focus-visible .transmission-art img,
+  .transmission-card-link:hover .transmission-copy::after,
+  .transmission-card-link:focus-visible .transmission-copy::after {
+    transform: none;
+  }
 }

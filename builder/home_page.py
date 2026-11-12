@@ -27,7 +27,7 @@ def build_index_html(
     config = load_config(config_file)
     # Config supplies authored copy and colors; this renderer only escapes it
     # and arranges it into the homepage structure.
-    project_title = config.get("project_title", "GSI")
+    project_title = config.get("project_title", "Chaperone")
     page_title = config.get("page_title", project_title)
     intro = config.get("intro", "")
     filters = config.get("filters", {})
@@ -120,6 +120,7 @@ def build_index_html(
         safe_label = html.escape(label)
         description = filter_settings.get("description", "") # panel text
         color = filter_settings.get("color", "#ffffff") # page tint color
+        safe_filter_color = html.escape(str(color or "#ffffff").strip() or "#ffffff", quote=True)
         playlist_url = (filter_settings.get("playlist_url") or "").strip()
         playlist_cover = (filter_settings.get("playlist_cover") or "").strip()
         playlist_cta = (filter_settings.get("playlist_cta") or "Want more of the same?").strip()
@@ -128,8 +129,20 @@ def build_index_html(
             item for item in tracks
             if filter_key in [tag.strip().lower() for tag in item.get("tags", "").split(",")]
         ]
+        selection_icon = ""
+        if filter_key == "ulas":
+            selection_icon = (
+                '<svg class="filter-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">'
+                '<path d="M4 2.5h8a1 1 0 0 1 1 1v10l-5-3-5 3v-10a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'
+                '</svg>'
+            )
         filter_buttons.append(
-            f'<button class="filter-btn filter-{safe_filter_key}" data-filter="{safe_filter_key}" aria-pressed="false"><span>{safe_label}</span></button>'
+            f'<button class="filter-btn filter-{safe_filter_key}" data-filter="{safe_filter_key}" aria-pressed="false" style="--filter-color: {safe_filter_color};">'
+            f'<span class="filter-dot" aria-hidden="true"></span>'
+            f'{selection_icon}'
+            f'<span class="filter-name">{safe_label}</span>'
+            f'<small class="filter-pill-count" aria-hidden="true">{len(filter_tracks)}</small>'
+            f'</button>'
         )
 
         filter_data[filter_key] = {
@@ -145,7 +158,10 @@ def build_index_html(
         }
 
     filters_html = f"""
-    <section class="filter-panel">
+    <section class="filter-panel" aria-label="Filter archive">
+        <div class="filter-panel-head">
+            <span class="filter-guide-label">Filter to begin:</span>
+        </div>
         <div class="filter-row">
             {''.join(filter_buttons)}
         </div>
@@ -189,14 +205,17 @@ def build_index_html(
                 <img src="covers/P53_cover-runtime.webp" alt="P53 protein artwork" loading="eager" fetchpriority="high" decoding="async">
             </div>
             <div class="p53-overlay">
-                <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover" loading="lazy" decoding="async">
-                <div class="p53-signal-copy">
-                    <span>CURRENT TRANSMISSION</span>
-                    <strong>{html.escape(p53_item['track'])}</strong>
-                    <small>{html.escape(p53_item['artist'])}</small>
-                    <b aria-hidden="true">↗</b>
+                <div class="p53-ribbon-lead">
+                    <div class="p53-radio">RADIO P53</div>
                 </div>
-                <div class="p53-radio">RADIO P53</div>
+                <div class="p53-ribbon-track">
+                    <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover" loading="lazy" decoding="async">
+                    <div class="p53-signal-copy">
+                        <strong>{html.escape(p53_item['track'])}</strong>
+                        <small>{html.escape(p53_item['artist'])}</small>
+                    </div>
+                    <b class="p53-arrow" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg></b>
+                </div>
             </div>
         </a>
         """

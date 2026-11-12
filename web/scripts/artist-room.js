@@ -26,17 +26,16 @@
   const artistReturn = document.querySelector("#artist-archive-return");
   if (artistReturn) {
     artistReturn.href = GSIContext.href("../index.html", roomParams);
-    artistReturn.textContent = "GSI";
   }
 
   if (filter && Object.hasOwn(filterLabels, filter)) {
     const filterLink = document.querySelector("#artist-filter-return");
-    const separator = document.querySelector("#artist-filter-separator");
-    if (filterLink && separator) {
+    const contextSeparator = document.querySelector("#artist-context-separator") || document.querySelector("#artist-filter-separator");
+    if (filterLink) {
       filterLink.textContent = String(filterLabels[filter]).toUpperCase();
       filterLink.href = GSIContext.href("../index.html", roomParams);
       filterLink.hidden = false;
-      separator.hidden = false;
+      if (contextSeparator) contextSeparator.hidden = false;
     }
   }
 

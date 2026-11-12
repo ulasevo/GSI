@@ -7,58 +7,60 @@
     <meta name="theme-color" content="#25152b">
     <meta name="description" content="@@P53_DESCRIPTION@@">@@SHARING_META@@
     <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
-    <script src="../scripts/theme-mode.js?v=20260921-persist"></script>
+    <script src="../scripts/theme-mode.js"></script>
     <link rel="stylesheet" href="../styles/gsi-tokens.css">
     <link rel="stylesheet" href="../styles/art-room.css">
     <link rel="stylesheet" href="../styles/p53-transmission.css">
     <link rel="stylesheet" href="../styles/p53-transmission-vars.css">
-    <link rel="stylesheet" href="../styles/theme-mode.css?v=20260920-final8">
+    <link rel="stylesheet" href="../styles/theme-mode.css">
     <title>@@P53_TITLE@@</title>
 </head>
 <body class="art-room p53-transmission-room" style="@@ART_STYLE@@">
     <main class="p53-page">
         <header class="p53-nav">
-            <nav class="p53-trace" aria-label="P53 path">
-                <a id="p53-trace-archive" href="../index.html">GSI</a><span class="trace-separator">→</span>
+            <nav class="p53-trace floating-path" aria-label="P53 path">
+                <a id="p53-trace-archive" href="../index.html" aria-label="Chaperone home" title="Chaperone"><span class="gsi-home-mark" data-gsi-mark="favicon-slot"><span class="gsi-home-mark-icon" aria-hidden="true"><img src="../covers/GSI_favicon.svg" alt=""></span></span></a><span class="trace-separator">→</span>
                 <a id="p53-trace-filter" class="hidden" href="../index.html"></a><span id="p53-trace-filter-separator" class="trace-separator hidden">→</span>
                 <a id="p53-trace-artist" class="hidden" href="../index.html"></a><span id="p53-trace-artist-separator" class="trace-separator hidden">→</span>
-                <a id="p53-radio-index" href="index.html">RADIO P53</a><span class="trace-separator">→</span><span class="trace-current" aria-current="page">@@SIGNAL_LABEL@@</span>
+                <a id="p53-radio-index" href="index.html">RADIO P53</a>
             </nav>
-            <button class="share-transmission" id="share-transmission" type="button" aria-haspopup="dialog">SHARE</button>
         </header>
         <section class="transmission">
+            <button class="share-transmission" id="share-transmission" type="button" aria-haspopup="dialog">Share</button>
             <div class="protein-panel"><img src="../covers/P53_cover-runtime.webp" alt="Expressive P53 protein artwork" loading="eager" decoding="async"></div>
             <div class="signal-panel">
                 @@COVER_HTML@@
                 <h1>@@TRACK@@</h1>
                 <p class="artist">@@ARTIST@@</p>
                 <p class="album">@@ALBUM@@</p>
+                @@NOTE_HTML@@
                 @@STREAMING_LINKS_HTML@@
-                @@ENTRY_COUNTERPART_HTML@@
             </div>
         </section>
         <div class="p53-details">
-            <aside class="p53-about"><h2>WHY P53?</h2><p>@@ABOUT_TEXT@@</p></aside>
-            @@NOTE_HTML@@
+            <aside class="p53-about"><h2>Why P53?</h2><p>@@ABOUT_TEXT@@</p></aside>
+            @@ENTRY_COUNTERPART_HTML@@
         </div>
     </main>
     <dialog id="story-modal" class="story-modal" aria-labelledby="story-modal-title">
         <div class="story-modal-shell">
             <header class="story-modal-header">
                 <div class="story-modal-heading">
-                    <span class="story-modal-kicker">RADIO P53</span>
-                    <h2 id="story-modal-title" class="story-modal-title">SHARE TRANSMISSION</h2>
+                    <span class="story-modal-kicker">Radio P53</span>
+                    <h2 id="story-modal-title" class="story-modal-title">Share transmission</h2>
                 </div>
-                <button type="button" class="story-modal-close" id="story-modal-close" aria-label="Close transmission card generator">✕</button>
+                <button type="button" class="story-modal-close" id="story-modal-close" aria-label="Close share dialog">✕</button>
             </header>
             <div class="story-modal-body">
                 <div class="story-card-preview-wrap">
                     <canvas id="story-card-canvas" width="1080" height="1920" class="story-card-canvas" aria-label="Radio P53 transmission story card preview"></canvas>
                 </div>
                 <div class="story-modal-actions">
-                    <button type="button" class="story-btn story-btn-share" id="story-btn-share">SHARE TO STORY / APP ↗</button>
-                    <button type="button" class="story-btn story-btn-download" id="story-btn-download">DOWNLOAD CARD (PNG)</button>
-                    <button type="button" class="story-btn story-btn-copy" id="story-btn-copy">COPY LINK</button>
+                    <button type="button" class="story-btn story-btn-share" id="story-btn-share" disabled>Share card ↗</button>
+                    <button type="button" class="story-btn story-btn-download" id="story-btn-download" disabled>Download card</button>
+                    <button type="button" class="story-btn story-btn-copy" id="story-btn-copy">Copy link</button>
+                    <p class="story-share-hint">Some apps don't include a link with an image. Copy it to add separately.</p>
+                    <p class="story-status" id="story-status" role="status" aria-live="polite"></p>
                 </div>
             </div>
         </div>

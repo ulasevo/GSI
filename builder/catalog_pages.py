@@ -119,7 +119,7 @@ def build_artist_pages(
             album_note = str(album_notes.get(artist, {}).get(album, "")).strip()
             album_note_html = f'<div class="album-note-preview">{simple_markdown_to_html(album_note)}</div>' if album_note else ""
             album_sections.append(f'''<section class="album-stack" style="--accent:{items[0]["accent"]}">
-                <header><img src="../covers/{html.escape(items[0]["cover_file"], quote=True)}" alt="{html.escape(album, quote=True)} cover" loading="lazy" decoding="async"><div style="min-width:0"><span style="display:block;margin-bottom:6px;color:color-mix(in srgb,var(--accent),white 24%);font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2>{album_title_link}</h2>{album_note_html}</div></header>
+                <header><img src="../covers/{html.escape(items[0]["cover_file"], quote=True)}" alt="{html.escape(album, quote=True)} cover" loading="lazy" decoding="async"><div style="min-width:0"><span class="album-stack-kicker" style="display:block;margin-bottom:6px;font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2>{album_title_link}</h2>{album_note_html}</div></header>
                 <div>{''.join(entry_tile(item, compact=True) for item in items)}</div>
             </section>''')
         albums_html = "".join(album_sections)
@@ -216,7 +216,7 @@ def build_album_pages(
                 f'<b>OPEN ↗</b></a>'
             )
         note = str(notes.get(artist, {}).get(album, "")).strip()
-        note_html = f'<section class="album-note"><span>MY TAKE</span>{simple_markdown_to_html(note)}</section>' if note else ""
+        note_html = f'<section class="album-note"><span>My take</span>{simple_markdown_to_html(note)}</section>' if note else ""
         album_room_data = json.dumps(
             {"filterKeys": list(config.get("filters", {}).keys())},
             ensure_ascii=False,

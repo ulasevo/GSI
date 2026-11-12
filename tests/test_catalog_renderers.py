@@ -63,7 +63,7 @@ class CatalogueRendererTests(unittest.TestCase):
         self.assertIn("Empty", page)
         self.assertIn("Too Little Too Late", page)
         self.assertIn("ALBUM / 02 SIGNALS", page)
-        self.assertIn(">Live It Out</strong>", page)
+        self.assertIn("<h1>Live It Out</h1>", page)
 
     def test_generation_manifest_can_target_an_isolated_output(self):
         inventory = {
@@ -119,7 +119,9 @@ class CatalogueRendererTests(unittest.TestCase):
             page = (output_dir / "metric-empty.html").read_text(encoding="utf-8")
 
         self.assertEqual([section["title"] for section in sections], ["Charge", "Sonical Attraction", "Lore"])
-        self.assertIn('class="entry-index"', page)
+        self.assertNotIn('class="entry-index"', page)
+        self.assertIn('class="section-card"', page)
+        self.assertIn('id="section-charge"', page)
         self.assertIn("A stored feeling.", page)
         self.assertIn("A sharp pulse.", page)
 
@@ -185,7 +187,7 @@ class CatalogueRendererTests(unittest.TestCase):
 
         self.assertIn("THIS SIGNAL IS <em>NOT</em> HERE.", page)
         self.assertIn("metric-empty.html", page)
-        self.assertIn("OPEN SIGNAL IN GSI", page)
+        self.assertIn("OPEN SIGNAL IN CHAPERONE", page)
 
     def test_404_renderer_uses_deployed_root_for_nested_pages(self):
         with tempfile.TemporaryDirectory() as temp:

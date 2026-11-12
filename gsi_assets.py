@@ -365,6 +365,16 @@ def copy_site_scripts(web_dir: Path, site_scripts_dir: Path) -> None:
         shutil.copy2(source, site_scripts_dir / source.name)
 
 
+def copy_site_fonts(web_dir: Path, site_fonts_dir: Path) -> None:
+    """Copy bundled typography assets into the generated site."""
+    fonts_dir = web_dir / "fonts"
+    if not fonts_dir.is_dir():
+        return
+    if site_fonts_dir.exists():
+        shutil.rmtree(site_fonts_dir)
+    shutil.copytree(fonts_dir, site_fonts_dir)
+
+
 def copy_site_styles(web_dir: Path, site_styles_dir: Path) -> None:
     """Copy stylesheets and assemble the layered homepage stylesheet."""
     site_styles_dir.mkdir(parents=True, exist_ok=True)

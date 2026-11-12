@@ -7,7 +7,7 @@
     <meta name="description" content="@@SAFE_META_DESCRIPTION@@">
     <meta name="theme-color" content="#0d0d0f">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="GSI">
+    <meta property="og:site_name" content="Chaperone">
     <meta property="og:title" content="@@SAFE_PAGE_TITLE@@">
     <meta property="og:description" content="@@SAFE_META_DESCRIPTION@@">@@HOMEPAGE_URL_META@@@@SHARE_IMAGE_META@@
     <link rel="icon" href="covers/GSI_favicon.svg" type="image/svg+xml">
@@ -15,16 +15,13 @@
     <link rel="stylesheet" href="styles/gsi-tokens.css">
     <link rel="stylesheet" href="styles/gsi-home.css">
     <link rel="stylesheet" href="styles/theme-mode.css?v=20260920-final8">
-    <title>@@SAFE_PROJECT_TITLE@@</title>
+    <title>@@SAFE_PAGE_TITLE@@</title>
 </head>
 <body data-view="wall">
     <div class="signal-transform" aria-hidden="true"></div>
     <header class="site-hero">
-        <div class="hero-copy">
-            <div class="hero-architecture" aria-hidden="true">
-                <span>GENOME</span><span>STABILITY</span><span>INDUCERS</span>
-            </div>
-            <div class="wordmark">GSI</div>
+        <div class="site-masthead">
+            <h1 class="wordmark">@@SAFE_PROJECT_TITLE@@</h1>
             @@INTRO_HTML@@
         </div>
         @@P53_HTML@@
@@ -57,7 +54,7 @@
             </span>
             <span class="view-cycle-label">VIEW</span>
             <strong class="view-cycle-value" id="view-cycle-value">WALL</strong>
-            <span class="view-cycle-arrow" aria-hidden="true">⟳</span>
+            <span class="cycle-dots cycle-dots--view" aria-hidden="true"><span></span><span></span><span></span></span>
         </button>
         <button class="view-btn" data-view="poster" aria-pressed="false" hidden>Poster</button>
         <button class="view-btn active" data-view="wall" aria-pressed="true" hidden>Wall</button>
@@ -79,7 +76,7 @@
             </span>
             <span class="format-cycle-label">FORMAT</span>
             <strong class="format-cycle-value" id="format-cycle-value">SONGS</strong>
-            <span class="format-cycle-arrow" aria-hidden="true">⟳</span>
+            <span class="cycle-dots cycle-dots--format" aria-hidden="true"><span></span><span></span></span>
         </button>
         <button class="format-option" data-format-option="songs" type="button" aria-pressed="true" hidden>SONGS</button>
         <button class="format-option" data-format-option="albums" type="button" aria-pressed="false" hidden>ALBUMS</button>

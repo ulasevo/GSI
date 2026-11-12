@@ -31,19 +31,6 @@
             border-radius: 12px 4px 12px 4px;
         }
         @media (max-width: 820px) {
-            .site-hero {
-                grid-template-columns: 1fr;
-            }
-            .hero-copy {
-                min-height: 0;
-            }
-            .p53-broadcast {
-                min-height: 280px; /* leave room for Radio P53 and the album transmission */
-                border-radius: 12px 34px 12px 34px;
-            }
-            .p53-art img { min-height: 100%; }
-            .filter-btn { flex-basis: calc(33.333% - 5px); }
-            .filter-btn.active { flex-grow: 1.8; }
             .filter-description { grid-template-columns: 1fr; }
             body.filter-active .filter-description { min-height: 0; }
             .playlist-card {
@@ -52,25 +39,16 @@
             }
         }
         @media (max-width: 520px) {
-            .wordmark {
-                font-size: clamp(72px, 25vw, 108px);
-                padding: 9px 20px 13px 15px;
-            }
-            .hero-copy .intro p { font-size: 14px; }
-            .p53-overlay { padding: 15px; gap: 10px; }
-            .p53-album { width: 68px; }
-            .p53-signal-copy { max-width: 78%; }
-            .p53-radio { font-size: 38px; }
-            .filter-btn {
-                flex-basis: calc(50% - 5px);
-                min-height: 48px;
-            }
-            .filter-btn.active { flex-basis: 100%; }
+            .p53-overlay { padding: 8px 10px 8px 12px; gap: 8px; }
+            .p53-album { width: 32px; height: 32px; }
+            .p53-radio { font-size: clamp(22px, 6vw, 28px); }
+            .p53-arrow { width: 24px; height: 24px; }
+            .p53-arrow svg { width: 11px; height: 11px; }
             body.filter-active .filter-description {
                 max-height:none;
-                padding:24px 18px;
+                padding:20px 16px;
             }
-            .filter-description h2 { font-size: clamp(38px, 15vw, 68px); }
+            .filter-description h2 { font-size: clamp(32px, 11vw, 52px); }
             .playlist-card { width:min(100%,260px); }
             .view-control { width: auto; }
             .view-btn { flex: 1; }
@@ -81,13 +59,6 @@
             body.filter-active .site-hero {
                 gap: 10px;
                 margin-bottom: 12px;
-            }
-            body.filter-active .hero-copy {
-                min-height: 0;
-                padding: 12px 16px;
-            }
-            body.filter-active .p53-broadcast {
-                min-height: 112px;
             }
             .layout-format-controls {
                 display: flex;
@@ -117,10 +88,24 @@
                 height: 100%;
                 min-height: 0;
                 padding: 0 4px;
-                gap: 5px;
+                gap: 4px;
                 border-radius: 8px;
                 font-size: 9px;
                 letter-spacing: 0.05em;
+            }
+            .cycle-dots {
+                gap: 2.5px;
+            }
+            .cycle-dots span {
+                width: 4px;
+                height: 4px;
+            }
+            .view-cycle-btn[data-current-view="wall"] .cycle-dots span:nth-child(1),
+            .view-cycle-btn[data-current-view="gallery"] .cycle-dots span:nth-child(2),
+            .view-cycle-btn[data-current-view="poster"] .cycle-dots span:nth-child(3),
+            .format-cycle-btn[data-current-format="songs"] .cycle-dots span:nth-child(1),
+            .format-cycle-btn[data-current-format="albums"] .cycle-dots span:nth-child(2) {
+                width: 7px;
             }
             .view-cycle-label,
             .format-cycle-label {
@@ -154,78 +139,61 @@
                     color: #fff;
                 }
             }
-            /* Android may substitute unavailable desktop display faces; make the mobile weight intentional. */
-            .filter-panel,
-            .filter-description,
-            .view-control {
-                font-family:Roboto,Arial,sans-serif;
-                font-synthesis:weight;
-                text-size-adjust:100%;
-                -webkit-text-size-adjust:100%;
+            .site-masthead {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+                padding-right: 104px;
+            }
+            .filter-panel {
+                padding: 10px 11px;
+                border-radius: 15px;
+            }
+            .filter-panel-head {
+                margin-bottom: 7px;
             }
             .filter-row {
-                display:grid;
-                grid-template-columns:repeat(2,minmax(0,1fr));
-                gap:7px;
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 6px;
             }
             .filter-btn {
-                min-width:0;
-                min-height:54px;
-                padding:11px 8px;
-                flex:initial;
+                width: 100%;
+                min-width: 0;
+                height: 38px;
+                min-height: 38px;
+                padding: 0 10px;
+                gap: 7px;
+                border-radius: 10px;
+                font-size: 12.5px;
             }
-            .filter-btn span {
-                max-width:100%;
-                overflow:hidden;
-                font-size:clamp(11px,3.35vw,14px);
-                font-weight:900;
-                -webkit-text-stroke:.22px currentColor;
-                text-overflow:ellipsis;
-                white-space:nowrap;
+            .filter-pill-count {
+                font-size: 10.5px;
             }
-            .filter-btn.filter-ulas,
-            .filter-btn.filter-p53 {
-                grid-column:1/-1;
-                flex-basis:auto;
-            }
-            .filter-btn.active {
-                grid-column:auto;
-                flex-grow:initial;
-                transform:none;
-            }
-            .filter-btn.filter-ulas.active,
-            .filter-btn.filter-p53.active { grid-column:1/-1; }
             .filter-description {
-                grid-template-columns:minmax(0,1fr);
-                gap:24px;
+                grid-template-columns: minmax(0, 1fr);
+                gap: 16px;
             }
             body.filter-active .filter-description {
-                min-height:0;
-                max-height:none;
-                padding:26px 20px 22px;
+                min-height: 0;
+                max-height: none;
+                padding: 18px 16px;
             }
             .filter-copy {
-                min-height:220px;
-                padding-top:16px;
-                justify-content:flex-start;
+                min-height: 0;
+                padding-top: 4px;
+                justify-content: flex-start;
             }
             .filter-description h2 {
-                font-size:clamp(42px,14vw,68px);
-                font-weight:900;
-                -webkit-text-stroke:.35px currentColor;
-                text-wrap:pretty;
+                font-size: clamp(34px, 11vw, 52px);
+                font-weight: 700;
+                text-wrap: pretty;
             }
-            .filter-count,
-            .playlist-card-text,
-            .view-btn { font-weight:900; -webkit-text-stroke:.18px currentColor; }
             .filter-room-label {
-                left:-4%;
-                bottom:14%;
-                color:color-mix(in srgb,var(--page-tint),transparent 63%);
-                font-family:"Arial Black",Roboto,Arial,sans-serif;
-                font-weight:900;
-                -webkit-text-stroke:.55px currentColor;
-                font-size:clamp(84px,24vw,132px);
+                left: -4%;
+                bottom: 12%;
+                color: color-mix(in srgb, var(--page-tint), transparent 72%);
+                font-size: clamp(72px, 22vw, 120px);
             }
             .filter-description[data-filter="bassline"] .filter-room-label {
                 left:-5%;
@@ -271,18 +239,10 @@
                 .view-cycle-label { display: none; }
             }
 
-            /* Mobile rooms are independent, content-sized signal cards — not a narrowed desktop stage. */
-            .hero-copy {
-                min-height:0;
-                padding:22px 20px 26px;
-                justify-content:flex-start;
-            }
+            /* Compact mobile filter-room presentation without the oversized hero slab. */
             .wordmark {
-                padding:9px 18px 12px 14px;
-                font-size:clamp(56px,18vw,78px);
+                font-size: clamp(26px, 7.5vw, 34px);
             }
-            .hero-copy .intro { margin-top:20px; }
-            .hero-architecture span:nth-child(2) { -webkit-text-stroke:0; }
 
             body.filter-active .filter-description {
                 grid-template-columns:minmax(0,1fr);
@@ -296,10 +256,11 @@
                 padding-top:0;
             }
             .filter-description h2 {
-                margin-bottom:12px;
-                font-size:clamp(42px,13vw,62px);
-                line-height:.88;
-                letter-spacing:-.05em;
+                margin-bottom:10px;
+                font-family:var(--gsi-display-font,"Space Grotesk",sans-serif);
+                font-size:clamp(32px,11vw,50px);
+                line-height:.92;
+                letter-spacing:-.04em;
                 font-synthesis:none;
             }
             .filter-description p {
@@ -354,7 +315,7 @@
                 left:18px;
                 bottom:12px;
                 color:color-mix(in srgb,var(--page-tint),transparent 86%);
-                font:900 clamp(62px,20vw,96px)/.75 Roboto,Arial,sans-serif;
+                font:700 clamp(62px,20vw,96px)/.75 var(--gsi-display-font,"Space Grotesk",sans-serif);
                 letter-spacing:-.08em;
             }
             .filter-description[data-filter="pop"] .filter-decor span {

@@ -10,8 +10,9 @@ import json
 from pathlib import Path
 
 from gsi_data import current_p53_slug, load_config
-from gsi_assets import artwork_palette, compact_rim_gradient, palette_style
+from gsi_assets import artwork_palette, palette_style
 from gsi_text import make_streaming_links, simple_markdown_to_html, slugify
+from builder.entry_pages import excerpt_text, extract_sections_from_markdown, p53_art_context
 from builder.template_renderer import render_template
 
 
@@ -19,21 +20,64 @@ def _default_base() -> Path:
     return Path(__file__).resolve().parent.parent
 
 
+def _build_entry_companion_html(
+    item: dict,
+    track_palette: dict[str, str],
+    track_accent: str,
+    cover_src: str,
+    entries_dir: Path,
+    entry_slugs: set[str] | None,
+) -> str:
+    """Render a track-themed companion card when an entry exists for this factor."""
+    entry_path = entries_dir / f'{item["slug"]}.md'
+    has_entry = item["slug"] in entry_slugs if entry_slugs is not None else entry_path.is_file()
+    if not has_entry:
+        return ""
+    sections: list[dict] = []
+    if entry_path.is_file():
+        try:
+            sections = [
+                section
+                for section in extract_sections_from_markdown(entry_path)
+                if str(section.get("content") or "").strip()
+            ]
+        except OSError:
+            sections = []
+    sections_html = ""
+    excerpt_html = ""
+    if sections:
+        section_pills = "".join(
+            f'<span>{html.escape(str(section["title"]))}</span>'
+            for section in sections
+        )
+        sections_html = f'<div class="entry-card-sections">{section_pills}</div>'
+        excerpt = excerpt_text(str(sections[0]["content"]))
+        if excerpt:
+            excerpt_html = f'<p class="entry-card-excerpt">{html.escape(excerpt)}</p>'
+    track_card_style = html.escape(
+        f'--accent:{track_accent};{palette_style(track_palette, cover_src)}',
+        quote=True,
+    )
+    track_aria = html.escape(f'Open entry: {item["track"]}', quote=True)
+    return (
+        f'<a class="entry-counterpart entry-card-companion" '
+        f'href="../entries/{html.escape(item["slug"], quote=True)}.html" '
+        f'aria-label="{track_aria}" '
+        f'style="{track_card_style}">'
+        f'<div class="entry-card-header">'
+        f'<span class="entry-card-kicker">Entry</span>'
+        f'<strong class="entry-card-title">{html.escape(item["track"])}</strong>'
+        f'</div>'
+        f'{sections_html}'
+        f'{excerpt_html}'
+        f'<span class="entry-card-cta" aria-hidden="true">↗</span>'
+        f'</a>'
+    )
+
+
 def _p53_art_context(config: dict, base: Path) -> tuple[dict[str, str], str]:
     """Return the playlist artwork palette and a style string for P53 rooms."""
-    settings = (config.get("filters") or {}).get("p53") or {}
-    cover_value = str(settings.get("playlist_cover") or "covers/P53_cover.jpg").strip()
-    cover_path = base / cover_value
-    palette = artwork_palette(cover_path, "#ff65ad")
-    browser_cover = cover_value.replace("\\", "/")
-    if browser_cover.startswith("covers/"):
-        browser_cover = "../" + browser_cover
-    style = (
-        f'--accent:{palette.get("primary", "#ff65ad")};'
-        f'--p53-accent:{palette.get("primary", "#ff65ad")};'
-        f'{palette_style(palette, browser_cover, rim_gradient=compact_rim_gradient(palette))}'
-    )
-    return palette, style
+    return p53_art_context(config, base)
 
 
 # Permanent transmissions receive one prepared context object for routing and
@@ -43,25 +87,35 @@ def build_p53_page(
     output_name: str,
     entry_slugs: set[str] | None = None,
     artist_slugs: set[str] | None = None,
+    album_routes: dict[tuple[str, str], str] | None = None,
     *,
     config_file: Path | None = None,
     output_dir: Path | None = None,
     entries_dir: Path | None = None,
 ) -> None:
-    """Build one permanent P53 transmission from explicitly editable P53 copy."""
+    """Build one permanent P53 factor page from explicitly editable P53 copy."""
     base = _default_base()
     config_file = config_file or base / "config.json"
     output_dir = output_dir or base / "site" / "p53"
     entries_dir = entries_dir or base / "entries"
     config = load_config(config_file)
     p53_palette, p53_style = _p53_art_context(config, base)
-    signal_label = "CURRENT TRANSMISSION" if item["slug"] == current_p53_slug(config, config.get("p53_history", [])) else "PAST TRANSMISSION"
+    signal_label = "ACTIVE" if item["slug"] == current_p53_slug(config, config.get("p53_history", [])) else "PREVIOUS"
     artist_slug = slugify(item["artist"])
     has_artist_room = artist_slug in (artist_slugs or set())
     artist_display = (
         f'<a class="artist-link" href="../artists/{artist_slug}.html">{html.escape(item["artist"])}</a>'
         if has_artist_room else html.escape(item["artist"])
     )
+    album_route = (album_routes or {}).get((item.get("artist", ""), item.get("album", "")))
+    if album_route:
+        album_href = album_route if album_route.startswith("../") else f"../{album_route.lstrip('/')}"
+        album_display = (
+            f'<a class="album-link" href="{html.escape(album_href, quote=True)}">'
+            f'{html.escape(item["album"])}</a>'
+        )
+    else:
+        album_display = html.escape(item["album"])
     about_text = (config.get("p53_about") or "").strip()
     transmission_note = str((config.get("p53_transmission_notes") or {}).get(item["slug"], "")).strip()
     cover_src = f'../covers/{item["cover_file"]}' if item.get("cover_file") else ""
@@ -70,7 +124,7 @@ def build_p53_page(
     track_palette = (
         artwork_palette(track_cover_path, fallback=item.get("accent") or "#ff65ad")
         if track_cover_path and track_cover_path.is_file()
-        else {"primary": item.get("accent") or "#ff65ad", "secondary": "#8a8292", "glow": "#6d6475", "field": "#120c18"}
+        else artwork_palette(Path("__missing_artwork__.jpg"), fallback=item.get("accent") or "#ff65ad")
     )
     track_accent = str(item.get("accent") or track_palette.get("primary") or "#ff65ad")
     p53_accent = str(p53_palette.get("primary") or "#ff65ad")
@@ -89,6 +143,9 @@ def build_p53_page(
             "secondary": track_palette.get("secondary", "#8a8292"),
             "glow": track_palette.get("glow", "#6d6475"),
             "field": track_palette.get("field", "#120c18"),
+            "soft": track_palette.get("soft", "#d4c8db"),
+            "surface": track_palette.get("surface", "#16111c"),
+            "ink": track_palette.get("ink", "#f8f5ef"),
         },
         "signalLabel": signal_label,
         "track": item["track"],
@@ -106,7 +163,7 @@ def build_p53_page(
         sharing_meta = f'''\n    <link rel="canonical" href="{html.escape(p53_permalink, quote=True)}">
     <meta property="og:url" content="{html.escape(p53_permalink, quote=True)}">
     <meta property="og:type" content="website">
-    <meta property="og:site_name" content="GSI / Radio P53">
+    <meta property="og:site_name" content="Chaperone / Radio P53">
     <meta property="og:title" content="{html.escape(f'Radio P53 — {item["track"]}', quote=True)}">
     <meta property="og:description" content="{html.escape(p53_description, quote=True)}">
     <meta property="og:image" content="{html.escape(site_url + '/covers/P53_cover.jpg', quote=True)}">
@@ -114,13 +171,17 @@ def build_p53_page(
     art_style = html.escape(p53_style, quote=True)
     cover_html = f'<img class="signal-cover" src="{cover_src}" alt="{html.escape(item["album"], quote=True)} cover" loading="eager" fetchpriority="high" decoding="async">' if cover_src else ""
     note_html = (
-        f'<section class="transmission-note"><h2>TRANSMISSION NOTES</h2>{simple_markdown_to_html(transmission_note)}</section>'
+        f'<div class="transmission-note">{simple_markdown_to_html(transmission_note)}</div>'
         if transmission_note else ""
     )
-    entry_counterpart_html = ""
-    has_entry = item["slug"] in entry_slugs if entry_slugs is not None else (entries_dir / f'{item["slug"]}.md').exists()
-    if has_entry:
-        entry_counterpart_html = f'<a class="entry-counterpart" href="../entries/{html.escape(item["slug"], quote=True)}.html">INSIDE GSI / READ ENTRY ↗</a>'
+    entry_counterpart_html = _build_entry_companion_html(
+        item,
+        track_palette,
+        track_accent,
+        cover_src,
+        entries_dir,
+        entry_slugs,
+    )
     html_page = render_template(
         "p53-transmission.html",
         {
@@ -131,7 +192,7 @@ def build_p53_page(
             "cover_html": cover_html,
             "track": html.escape(item["track"]),
             "artist": artist_display,
-            "album": html.escape(item["album"]),
+            "album": album_display,
             "streaming_links_html": make_streaming_links(item),
             "entry_counterpart_html": entry_counterpart_html,
             "about_text": html.escape(about_text),
@@ -178,7 +239,7 @@ def build_p53_archive(
 
     def transmission_card(item: dict, index: int) -> str:
         number = str(index + 1).zfill(2)
-        state = "CURRENT TRANSMISSION" if index == 0 else "PAST TRANSMISSION"
+        state = "ACTIVE" if index == 0 else "PREVIOUS"
         current_class = " is-current" if index == 0 else ""
         current_attr = 'aria-current="true"' if index == 0 else ""
         note = str(transmission_notes.get(item["slug"], "")).strip()
@@ -186,7 +247,7 @@ def build_p53_archive(
         return f'''<li class="transmission-card{current_class}" id="signal-{number}" data-index="{index}">
     <a class="transmission-card-link" {current_attr} data-base-href="{html.escape(item["slug"], quote=True)}.html" href="{html.escape(item["slug"], quote=True)}.html">
         <div class="transmission-art">{cover(item, eager=index == 0)}</div>
-        <div class="transmission-copy"><div class="copy-content"><span class="signal-state">{state}</span><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small>{note_html}<b>ENTER TRANSMISSION ↗</b></div></div>
+        <div class="transmission-copy"><div class="copy-content"><span class="signal-state">{state}</span><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small>{note_html}</div></div>
     </a>
 </li>'''
 

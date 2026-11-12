@@ -11,10 +11,63 @@ import re
 from pathlib import Path
 from urllib.parse import quote
 
-from gsi_data import current_p53_slug, load_config
-from gsi_assets import artwork_palette, palette_style
+from gsi_data import load_config
+from gsi_assets import artwork_palette, compact_rim_gradient, palette_style
 from gsi_text import make_streaming_links, simple_markdown_to_html, slugify
 from builder.template_renderer import render_template
+
+
+def excerpt_text(raw_content: str, max_chars: int = 180) -> str:
+    """Return a concise plain-text excerpt from authored prose."""
+    plain = re.sub(r"\*\*(.*?)\*\*", r"\1", raw_content or "")
+    collapsed = re.sub(r"\s+", " ", plain).strip()
+    if len(collapsed) <= max_chars:
+        return collapsed
+    clipped = collapsed[:max_chars].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    return (clipped or collapsed[:max_chars].rstrip()) + "…"
+
+
+def p53_art_context(config: dict, base: Path) -> tuple[dict[str, str], str]:
+    """Return the P53 playlist artwork palette and inline CSS vars for room surfaces."""
+    settings = (config.get("filters") or {}).get("p53") or {}
+    cover_value = str(settings.get("playlist_cover") or "covers/P53_cover.jpg").strip()
+    cover_path = base / cover_value if cover_value else Path("__missing_artwork__.jpg")
+    palette = artwork_palette(cover_path, "#ff65ad")
+    browser_cover = cover_value.replace("\\", "/")
+    if browser_cover.startswith("covers/"):
+        browser_cover = "../" + browser_cover
+    style = (
+        f'--accent:{palette.get("primary", "#ff65ad")};'
+        f'--p53-accent:{palette.get("primary", "#ff65ad")};'
+        f'{palette_style(palette, browser_cover, rim_gradient=compact_rim_gradient(palette))}'
+    )
+    return palette, style
+
+
+def _build_p53_companion_html(item: dict, config: dict, base: Path) -> str:
+    """Render a Radio P53 companion card when this song appears in p53_history."""
+    in_p53 = any(record.get("slug") == item["slug"] for record in config.get("p53_history", []))
+    if not in_p53:
+        return ""
+    p53_note = str((config.get("p53_transmission_notes") or {}).get(item["slug"], "")).strip()
+    note_excerpt = excerpt_text(p53_note, max_chars=160) if p53_note else ""
+    note_excerpt_html = f'<p class="p53-card-note">{html.escape(note_excerpt)}</p>' if note_excerpt else ""
+    _, p53_style = p53_art_context(config, base)
+    safe_style = html.escape(p53_style, quote=True)
+    safe_slug = html.escape(item["slug"], quote=True)
+    safe_track = html.escape(item["track"])
+    safe_aria = html.escape(f'Radio P53: {item["track"]}', quote=True)
+    return (
+        f'<a class="p53-counterpart p53-card-companion" '
+        f'data-base-href="../p53/{safe_slug}.html" '
+        f'href="../p53/{safe_slug}.html" '
+        f'aria-label="{safe_aria}" '
+        f'style="{safe_style}">'
+        f'<div class="p53-card-art"><img src="../covers/P53_cover-runtime.webp" alt="Radio P53 artwork" loading="lazy" decoding="async"></div>'
+        f'<div class="p53-card-body"><span class="p53-card-kicker">RADIO P53</span><strong class="p53-card-title">{safe_track}</strong>{note_excerpt_html}</div>'
+        f'<span class="p53-card-cta" aria-hidden="true">↗</span>'
+        f'</a>'
+    )
 
 
 # Markdown is intentionally reduced to the small section structure GSI uses;
@@ -64,7 +117,7 @@ def build_entry_page(
     entry_path = entries_dir / item["entry_file"]
     sections = extract_sections_from_markdown(entry_path)
     page_title_text = f'{item["track"]} — {item["artist"]}'
-    page_description_text = f'{item["track"]} by {item["artist"]}, from {item["album"]}, in GSI.'
+    page_description_text = f'{item["track"]} by {item["artist"]}, from {item["album"]}, in Chaperone.'
     safe_page_title = html.escape(page_title_text)
     safe_page_description = html.escape(page_description_text, quote = True)
     site_url = item.get("site_url", "")
@@ -101,13 +154,11 @@ def build_entry_page(
         )
     # Empty sections do not become doors in the reading room.
     section_cards = []
-    section_index = []
     for section in sections:
         if not section["content"].strip():
             continue
         section_title = section["title"]
         section_id = f"section-{slugify(section_title)}"
-        section_index.append((section_id, section_title))
         section_help = (section_info.get(section_title) or "").strip()
         help_button = ""
         help_panel = ""
@@ -127,23 +178,13 @@ def build_entry_page(
             {simple_markdown_to_html(section["content"])}
         </section>
         """)
-    # The section strip appears only when there are enough real sections to aid
-    # orientation; short entries stay visually quiet.
+    # Keep section_id anchors on every .section-card while omitting the top
+    # sections strip so the reading layout stays quiet.
     entry_index_html = ""
-    if len(section_index) >= 3:
-        index_links = "".join(
-            f'<a href="#{html.escape(section_id, quote=True)}">{html.escape(title)}</a>'
-            for section_id, title in section_index
-        )
-        entry_index_html = f'''<aside class="entry-index" aria-label="Entry sections"><span>SECTIONS</span><nav>{index_links}</nav></aside>'''
-    entry_layout_class = "entry-reading-layout has-entry-index" if entry_index_html else "entry-reading-layout"
+    entry_layout_class = "entry-reading-layout"
     streaming_links_html = make_streaming_links(item)
-    p53_current_slug = current_p53_slug(config, config.get("p53_history", []))
     in_p53 = any(record.get("slug") == item["slug"] for record in config.get("p53_history", []))
-    p53_counterpart_html = ""
-    if in_p53:
-        p53_label = "CURRENT P53 TRANSMISSION" if item["slug"] == p53_current_slug else "P53 TRANSMISSION"
-        p53_counterpart_html = f'<a class="p53-counterpart" data-base-href="../p53/{item["slug"]}.html" href="../p53/{item["slug"]}.html">{p53_label} <span>OPEN ↗</span></a>'
+    p53_counterpart_html = _build_p53_companion_html(item, config, base) if in_p53 else ""
     filter_labels = {
         key: settings.get("label", key)
         for key, settings in config.get("filters", {}).items()
@@ -180,16 +221,16 @@ def build_entry_page(
         if album_href else html.escape(item["album"])
     )
     if artist_room_exists:
-        also_paths.append(f'<a data-artist-base-href="{artist_href}" href="{artist_href}">ARTIST PAGE : {html.escape(item["artist"])}</a>')
+        also_paths.append(f'<a data-artist-base-href="{artist_href}" href="{artist_href}">Artist: {html.escape(item["artist"])}</a>')
     if album_href:
-        also_paths.append(f'<a data-album-base-href="{html.escape(album_href, quote=True)}" href="{html.escape(album_href, quote=True)}">ALBUM PAGE : {html.escape(item["album"])}</a>')
+        also_paths.append(f'<a data-album-base-href="{html.escape(album_href, quote=True)}" href="{html.escape(album_href, quote=True)}">Album: {html.escape(item["album"])}</a>')
     if in_p53:
-        also_paths.append(f'<a href="../p53/{item["slug"]}.html">RADIO P53</a>')
+        also_paths.append(f'<a href="../p53/{item["slug"]}.html">Radio P53</a>')
     if filter_receipt_links:
         also_paths.append(filter_receipt_links)
     also_appears_html = ""
     if also_paths:
-        also_appears_html = f'<aside class="also-appears" id="also-appears"><span>ALSO APPEARS IN</span><div>{"".join(also_paths)}</div></aside>'
+        also_appears_html = f'<aside class="also-appears" id="also-appears"><span>Also in</span><div>{"".join(also_paths)}</div></aside>'
 
     safe_accent = html.escape(str(item["accent"]), quote=True)
     art_style = html.escape(

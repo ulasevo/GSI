@@ -7,7 +7,7 @@ existing command and tests continue to work while the migration settles.
 
 import argparse # command-line options such as the source-safe site build
 from pathlib import Path # cross OS handling
-from gsi_assets import copy_site_covers, copy_site_editor, copy_site_scripts, copy_site_styles
+from gsi_assets import copy_site_covers, copy_site_editor, copy_site_fonts, copy_site_scripts, copy_site_styles
 from gsi_artists import artist_catalogue_records, copy_site_artist_assets, write_artist_manifest
 from gsi_data import artist_room_groups, build_generation_inventory, current_p53_slug, load_config, ordered_tracks, read_tracks
 from gsi_links import print_provider_link_audit, provider_link_audit
@@ -114,6 +114,7 @@ def main() -> None:
     copy_site_covers(COVERS_DIR, SITE_COVERS_DIR)
     copy_site_artist_assets(ARTIST_ASSETS_DIR, SITE_ARTIST_ASSETS_DIR)
     copy_site_scripts(WEB_DIR, SITE_SCRIPTS_DIR)
+    copy_site_fonts(WEB_DIR, SITE_DIR / "fonts")
     copy_site_styles(WEB_DIR, SITE_STYLES_DIR)
     copy_site_editor(
         BASE / "tools" / "editor",
@@ -137,10 +138,10 @@ def main() -> None:
     for item in tracks:
         build_entry_page(item, artist_counts, album_pages)
     for item in p53_history:
-        build_p53_page(item, f'{item["slug"]}.html', set(inventory["entry_routes"]), {slugify(artist) for artist in artist_groups})
+        build_p53_page(item, f'{item["slug"]}.html', set(inventory["entry_routes"]), {slugify(artist) for artist in artist_groups}, album_routes=inventory["album_routes"])
     p53_item = next((item for item in p53_history if item["slug"] == p53_slug), None)
     if p53_item:
-        build_p53_page(p53_item, "latest.html", set(inventory["entry_routes"]), {slugify(artist) for artist in artist_groups})
+        build_p53_page(p53_item, "latest.html", set(inventory["entry_routes"]), {slugify(artist) for artist in artist_groups}, album_routes=inventory["album_routes"])
     if p53_history:
         build_p53_archive(
             p53_history,

@@ -1,5 +1,5 @@
 {
-  "project_title": "GSI",
+  "project_title": "Chaperone",
   "site_url": "https://ulasevo.github.io/GSI",
   "p53_current_slug": "matt-maeson-stubborn-as-religion",
   "p53_current_signal_id": "sig-cad08a62f820d0cf19f2",
@@ -192,11 +192,11 @@
   "not_found": {
     "eyebrow": "SIGNAL LOST / 404",
     "title": "THIS FREQUENCY DOES NOT EXIST.",
-    "message": "The page slipped out of GSI. Take a song for the walk back.",
+    "message": "The page slipped out of Chaperone. Take a song for the walk back.",
     "recommendation_label": "INTERCEPTED SIGNAL"
   },
-  "page_title": "GSI: Ulaş's Genomic Stability Inducers",
-  "intro": "Music is the one non-negotiable no matter how I am to feel, to cherish that and the songs that play the miniscule role in shaping who I am, I am creating this authentic web-page, you're welcome to linger. Note that neither me nor should you take this space too seriously. Nothing is critically acclaimed, everything is personal.",
+  "page_title": "Chaperone — Interactive music archive",
+  "intro": "Interactive music archive",
   "newest_first": true,
   "force_refresh_covers": false,
   "upgrade_low_res_covers": true,
@@ -224,9 +224,8 @@
       "playlist_cta": "CHECK OUT THE PLAYLIST"
     },
     "ulas": {
-      "label": "Ulaş's Selection",
+      "label": "Selection",
       "room_label_lines": [
-        "ULAŞ'S",
         "SELECTION"
       ],
       "description": "the ever changing list of songs that I hand-picked for you to delve into",
