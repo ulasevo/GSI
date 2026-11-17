@@ -657,15 +657,17 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
 
 .transmission-intercept {
   margin: 14px 0 0;
-  padding: 8px 14px;
+  padding: 10px 16px;
   font-family: var(--gsi-ui-font, Arial, sans-serif);
   font-size: 13px;
   font-style: italic;
   line-height: 1.45;
   color: color-mix(in srgb, var(--accent, #ff7fbb), white 68%);
-  background: rgba(0, 0, 0, .32);
-  border-left: 2px solid color-mix(in srgb, var(--accent, #ff7fbb), white 32%);
-  border-radius: 0 8px 8px 0;
+  background: linear-gradient(90deg, color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), transparent 86%), transparent 90%);
+  border: 0;
+  border-left: 3px solid color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), white 28%);
+  border-radius: 0 12px 12px 0;
+  box-shadow: none;
 }
 
 .transmission-card.is-current .transmission-intercept {

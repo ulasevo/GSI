@@ -59,6 +59,13 @@
       });
 
       byAlbum.forEach(groupCards => {
+        groupCards.sort((first, second) => {
+          const firstTrack = Number(first.dataset.trackNumber);
+          const secondTrack = Number(second.dataset.trackNumber);
+          const safeFirst = Number.isFinite(firstTrack) && firstTrack > 0 ? firstTrack : 999;
+          const safeSecond = Number.isFinite(secondTrack) && secondTrack > 0 ? secondTrack : 999;
+          return safeFirst - safeSecond;
+        });
         const firstMatchingCard = groupCards.find(card => homeState.cardMatchesFilter(card, filterName));
         if (!firstMatchingCard) return;
         const first = groupCards[0];

@@ -7,6 +7,7 @@
     flex-direction: column;
     gap: 3px;
     min-width: 0;
+    flex: 1 1 auto;
 }
 .album-song-meta span {
     overflow-wrap: anywhere;
@@ -17,6 +18,64 @@
     letter-spacing: .12em;
     color: color-mix(in srgb, var(--accent, #eee), white 60%);
     text-shadow: 0 1px 3px rgba(0,0,0,.6);
+}
+.album-song-mark {
+    width: 8px;
+    height: 8px;
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent, #ff65ad), white 34%);
+    box-shadow: 0 0 10px color-mix(in srgb, var(--accent, #ff65ad), transparent 45%);
+    flex-shrink: 0;
+}
+.album-song b,
+.album-song-chevron {
+    color: color-mix(in srgb, var(--accent, #ff65ad), white 32%);
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1;
+    margin-left: auto;
+    transition: transform .2s ease;
+}
+.album-song:hover .album-song-chevron,
+.album-song:focus-visible .album-song-chevron {
+    transform: translateX(4px);
+}
+.album-archived-badge {
+    display: inline-block;
+    padding: 2px 7px;
+    margin-left: 6px;
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: .14em;
+    border-radius: 6px;
+    color: color-mix(in srgb, var(--accent, #ff65ad), white 45%);
+    background: color-mix(in srgb, var(--accent, #ff65ad), transparent 82%);
+    border: 1px solid color-mix(in srgb, var(--accent, #ff65ad), white 20%);
+    vertical-align: middle;
+}
+.album-song--unreviewed {
+    opacity: 0.38;
+    pointer-events: none;
+    cursor: default;
+    background: rgba(255, 255, 255, .02);
+    border-color: rgba(255, 255, 255, .08);
+}
+.album-song--unreviewed:hover,
+.album-song--unreviewed:focus-visible {
+    transform: none;
+    background: rgba(255, 255, 255, .02);
+}
+.album-song--unreviewed .album-song-mark {
+    background: rgba(255, 255, 255, .2);
+    box-shadow: none;
+}
+.album-song--unreviewed .album-song-meta span {
+    font-style: italic;
+    color: rgba(255, 255, 255, .6);
+}
+.album-song--unreviewed .album-song-arc {
+    color: rgba(255, 255, 255, .4);
+    text-shadow: none;
 }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

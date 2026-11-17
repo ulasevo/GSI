@@ -86,6 +86,7 @@ def build_index_html(
             data-artist="{html.escape(item["artist"], quote = True)}"
             data-album="{html.escape(item["album"], quote = True)}"
             data-album-href="{html.escape(album_route, quote=True)}"
+            data-track-number="{html.escape(str(item.get('track_number') or ''), quote=True)}"
             data-p53-order="{p53_order}"
             aria-label="{safe_card_label}"
             data-base-href="{html.escape(item["page_url"], quote = True)}"

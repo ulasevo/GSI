@@ -237,10 +237,13 @@
   color: var(--gsi-mode-muted);
 }
 :root[data-gsi-theme="light"] body[data-view] .recommend-link .recommend-words,
-:root[data-gsi-theme="light"] body[data-view] .recommend-link .recommend-line-2 {
+:root[data-gsi-theme="light"] body[data-view] .recommend-link .recommend-line-2,
+:root[data-gsi-theme="light"] body[data-view] .recommend-link .recommend-text {
   color: var(--gsi-mode-ink);
 }
 
+:root[data-gsi-theme="light"] body[data-view] .site-hero .recommend-link:hover .recommend-text,
+:root[data-gsi-theme="light"] body[data-view] .site-hero .recommend-link:focus-visible .recommend-text,
 :root[data-gsi-theme="light"] body[data-view] .site-hero .recommend-link:hover .recommend-line-1,
 :root[data-gsi-theme="light"] body[data-view] .site-hero .recommend-link:hover .recommend-line-2,
 :root[data-gsi-theme="light"] body[data-view] .site-hero .recommend-link:focus-visible .recommend-line-1,
@@ -896,14 +899,28 @@
   color: var(--art-dark-ink, #f8f5ef);
 }
 
-:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-stack,
-:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading.has-artist-image {
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-stack {
   border-color: color-mix(in srgb, var(--art-control, #e7c4ff), transparent 34%);
   background:
     linear-gradient(rgba(7, 7, 10, .28), rgba(7, 7, 10, .34)),
     var(--art-rim-gradient, none),
     linear-gradient(135deg, color-mix(in srgb, var(--art-primary, #777), #0d0d12 76%), color-mix(in srgb, var(--art-secondary, #777), #0d0d12 82%));
   box-shadow: 0 22px 58px rgba(0, 0, 0, .38);
+}
+
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading.has-artist-image,
+:root[data-gsi-theme="dark"] body.artist-room main {
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading.has-artist-image::before,
+:root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading.has-artist-image::after,
+:root[data-gsi-theme="dark"] body.artist-room main::before,
+:root[data-gsi-theme="dark"] body.artist-room main::after {
+  content: none;
+  border: none;
+  background: none;
 }
 
 :root[data-gsi-theme="dark"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-stack > header {
@@ -1008,9 +1025,24 @@
   color: color-mix(in srgb, var(--accent, var(--art-primary, #8c5de8)), var(--art-light-ink, #1f1420) 80%);
 }
 
-:root[data-gsi-theme="light"] body.art-room:not(.entry-room):not(.p53-transmission-room) :is(.album-stack, .artist-heading.has-artist-image) {
+:root[data-gsi-theme="light"] body.art-room:not(.entry-room):not(.p53-transmission-room) .album-stack {
   border-color: color-mix(in srgb, var(--art-primary, #8c5de8), var(--art-light-ink, #1f1420) 24%);
   background: linear-gradient(135deg, rgba(255, 255, 255, .44), rgba(255, 255, 255, .20));
+}
+
+:root[data-gsi-theme="light"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading.has-artist-image,
+:root[data-gsi-theme="light"] body.artist-room main {
+  border: none;
+  background: none;
+  box-shadow: none;
+}
+:root[data-gsi-theme="light"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading.has-artist-image::before,
+:root[data-gsi-theme="light"] body.art-room:not(.entry-room):not(.p53-transmission-room) .artist-heading.has-artist-image::after,
+:root[data-gsi-theme="light"] body.artist-room main::before,
+:root[data-gsi-theme="light"] body.artist-room main::after {
+  content: none;
+  border: none;
+  background: none;
 }
 
 :root[data-gsi-theme="light"] body.art-room:not(.entry-room):not(.p53-transmission-room) :is(.album-entry, .artist-signal, .album-song) {
@@ -1036,21 +1068,25 @@
 /* Annotation pass: light-mode controls, catalogue cards, and rooms.  These
    rules intentionally sit last so legacy dark-first component sheets cannot
    reintroduce black-on-black controls after the mode is selected. */
-:root[data-gsi-theme="light"] body[data-view] .view-btn {
-  color: var(--gsi-mode-ink);
-  border-color: var(--gsi-mode-line);
-  background: color-mix(in srgb, var(--page-tint, #c7b6f4), white 78%);
+:root[data-gsi-theme="light"] body[data-view] .segmented-control {
+  background: rgba(0, 0, 0, 0.06);
 }
 
-:root[data-gsi-theme="light"] body[data-view] .view-btn.active {
+:root[data-gsi-theme="light"] body[data-view] :is(.view-btn, .format-option) {
+  color: var(--gsi-mode-ink);
+  border-color: var(--gsi-mode-line);
+  background: transparent;
+}
+
+:root[data-gsi-theme="light"] body[data-view] :is(.view-btn.active, .format-option.active, .format-option[aria-pressed="true"]) {
   color: var(--gsi-mode-ink);
   border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 32%);
   background: color-mix(in srgb, var(--page-tint, #8c5de8), white 58%);
   box-shadow: 0 8px 22px color-mix(in srgb, var(--page-tint, #8c5de8), transparent 76%);
 }
 
-:root[data-gsi-theme="light"] body[data-view] .view-btn:hover,
-:root[data-gsi-theme="light"] body[data-view] .view-btn:focus-visible {
+:root[data-gsi-theme="light"] body[data-view] :is(.view-btn, .format-option):hover,
+:root[data-gsi-theme="light"] body[data-view] :is(.view-btn, .format-option):focus-visible {
   color: var(--gsi-mode-ink);
   border-color: color-mix(in srgb, var(--page-tint, #8c5de8), var(--gsi-mode-ink) 20%);
   background: color-mix(in srgb, var(--page-tint, #8c5de8), white 66%);
@@ -1601,7 +1637,7 @@ body.entry-room .stream-link:focus-visible {
 :root[data-gsi-theme="light"] body.p53-landing-room .transmission-intercept {
   color: var(--art-light-ink, #211823);
   border-left-color: color-mix(in srgb, var(--art-primary, #8c5de8), var(--art-light-ink, #211823) 38%);
-  background: rgba(255, 255, 255, .44);
+  background: linear-gradient(90deg, color-mix(in srgb, var(--art-primary, #8c5de8), white 74%), transparent 88%);
 }
 
 :root[data-gsi-theme="light"] body.entry-room .stream-link.audition-trigger.is-playing,
@@ -1651,22 +1687,22 @@ body.entry-room .stream-link:focus-visible {
 /* With no filter selected, white-on-white made the active layout tab almost
    impossible to distinguish.  Use the shared purple control colour only for
    the light-mode neutral state; filtered rooms retain their own accents. */
-:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn {
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) :is(.view-btn, .format-option) {
   color: var(--gsi-mode-ink);
   border-color: #c9bfd4;
-  background: #fffafc;
+  background: transparent;
 }
 
-:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn:not(.active):hover,
-:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn:not(.active):focus-visible {
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) :is(.view-btn, .format-option):not(.active):hover,
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) :is(.view-btn, .format-option):not(.active):focus-visible {
   color: var(--gsi-mode-ink);
   border-color: color-mix(in srgb, var(--gsi-mode-ink), white 56%);
   background: color-mix(in srgb, var(--gsi-mode-ink), white 92%);
 }
 
-:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn.active,
-:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn.active:hover,
-:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) .view-btn.active:focus-visible {
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) :is(.view-btn.active, .format-option.active, .format-option[aria-pressed="true"]),
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) :is(.view-btn.active, .format-option.active, .format-option[aria-pressed="true"]):hover,
+:root[data-gsi-theme="light"] body[data-view]:not(.filter-active) :is(.view-btn.active, .format-option.active, .format-option[aria-pressed="true"]):focus-visible {
   color: #251a27;
   border-color: color-mix(in srgb, var(--gsi-mode-ink), white 42%);
   background: color-mix(in srgb, var(--gsi-mode-ink), white 84%);
@@ -1733,6 +1769,12 @@ html::before {
   background: linear-gradient(to bottom, color-mix(in srgb, var(--gsi-mode-bg), transparent 82%), transparent);
   -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, .58) 48%, transparent 100%);
   mask-image: linear-gradient(to bottom, #000 0%, rgba(0, 0, 0, .58) 48%, transparent 100%);
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+:is(html.is-scrolled, html[data-scrolled="true"])::before {
+  opacity: 1;
 }
 
 html::after {

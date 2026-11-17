@@ -245,6 +245,7 @@ h1 {
 .stream-links { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .stream-link {
+    position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -258,6 +259,26 @@ h1 {
     border-radius: var(--gsi-control-radius, 10px);
     background: rgba(255, 255, 255, .07);
     transition: transform 360ms cubic-bezier(.2, .8, .2, 1), border-radius 360ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.stream-link:not(.audition-trigger) {
+    padding-right: 34px;
+}
+
+.stream-link:not(.audition-trigger)::after {
+    content: "↗";
+    position: absolute;
+    right: 13px;
+    transition: transform 240ms ease;
+}
+
+.stream-link:not(.audition-trigger):hover::after,
+.stream-link:not(.audition-trigger):focus-visible::after {
+    transform: translate(3px, -3px);
+}
+
+.stream-link.audition-trigger::after {
+    content: none !important;
 }
 
 .stream-link:hover,
@@ -294,8 +315,8 @@ h1 {
     position: relative;
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 12px;
+    justify-content: flex-start;
+    gap: 14px;
     width: 100%;
     height: 100%;
     min-height: 44px;
@@ -329,6 +350,7 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    padding-right: 48px;
 }
 
 .entry-card-kicker {
@@ -377,13 +399,15 @@ h1 {
 }
 
 .entry-card-cta {
-    align-self: flex-end;
+    position: absolute;
+    top: clamp(18px, 3.5vw, 24px);
+    right: clamp(18px, 3.5vw, 24px);
     display: inline-grid;
     place-items: center;
     flex-shrink: 0;
     width: 36px;
     height: 36px;
-    margin-top: auto;
+    margin: 0;
     padding: 0;
     border: 1px solid color-mix(in srgb, var(--art-control, var(--cyan, #35c9e9)), transparent 36%);
     border-radius: 10px;

@@ -115,18 +115,22 @@
                 }
             }
             .filter-panel {
-                padding: 10px 11px;
+                padding: 8px 11px;
                 border-radius: 15px;
             }
             .filter-panel.filter-panel--collapsed {
-                padding: 6px 11px;
+                padding: 8px 11px;
             }
             .filter-panel.filter-panel--collapsed .filter-drawer-toggle {
-                min-height: 20px;
-                padding: 0 2px;
+                height: 28px;
+                min-height: 28px;
+                padding: 0 4px;
             }
             .filter-panel-head {
-                margin-bottom: 7px;
+                margin-bottom: 0;
+            }
+            .filter-panel--expanded .filter-panel-head {
+                margin-bottom: 8px;
             }
             .filter-panel.filter-panel--collapsed .filter-panel-head {
                 margin-bottom: 0;

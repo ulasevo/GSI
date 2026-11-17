@@ -56,6 +56,14 @@
   // preference before its destination has a chance to decorate the URL.
   setTheme(initial, true);
 
+  function syncScroll() {
+    const isScrolled = (window.scrollY || document.documentElement.scrollTop || 0) > 8;
+    root.classList.toggle("is-scrolled", isScrolled);
+    root.dataset.scrolled = String(isScrolled);
+  }
+  window.addEventListener("scroll", syncScroll, { passive: true });
+  syncScroll();
+
   function mount() {
     setTheme(root.dataset.gsiTheme || initial, true);
     let toggle = document.querySelector(".theme-toggle");

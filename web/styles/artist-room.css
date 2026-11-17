@@ -13,6 +13,16 @@ main {
   width: min(1180px, calc(100% - 36px));
   margin: auto;
   padding: 24px 0 80px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+main::before,
+main::after {
+  content: none;
+  background: none;
+  border: none;
 }
 nav {
   display: flex;
@@ -75,6 +85,16 @@ nav strong {
   gap: clamp(32px, 5vw, 56px);
   align-items: center;
   padding: clamp(24px, 4vw, 52px) 0 36px;
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+}
+.artist-heading.has-artist-image::before,
+.artist-heading.has-artist-image::after {
+  content: none;
+  background: none;
+  border: none;
 }
 .artist-image-header {
   position: relative;
@@ -224,13 +244,20 @@ nav strong {
   color: color-mix(in srgb, var(--accent, #eee), white 60%);
   text-shadow: 0 1px 3px rgba(0,0,0,.6);
 }
-.album-entry b {
+.album-entry b,
+.album-entry-chevron {
   display: block;
   padding-left: 8px;
   color: color-mix(in srgb, var(--accent, #ff4fa3), white 34%);
-  font-size: 9px;
-  letter-spacing: .12em;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1;
   white-space: nowrap;
+  transition: transform .2s ease;
+}
+.album-entry:hover .album-entry-chevron,
+.album-entry:focus-visible .album-entry-chevron {
+  transform: translateX(3px);
 }
 .album-entry:hover,
 .album-entry:focus-visible {

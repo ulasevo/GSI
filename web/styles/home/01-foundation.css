@@ -265,6 +265,33 @@
             letter-spacing: .2em;
         }
 
+        .segmented-control .view-btn {
+            padding: 0;
+            border: 0;
+            border-radius: 8px;
+            background: transparent;
+            color: var(--gsi-mode-muted, rgba(255, 255, 255, 0.65));
+            transform: none;
+            box-shadow: none;
+        }
+
+        .segmented-control .view-btn:hover,
+        .segmented-control .view-btn:focus-visible {
+            border: 0;
+            transform: none;
+            box-shadow: none;
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--gsi-mode-ink, #ffffff);
+        }
+
+        .segmented-control .view-btn.active {
+            border: 0;
+            transform: none;
+            background: var(--gsi-mode-surface-strong, rgba(255, 255, 255, 0.14));
+            color: var(--gsi-mode-ink, #ffffff);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+        }
+
         .view-btn {
             padding: 7px 10px;
             border: 1px solid rgba(255, 255, 255, .14);

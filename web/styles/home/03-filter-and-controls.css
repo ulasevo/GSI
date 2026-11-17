@@ -10,7 +10,7 @@
             transition: padding 200ms var(--ease-drawer, cubic-bezier(0.32, 0.72, 0, 1));
         }
         .filter-panel.filter-panel--collapsed {
-            padding: 6px 12px;
+            padding: 8px 12px;
         }
         .filter-panel-head {
             display: flex;
@@ -18,17 +18,22 @@
             justify-content: space-between;
             gap: 8px;
             margin: 0;
+            min-height: 28px;
+        }
+        .filter-panel--expanded .filter-panel-head {
+            margin-bottom: 8px;
         }
         .filter-panel.filter-panel--collapsed .filter-panel-head {
-            margin: 0;
+            margin-bottom: 0;
         }
         .filter-drawer-toggle {
             display: flex;
             align-items: center;
             justify-content: space-between;
             width: 100%;
+            height: 28px;
             min-height: 28px;
-            padding: 2px 6px;
+            padding: 0 4px;
             border: 0;
             border-radius: 10px;
             background: transparent;
@@ -38,7 +43,8 @@
             transition: background 160ms ease;
         }
         .filter-panel.filter-panel--collapsed .filter-drawer-toggle {
-            min-height: 20px;
+            height: 28px;
+            min-height: 28px;
             padding: 0 4px;
         }
         .filter-drawer-toggle:hover {
@@ -50,6 +56,8 @@
             gap: 10px;
         }
         .filter-guide-label {
+            display: inline-flex;
+            align-items: center;
             color: var(--gsi-mode-muted, rgba(255, 255, 255, .58));
             font-family: var(--gsi-ui-font, "Space Grotesk", sans-serif);
             font-size: 11px;
@@ -57,6 +65,8 @@
             letter-spacing: .12em;
             text-transform: uppercase;
             line-height: 1;
+            margin: 0;
+            padding: 0;
         }
         .filter-active-pill {
             display: inline-flex;
@@ -524,10 +534,17 @@
             background: rgba(0, 0, 0, 0.22);
             box-sizing: border-box;
         }
+        .segmented-control.view-segmented,
+        .segmented-control.format-segmented {
+            background: rgba(0, 0, 0, 0.22);
+        }
         .segmented-control button {
             flex: 1 1 0;
             min-width: 0;
             height: 100%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             border: 0;
             border-radius: 8px;
             background: transparent;
@@ -540,6 +557,10 @@
             cursor: pointer;
             box-sizing: border-box;
             transition: background 160ms ease, color 160ms ease, transform 160ms ease;
+        }
+        .segmented-control button svg {
+            display: block;
+            flex-shrink: 0;
         }
         .segmented-control button:hover {
             color: var(--gsi-mode-ink, #ffffff);

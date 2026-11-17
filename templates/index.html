@@ -37,7 +37,7 @@
                 @@INTRO_HTML@@
             </div>
             <div class="header-actions">
-                <a class="recommend-link" href="recommend.html" title="Recommend a song"><span class="recommend-text"><span class="recommend-line-1">recommend</span><span class="recommend-line-2">a <span class="recommend-song">SONG</span></span></span><span class="recommend-arrow" aria-hidden="true">↗</span></a>
+                <a class="recommend-link" href="recommend.html" title="Recommend a song"><span class="recommend-text">Recommend</span><span class="recommend-arrow" aria-hidden="true">↗</span></a>
                 <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to LIT mode">
                     <span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__icon"></span></span>
                     <span class="theme-toggle__label">DIM</span>
@@ -48,10 +48,38 @@
     </header>
     @@FILTERS_HTML@@
     <div class="layout-format-controls">
-      <div class="segmented-control view-segmented" role="group" aria-label="Layout">
-        <button class="view-btn active" data-view="wall" type="button" aria-pressed="true">Wall</button>
-        <button class="view-btn" data-view="poster" type="button" aria-pressed="false">Poster</button>
-        <button class="view-btn" data-view="gallery" type="button" aria-pressed="false">Gallery</button>
+      <div class="segmented-control view-segmented" role="group" aria-label="Layout density">
+        <button class="view-btn" data-view="poster" type="button" aria-pressed="false" aria-label="Poster view (zoomed in)" title="Poster view">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <rect x="2.5" y="1" width="9" height="12" rx="1.5" stroke="currentColor" stroke-width="1.2"/>
+            <rect x="4.5" y="9.5" width="5" height="1" rx="0.5" fill="currentColor"/>
+          </svg>
+        </button>
+        <button class="view-btn active" data-view="wall" type="button" aria-pressed="true" aria-label="Wall view (default)" title="Wall view">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="4.5" height="3.5" rx="0.5" fill="currentColor"/>
+            <rect x="1.5" y="5.8" width="3.5" height="0.8" rx="0.4" fill="currentColor"/>
+            <rect x="8" y="1.5" width="4.5" height="3.5" rx="0.5" fill="currentColor"/>
+            <rect x="8" y="5.8" width="3.5" height="0.8" rx="0.4" fill="currentColor"/>
+            <rect x="1.5" y="7.8" width="4.5" height="3.5" rx="0.5" fill="currentColor"/>
+            <rect x="1.5" y="12.1" width="3.5" height="0.8" rx="0.4" fill="currentColor"/>
+            <rect x="8" y="7.8" width="4.5" height="3.5" rx="0.5" fill="currentColor"/>
+            <rect x="8" y="12.1" width="3.5" height="0.8" rx="0.4" fill="currentColor"/>
+          </svg>
+        </button>
+        <button class="view-btn" data-view="gallery" type="button" aria-pressed="false" aria-label="Gallery view (zoomed out)" title="Gallery view">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <rect x="1.5" y="1.5" width="3" height="3" rx="0.5" fill="currentColor"/>
+            <rect x="5.5" y="1.5" width="3" height="3" rx="0.5" fill="currentColor"/>
+            <rect x="9.5" y="1.5" width="3" height="3" rx="0.5" fill="currentColor"/>
+            <rect x="1.5" y="5.5" width="3" height="3" rx="0.5" fill="currentColor"/>
+            <rect x="5.5" y="5.5" width="3" height="3" rx="0.5" fill="currentColor"/>
+            <rect x="9.5" y="5.5" width="3" height="3" rx="0.5" fill="currentColor"/>
+            <rect x="1.5" y="9.5" width="3" height="3" rx="0.5" fill="currentColor"/>
+            <rect x="5.5" y="9.5" width="3" height="3" rx="0.5" fill="currentColor"/>
+            <rect x="9.5" y="9.5" width="3" height="3" rx="0.5" fill="currentColor"/>
+          </svg>
+        </button>
       </div>
       <div class="segmented-control format-segmented" role="group" aria-label="Format">
         <button class="format-option active" data-format-option="songs" type="button" aria-pressed="true">Songs</button>

@@ -24,11 +24,15 @@ body.art-room nav a { color: var(--art-copy, #211823); }
 body.art-room nav strong { color: var(--art-copy, #211823); }
 body.art-room nav span { color: color-mix(in srgb, var(--art-copy, #211823), transparent 42%); }
 body.art-room .artist-heading.has-artist-image {
-  border-color: color-mix(in srgb, var(--art-primary), white 28%);
-  background: linear-gradient(135deg, rgba(255,255,255,.38), rgba(255,255,255,.12));
-  box-shadow: 0 24px 60px color-mix(in srgb, var(--art-primary), transparent 78%);
+  border: none;
+  background: none;
+  box-shadow: none;
 }
-body.art-room .artist-heading.has-artist-image::before { border-color: rgba(255,255,255,.38); }
+body.art-room .artist-heading.has-artist-image::before {
+  content: none;
+  border: none;
+  background: none;
+}
 body.art-room .artist-heading>span { color: color-mix(in srgb, var(--art-primary), #17121a 34%); }
 body.art-room .artist-heading h1 { color: var(--art-copy); }
 body.art-room .artist-note { color: color-mix(in srgb, var(--art-surface), #17121a 42%); }

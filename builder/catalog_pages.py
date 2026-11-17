@@ -86,7 +86,7 @@ def build_artist_pages(
                 return f'''<a class="album-entry"{entry_kind} data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
                     <span class="album-entry-mark" aria-hidden="true"></span>
                     <div class="album-entry-meta"><h3>{html.escape(item["track"])}</h3>{arc_badge}</div>
-                    <b>{transmission_label}</b>
+                    <b class="album-entry-chevron" aria-hidden="true">›</b>
                 </a>'''
             meta_parts = []
             if item.get("p53_only"):
@@ -111,6 +111,7 @@ def build_artist_pages(
         # same artist and album. Their nested rows stay text-first on purpose.
         album_sections = []
         for album, items in grouped_albums:
+            items.sort(key=lambda x: (int(x.get("track_number") or 999), str(x.get("track", ""))))
             album_href = f'../albums/{slugify(f"{artist}-{album}")}.html'
             album_title_link = (
                 f'<a class="album-title-link" data-context-base-href="{html.escape(album_href, quote=True)}" '
@@ -196,25 +197,80 @@ def build_album_pages(
         )
         cover = items[0].get("cover_file", "")
         cover_html = f'<img class="album-cover" src="../covers/{html.escape(cover, quote=True)}" alt="{html.escape(album, quote=True)} cover" loading="eager" fetchpriority="high" decoding="async">' if cover else ""
-        song_links = []
+
+        # Sort items by ascending track number
+        items.sort(key=lambda x: (int(x.get("track_number") or 999), str(x.get("track", ""))))
+
+        # Calculate discography tracking totals
+        track_counts = [int(item["track_count"]) for item in items if item.get("track_count") and str(item["track_count"]).isdigit()]
+        total_tracks = max(track_counts, default=0)
+        archived_badge_html = f' · <span class="album-archived-badge">{len(items)} / {total_tracks} ARCHIVED</span>' if total_tracks > 0 else ""
+
+        reviewed_by_num: dict[int, list[dict]] = {}
+        unassigned_items: list[dict] = []
         for item in items:
-            target = item.get("page_url") or f'entries/{item["html_file"]}'
             t_num = item.get("track_number")
-            t_cnt = item.get("track_count")
-            year = item.get("release_year")
-            arc_parts = []
-            if t_num and t_cnt:
-                arc_parts.append(f"TRACK {int(t_num):02d} OF {int(t_cnt):02d}")
-            elif t_num:
-                arc_parts.append(f"TRACK {int(t_num):02d}")
-            if year:
-                arc_parts.append(str(year))
-            arc_badge = f'<small class="album-song-arc">{" · ".join(arc_parts)}</small>' if arc_parts else ""
-            song_links.append(
-                f'<a class="album-song" data-entry-base-href="../{html.escape(target, quote=True)}" href="../{html.escape(target, quote=True)}">'
-                f'<div class="album-song-meta"><span>{html.escape(item["track"])}</span>{arc_badge}</div>'
-                f'<b>OPEN ↗</b></a>'
-            )
+            if t_num and str(t_num).isdigit():
+                reviewed_by_num.setdefault(int(t_num), []).append(item)
+            else:
+                unassigned_items.append(item)
+
+        song_links = []
+        if total_tracks > 0:
+            max_num = max(total_tracks, max(reviewed_by_num.keys(), default=0))
+            for t in range(1, max_num + 1):
+                if t in reviewed_by_num:
+                    for item in reviewed_by_num[t]:
+                        target = item.get("page_url") or f'entries/{item["html_file"]}'
+                        year = item.get("release_year")
+                        arc_parts = [f"TRACK {t:02d} OF {total_tracks:02d}"]
+                        if year:
+                            arc_parts.append(str(year))
+                        arc_badge = f'<small class="album-song-arc">{" · ".join(arc_parts)}</small>'
+                        song_links.append(
+                            f'<a class="album-song" data-entry-base-href="../{html.escape(target, quote=True)}" href="../{html.escape(target, quote=True)}">'
+                            f'<span class="album-song-mark" aria-hidden="true"></span>'
+                            f'<div class="album-song-meta"><span>{html.escape(item["track"])}</span>{arc_badge}</div>'
+                            f'<b class="album-song-chevron" aria-hidden="true">›</b></a>'
+                        )
+                else:
+                    arc_badge = f'<small class="album-song-arc">TRACK {t:02d} OF {total_tracks:02d} · UNREVIEWED</small>'
+                    song_links.append(
+                        f'<div class="album-song album-song--unreviewed">'
+                        f'<span class="album-song-mark" aria-hidden="true"></span>'
+                        f'<div class="album-song-meta"><span>Track {t:02d}</span>{arc_badge}</div>'
+                        f'</div>'
+                    )
+            for item in unassigned_items:
+                target = item.get("page_url") or f'entries/{item["html_file"]}'
+                year = item.get("release_year")
+                arc_badge = f'<small class="album-song-arc">{html.escape(str(year))}</small>' if year else ""
+                song_links.append(
+                    f'<a class="album-song" data-entry-base-href="../{html.escape(target, quote=True)}" href="../{html.escape(target, quote=True)}">'
+                    f'<span class="album-song-mark" aria-hidden="true"></span>'
+                    f'<div class="album-song-meta"><span>{html.escape(item["track"])}</span>{arc_badge}</div>'
+                    f'<b class="album-song-chevron" aria-hidden="true">›</b></a>'
+                )
+        else:
+            for item in items:
+                target = item.get("page_url") or f'entries/{item["html_file"]}'
+                t_num = item.get("track_number")
+                t_cnt = item.get("track_count")
+                year = item.get("release_year")
+                arc_parts = []
+                if t_num and t_cnt:
+                    arc_parts.append(f"TRACK {int(t_num):02d} OF {int(t_cnt):02d}")
+                elif t_num:
+                    arc_parts.append(f"TRACK {int(t_num):02d}")
+                if year:
+                    arc_parts.append(str(year))
+                arc_badge = f'<small class="album-song-arc">{" · ".join(arc_parts)}</small>' if arc_parts else ""
+                song_links.append(
+                    f'<a class="album-song" data-entry-base-href="../{html.escape(target, quote=True)}" href="../{html.escape(target, quote=True)}">'
+                    f'<span class="album-song-mark" aria-hidden="true"></span>'
+                    f'<div class="album-song-meta"><span>{html.escape(item["track"])}</span>{arc_badge}</div>'
+                    f'<b class="album-song-chevron" aria-hidden="true">›</b></a>'
+                )
         note = str(notes.get(artist, {}).get(album, "")).strip()
         note_html = f'<section class="album-note"><span>My take</span>{simple_markdown_to_html(note)}</section>' if note else ""
         album_room_data = json.dumps(
@@ -232,6 +288,7 @@ def build_album_pages(
                 "artist_nav": artist_nav,
                 "cover_html": cover_html,
                 "signal_count": f"{len(items):02d}",
+                "archived_badge_html": archived_badge_html,
                 "artist_display": artist_display,
                 "note_html": note_html,
                 "song_links_html": "".join(song_links),
