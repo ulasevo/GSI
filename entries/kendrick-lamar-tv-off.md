@@ -17,7 +17,7 @@ accent: "#c7c7c7"
 
 solidarity, especially when the anthem kicks in
 
-## Sonical Attraction
+## Sonic Attraction
 
 <!-- What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence. -->
 

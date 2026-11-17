@@ -2,13 +2,13 @@
 artist: "Royal Blood"
 track: "Ten Tonne Skeleton"
 album: "Royal Blood (10th Anniversary Edition)"
-cover: "../covers/royal-blood-ten-tonne-skeleton.jpg"
+cover: "../covers/royal-blood-little-monster.jpg"
 accent: "#c69d46"
 ---
 
 # Ten Tonne Skeleton — Royal Blood
 
-![cover](../covers/royal-blood-ten-tonne-skeleton.jpg)
+![cover](../covers/royal-blood-little-monster.jpg)
 
 **Album:** Royal Blood (10th Anniversary Edition)
 **Accent:** `#c69d46`
@@ -17,7 +17,7 @@ accent: "#c69d46"
 
 <!-- What state does this song trigger? -->
 
-## Sonical Attraction
+## Sonic Attraction
 
 <!-- What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence. -->
 

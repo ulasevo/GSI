@@ -11,78 +11,52 @@
     <meta property="og:title" content="@@SAFE_PAGE_TITLE@@">
     <meta property="og:description" content="@@SAFE_META_DESCRIPTION@@">@@HOMEPAGE_URL_META@@@@SHARE_IMAGE_META@@
     <link rel="icon" href="covers/GSI_favicon.svg" type="image/svg+xml">
+    <script>
+    (() => {
+        try {
+            const param = (new URLSearchParams(window.location.search)).get("theme");
+            const stored = localStorage.getItem("gsi-theme");
+            const choice = param || stored || "dark";
+            const mode = (choice === "light") ? "light" : "dark";
+            document.documentElement.dataset.gsiTheme = mode;
+        } catch {}
+    })();
+    </script>
     <script src="scripts/theme-mode.js?v=20260921-persist"></script>
     <link rel="stylesheet" href="styles/gsi-tokens.css">
     <link rel="stylesheet" href="styles/gsi-home.css">
     <link rel="stylesheet" href="styles/theme-mode.css?v=20260920-final8">
     <title>@@SAFE_PAGE_TITLE@@</title>
 </head>
-<body data-view="wall">
+<body data-view="wall" data-format="songs">
     <div class="signal-transform" aria-hidden="true"></div>
     <header class="site-hero">
         <div class="site-masthead">
-            <h1 class="wordmark">@@SAFE_PROJECT_TITLE@@</h1>
-            @@INTRO_HTML@@
+            <div class="site-branding">
+                <h1 class="wordmark">@@SAFE_PROJECT_TITLE@@</h1>
+                @@INTRO_HTML@@
+            </div>
+            <div class="header-actions">
+                <a class="recommend-link" href="recommend.html" title="Recommend a song"><span class="recommend-text"><span class="recommend-line-1">recommend</span><span class="recommend-line-2">a <span class="recommend-song">SONG</span></span></span><span class="recommend-arrow" aria-hidden="true">↗</span></a>
+                <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to LIT mode">
+                    <span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__icon"></span></span>
+                    <span class="theme-toggle__label">DIM</span>
+                </button>
+            </div>
         </div>
         @@P53_HTML@@
     </header>
     @@FILTERS_HTML@@
     <div class="layout-format-controls">
-      <div class="view-control" role="group" aria-label="Layout">
-        <button class="view-cycle-btn" id="view-cycle-btn" type="button" data-current-view="wall" aria-label="Cycle layout view (current: WALL)">
-            <span class="view-cycle-icon" aria-hidden="true">
-                <svg class="icon-wall" width="13" height="13" viewBox="0 0 14 14" fill="currentColor">
-                    <rect x="1" y="1" width="5" height="5" rx="1"/>
-                    <rect x="8" y="1" width="5" height="5" rx="1"/>
-                    <rect x="1" y="8" width="5" height="5" rx="1"/>
-                    <rect x="8" y="8" width="5" height="5" rx="1"/>
-                </svg>
-                <svg class="icon-poster" width="13" height="13" viewBox="0 0 14 14" fill="currentColor">
-                    <rect x="2.5" y="1" width="9" height="12" rx="1.5"/>
-                </svg>
-                <svg class="icon-gallery" width="13" height="13" viewBox="0 0 14 14" fill="currentColor">
-                    <rect x="1" y="1" width="3" height="3" rx="0.5"/>
-                    <rect x="5.5" y="1" width="3" height="3" rx="0.5"/>
-                    <rect x="10" y="1" width="3" height="3" rx="0.5"/>
-                    <rect x="1" y="5.5" width="3" height="3" rx="0.5"/>
-                    <rect x="5.5" y="5.5" width="3" height="3" rx="0.5"/>
-                    <rect x="10" y="5.5" width="3" height="3" rx="0.5"/>
-                    <rect x="1" y="10" width="3" height="3" rx="0.5"/>
-                    <rect x="5.5" y="10" width="3" height="3" rx="0.5"/>
-                    <rect x="10" y="10" width="3" height="3" rx="0.5"/>
-                </svg>
-            </span>
-            <span class="view-cycle-label">VIEW</span>
-            <strong class="view-cycle-value" id="view-cycle-value">WALL</strong>
-            <span class="cycle-dots cycle-dots--view" aria-hidden="true"><span></span><span></span><span></span></span>
-        </button>
-        <button class="view-btn" data-view="poster" aria-pressed="false" hidden>Poster</button>
-        <button class="view-btn active" data-view="wall" aria-pressed="true" hidden>Wall</button>
-        <button class="view-btn" data-view="gallery" aria-pressed="false" hidden>Gallery</button>
+      <div class="segmented-control view-segmented" role="group" aria-label="Layout">
+        <button class="view-btn active" data-view="wall" type="button" aria-pressed="true">Wall</button>
+        <button class="view-btn" data-view="poster" type="button" aria-pressed="false">Poster</button>
+        <button class="view-btn" data-view="gallery" type="button" aria-pressed="false">Gallery</button>
       </div>
-      <div class="format-control" role="group" aria-label="Format">
-        <button class="format-cycle-btn" id="format-cycle-btn" type="button" data-current-format="songs" aria-label="Cycle archive format (current: SONGS)">
-            <span class="format-cycle-icon" aria-hidden="true">
-                <svg class="icon-songs" width="13" height="13" viewBox="0 0 14 14" fill="currentColor">
-                    <rect x="2" y="2.5" width="10" height="1.8" rx="0.9"/>
-                    <rect x="2" y="6.1" width="7.5" height="1.8" rx="0.9"/>
-                    <rect x="2" y="9.7" width="9.5" height="1.8" rx="0.9"/>
-                </svg>
-                <svg class="icon-albums" width="13" height="13" viewBox="0 0 14 14" fill="none">
-                    <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.3"/>
-                    <circle cx="7" cy="7" r="2.2" stroke="currentColor" stroke-width="1"/>
-                    <circle cx="7" cy="7" r="0.9" fill="currentColor"/>
-                </svg>
-            </span>
-            <span class="format-cycle-label">FORMAT</span>
-            <strong class="format-cycle-value" id="format-cycle-value">SONGS</strong>
-            <span class="cycle-dots cycle-dots--format" aria-hidden="true"><span></span><span></span></span>
-        </button>
-        <button class="format-option" data-format-option="songs" type="button" aria-pressed="true" hidden>SONGS</button>
-        <button class="format-option" data-format-option="albums" type="button" aria-pressed="false" hidden>ALBUMS</button>
-        <button class="format-option" data-format-option="artists" type="button" aria-pressed="false" disabled aria-disabled="true" hidden>ARTISTS</button>
+      <div class="segmented-control format-segmented" role="group" aria-label="Format">
+        <button class="format-option active" data-format-option="songs" type="button" aria-pressed="true">Songs</button>
+        <button class="format-option" data-format-option="albums" type="button" aria-pressed="false">Albums</button>
       </div>
-      <a class="recommend-link" href="recommend.html"><span class="recommend-label">RECOMMEND</span><span class="recommend-words">A SIGNAL</span><span class="recommend-arrow">↗</span></a>
     </div>
     <div class="grid">
         @@CARDS_HTML@@

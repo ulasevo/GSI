@@ -17,7 +17,7 @@ accent: "#bc927d"
 
 <!-- What state does this song trigger? -->
 
-## Sonical Attraction
+## Sonic Attraction
 
 <!-- What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence. -->
 

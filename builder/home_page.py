@@ -102,17 +102,23 @@ def build_index_html(
         cards.append(card)  # add this card to the gallery
     intro_html = ""
     if intro.strip():
-        intro_html = f"""
-        <section class = "intro">
-            <p>{safe_intro}</p>
-        </section>
-        """
+        intro_html = f'<p class="intro">{safe_intro}</p>'
+
+    FILTER_ICONS = {
+        "bite": '<svg class="filter-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5.5C4.5 4.5 11.5 4.5 13.5 5.5M5 5.5l1 4.5 1-4.5M9 5.5l1 4.5 1-4.5"/></svg>',
+        "ulas": '<svg class="filter-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 2.5h8a1 1 0 0 1 1 1v10.5l-5-3.5-5 3.5v-10.5a1 1 0 0 1 1-1Z"/></svg>',
+        "personal": '<svg class="filter-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="5.5" r="3"/><path d="M3 13.5c0-2.5 2.2-4 5-4s5 1.5 5 4"/></svg>',
+        "distortion": '<svg class="filter-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8h2l2-4.5h2.5l2 9h2.5l2-4.5h2"/></svg>',
+        "bassline": '<svg class="filter-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1.5 8c2-5.5 3.5-5.5 5.5 0s3.5 5.5 5.5 0h2"/></svg>',
+        "dreamy": '<svg class="filter-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 2.5c0 2.5-1.5 4-4 4 2.5 0 4 1.5 4 4 0-2.5 1.5-4 4-4-2.5 0-4-1.5-4-4ZM13 11.5a1.5 1.5 0 1 1-1.2-1.5"/></svg>',
+        "pop": '<svg class="filter-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 1.5 9.8 6.2 14.5 8 9.8 9.8 8 14.5 6.2 9.8 1.5 8 6.2 6.2Z"/></svg>',
+        "p53": '<svg class="filter-icon" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="11.5" r="1.5" fill="currentColor"/><path d="M4.5 8a5 5 0 0 1 7 0M2 5.5a8.5 8.5 0 0 1 12 0"/></svg>',
+    }
+
     # Filter data is emitted once as JSON so the browser script does not need
     # another copy of the catalogue or its descriptions.
     filter_buttons = []
-
     filter_data = {}
-
 
     for filter_key, filter_settings in filters.items(): # build one button per config filter
         label = filter_settings.get("label", filter_key) # visible button text
@@ -129,19 +135,12 @@ def build_index_html(
             item for item in tracks
             if filter_key in [tag.strip().lower() for tag in item.get("tags", "").split(",")]
         ]
-        selection_icon = ""
-        if filter_key == "ulas":
-            selection_icon = (
-                '<svg class="filter-icon" width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">'
-                '<path d="M4 2.5h8a1 1 0 0 1 1 1v10l-5-3-5 3v-10a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/>'
-                '</svg>'
-            )
+        icon_svg = FILTER_ICONS.get(filter_key, "")
         filter_buttons.append(
             f'<button class="filter-btn filter-{safe_filter_key}" data-filter="{safe_filter_key}" aria-pressed="false" style="--filter-color: {safe_filter_color};">'
-            f'<span class="filter-dot" aria-hidden="true"></span>'
-            f'{selection_icon}'
+            f'<span class="filter-icon-wrapper" aria-hidden="true">{icon_svg}</span>'
             f'<span class="filter-name">{safe_label}</span>'
-            f'<small class="filter-pill-count" aria-hidden="true">{len(filter_tracks)}</small>'
+            f'<small class="filter-pill-count" aria-hidden="true">{len(filter_tracks):02d}</small>'
             f'</button>'
         )
 
@@ -154,18 +153,31 @@ def build_index_html(
             "playlist_color": playlist_color,
             "playlist_cta": playlist_cta,
             "count": len(filter_tracks),
-            "room_label_lines": filter_settings.get("room_label_lines") or [label]
+            "room_label_lines": filter_settings.get("room_label_lines") or [label],
+            "icon": icon_svg,
         }
 
     filters_html = f"""
-    <section class="filter-panel" aria-label="Filter archive">
+    <section class="filter-panel filter-panel--collapsed" id="filter-panel" aria-label="Filter archive">
         <div class="filter-panel-head">
-            <span class="filter-guide-label">Filter to begin:</span>
+            <button class="filter-drawer-toggle" id="filter-drawer-toggle" type="button" aria-expanded="false" aria-controls="filter-drawer-body">
+                <span class="filter-drawer-lead">
+                    <span class="filter-guide-label">FILTER TO BEGIN</span>
+                    <span class="filter-active-pill" id="filter-active-pill" hidden>
+                        <span class="filter-active-icon" id="filter-active-icon" aria-hidden="true"></span>
+                        <span class="filter-active-text" id="filter-active-text"></span>
+                    </span>
+                </span>
+                <span class="filter-drawer-caret" id="filter-drawer-caret" aria-hidden="true"><svg viewBox="0 0 20 20" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 7.5L10 13L15.5 7.5"/></svg></span>
+            </button>
+            <button class="filter-clear-quick-btn" id="filter-clear-quick-btn" type="button" aria-label="Clear active filter" hidden>×</button>
         </div>
-        <div class="filter-row">
-            {''.join(filter_buttons)}
+        <div class="filter-drawer-body" id="filter-drawer-body" hidden>
+            <div class="filter-row">
+                {''.join(filter_buttons)}
+            </div>
         </div>
-        <div class="filter-description hidden" id="filter-description-box">
+        <div class="filter-description hidden" id="filter-description-box" hidden aria-hidden="true">
             <div class="filter-room-label" id="filter-room-label" aria-hidden="true"></div>
             <div class="filter-decor" id="filter-decor" aria-hidden="true"></div>
             <div class="filter-copy">
@@ -173,7 +185,7 @@ def build_index_html(
                 <h2 id="filter-title"></h2>
                 <p id="filter-description"></p>
             </div>
-            <a class="playlist-card hidden" id="playlist-card" href="#" target="_blank" rel="noopener noreferrer">
+            <a class="playlist-card hidden" id="playlist-card" href="#" target="_blank" rel="noopener noreferrer" hidden aria-hidden="true">
                 <img id="playlist-cover" alt="Playlist cover" loading="lazy" decoding="async">
                 <div class="playlist-card-copy">
                     <span class="playlist-card-eyebrow">APPLE MUSIC ↗</span>
@@ -214,7 +226,7 @@ def build_index_html(
                         <strong>{html.escape(p53_item['track'])}</strong>
                         <small>{html.escape(p53_item['artist'])}</small>
                     </div>
-                    <b class="p53-arrow" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg></b>
+                    <span class="p53-arrow" aria-hidden="true"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg></span>
                 </div>
             </div>
         </a>

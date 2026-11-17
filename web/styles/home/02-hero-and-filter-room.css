@@ -33,11 +33,21 @@
         }
         .site-masthead {
             display: flex;
+            flex-wrap: nowrap;
+            align-items: flex-start;
+            justify-content: space-between;
+            gap: 12px 18px;
+            padding: 2px 2px 0;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .site-branding {
+            display: flex;
             flex-wrap: wrap;
             align-items: baseline;
-            justify-content: space-between;
             gap: 6px 16px;
-            padding: 2px 2px 0;
+            min-width: 0;
+            flex: 1 1 auto;
         }
         .wordmark {
             align-self: baseline;
@@ -55,6 +65,7 @@
             letter-spacing: -0.04em;
             text-transform: none;
             animation: none;
+            white-space: nowrap;
         }
         .wordmark:hover {
             animation: none;
@@ -62,15 +73,116 @@
             transform: none;
             text-shadow: none;
         }
-        .site-masthead .intro {
+        .site-branding .intro {
             margin: 0;
-            max-width: none;
-        }
-        .site-masthead .intro p {
-            margin: 0;
-            color: rgba(255, 255, 255, .62);
+            color: var(--gsi-mode-muted, rgba(255, 255, 255, .62));
             font-size: clamp(13.5px, 1.3vw, 15px);
             line-height: 1.4;
+            white-space: nowrap;
+        }
+        .header-actions {
+            display: inline-flex;
+            align-items: center;
+            flex-wrap: nowrap;
+            gap: 8px;
+            margin: 0 0 0 auto;
+            flex-shrink: 0;
+            align-self: flex-start;
+        }
+        .site-hero .theme-toggle {
+            position: static;
+            bottom: auto;
+            right: auto;
+            top: auto;
+            left: auto;
+            transform: none;
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .14);
+            border: 1px solid var(--gsi-mode-line, rgba(255, 255, 255, .16));
+        }
+        .site-hero .theme-toggle:hover,
+        .site-hero .theme-toggle:focus-visible {
+            transform: translateY(-1px);
+        }
+        .site-hero .recommend-link {
+            position: static;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin: 0;
+            height: 38px;
+            min-height: 38px;
+            padding: 0 12px;
+            border-radius: 999px;
+            border: 1px solid var(--gsi-mode-line, rgba(255, 255, 255, .16));
+            background: var(--gsi-mode-surface, rgba(18, 16, 23, .84));
+            color: var(--gsi-mode-ink, #f6f1ea);
+            text-decoration: none;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            box-shadow: 0 4px 14px rgba(0, 0, 0, .14);
+            box-sizing: border-box;
+            white-space: nowrap;
+            transition: color 180ms ease, border-color 180ms ease, background 180ms ease, transform 180ms ease;
+        }
+        .site-hero .recommend-link .recommend-text {
+            display: inline-flex;
+            flex-direction: column;
+            justify-content: center;
+            text-align: left;
+            line-height: 1.1;
+        }
+        .site-hero .recommend-link .recommend-line-1 {
+            font-family: var(--gsi-ui-font, Arial, sans-serif);
+            font-size: 8.5px;
+            font-weight: 600;
+            letter-spacing: .07em;
+            text-transform: lowercase;
+            color: var(--gsi-mode-muted, rgba(255, 255, 255, .62));
+            line-height: 1;
+        }
+        .site-hero .recommend-link .recommend-line-2 {
+            font-family: var(--gsi-ui-font, Arial, sans-serif);
+            font-size: 9.5px;
+            font-weight: 850;
+            letter-spacing: .06em;
+            text-transform: none;
+            color: var(--gsi-mode-ink, #f6f1ea);
+            padding-left: 5px;
+            line-height: 1.1;
+        }
+        .site-hero .recommend-link .recommend-song {
+            font-weight: 950;
+            letter-spacing: .08em;
+            text-transform: uppercase;
+        }
+        .site-hero .recommend-link:hover,
+        .site-hero .recommend-link:focus-visible {
+            border-color: var(--gsi-mode-control, #ff65ad);
+            color: var(--gsi-mode-control, #ff65ad);
+            transform: translateY(-1px);
+        }
+        .site-hero .recommend-link:hover .recommend-line-1,
+        .site-hero .recommend-link:hover .recommend-line-2,
+        .site-hero .recommend-link:focus-visible .recommend-line-1,
+        .site-hero .recommend-link:focus-visible .recommend-line-2 {
+            color: inherit;
+        }
+        .site-hero .recommend-link:active {
+            transform: scale(0.96);
+            transition: transform 80ms ease-out;
+        }
+        .site-hero .recommend-link .recommend-arrow {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            line-height: 1;
+            color: var(--gsi-mode-muted, rgba(255, 255, 255, .62));
+            transition: transform 180ms ease, color 180ms ease;
+        }
+        .site-hero .recommend-link:hover .recommend-arrow {
+            color: inherit;
+            transform: translate(2px, -2px);
         }
 
         /* Aligned Radio P53 ribbon: preserves RADIO P53 typography in a compact bar. */
@@ -87,15 +199,25 @@
             background: #1b1722;
             box-shadow: 0 10px 26px rgba(0, 0, 0, .28);
             transition:
-                transform 200ms cubic-bezier(.2,.8,.2,1),
+                transform 180ms var(--ease-out, cubic-bezier(.23,1,.32,1)),
                 border-color 180ms ease,
-                box-shadow 200ms ease;
+                box-shadow 180ms ease;
         }
-        .p53-broadcast:hover,
+        @media (hover: hover) and (pointer: fine) {
+            .p53-broadcast:hover {
+                transform: translateY(-2px);
+                border-color: #ff8dc4;
+                box-shadow: 0 16px 36px rgba(0, 0, 0, .36), 0 0 24px color-mix(in srgb, #ff72b5, transparent 68%);
+            }
+        }
         .p53-broadcast:focus-visible {
             transform: translateY(-2px);
             border-color: #ff8dc4;
-            box-shadow: 5px 5px 0 rgba(34, 188, 227, .72), -4px -3px 0 rgba(255, 79, 154, .44), 0 16px 34px rgba(0, 0, 0, .34);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, .36), 0 0 24px color-mix(in srgb, #ff72b5, transparent 68%);
+        }
+        .p53-broadcast:active {
+            transform: scale(0.985);
+            transition: transform 100ms ease-out;
         }
         .p53-art {
             position: absolute;

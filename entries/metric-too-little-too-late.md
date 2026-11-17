@@ -2,13 +2,13 @@
 artist: "Metric"
 track: "Too Little Too Late"
 album: "Live It Out"
-cover: "../covers/metric-too-little-too-late.jpg"
+cover: "../covers/metric-empty.jpg"
 accent: "#ff2f92"
 ---
 
 # Too Little Too Late — Metric
 
-![cover](../covers/metric-too-little-too-late.jpg)
+![cover](../covers/metric-empty.jpg)
 
 **Album:** Live It Out
 **Accent:** `#ff2f92`
@@ -17,7 +17,7 @@ accent: "#ff2f92"
 
 <!-- What state does this song trigger? -->
 
-## Sonical Attraction
+## Sonic Attraction
 
 <!-- What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence. -->
 

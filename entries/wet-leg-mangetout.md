@@ -18,7 +18,7 @@ accent: "#6f4730"
 <!-- What state does this song trigger? -->
 
 
-## Sonical Attraction
+## Sonic Attraction
 
 <!-- What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence. -->
 The vocal's tonality does a good job in expressing exhaustion and carelessness into humiliation by the end. The ending verse is especially good, in that I found myself anticipating it as I'm looping through the song.

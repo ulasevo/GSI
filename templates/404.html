@@ -7,6 +7,17 @@
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#0d0d0f">
     <base href="@@SITE_PATH@@">
+    <script>
+    (() => {
+        try {
+            const param = (new URLSearchParams(window.location.search)).get("theme");
+            const stored = localStorage.getItem("gsi-theme");
+            const choice = param || stored || "dark";
+            const mode = (choice === "light") ? "light" : "dark";
+            document.documentElement.dataset.gsiTheme = mode;
+        } catch {}
+    })();
+    </script>
     <script src="scripts/theme-mode.js?v=20260921-persist"></script>
     <link rel="icon" id="favicon" href="covers/GSI_favicon.svg" type="image/svg+xml">
     <title>Signal Lost — Chaperone</title>

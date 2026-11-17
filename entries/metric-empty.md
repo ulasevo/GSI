@@ -17,7 +17,7 @@ accent: "#ff2f92"
 
 Strength. Makes me feel aware.
 
-## Sonical Attraction
+## Sonic Attraction
 
 The distinct inverted V shape in the rhythm of the song , mixed with the blandness in change of lyrical emotion.. Perfectly matches the depicted inability to see what was coming but being met with damage and having to give in once it’s all too late. Even the starting riff’s excitement is met with the riff at the very end’s decline. The distortion kicking in, in silence and after harmony of the initial lyrical part is almost like a strong bass drop in a sense.
 

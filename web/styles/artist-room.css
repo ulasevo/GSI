@@ -22,7 +22,7 @@ nav {
   max-width: 100%;
   padding: 13px 16px;
   border: 1px solid color-mix(in srgb, var(--art-primary, #ff4fa3), white 20%);
-  border-radius: 20px 6px;
+  border-radius: 12px;
   background: rgba(13, 13, 15, .85);
   font-size: 11px;
   font-weight: 900;
@@ -94,7 +94,7 @@ nav strong {
   object-fit: contain;
   aspect-ratio: auto;
   border: 2px solid color-mix(in srgb, var(--art-primary, #ff4fa3), white 24%);
-  border-radius: 28px 8px 28px 8px;
+  border-radius: 16px;
   box-shadow: 0 0 34px color-mix(in srgb, var(--art-primary, #ff4fa3), transparent 65%);
   transition: transform .3s ease, box-shadow .3s ease;
 }
@@ -112,7 +112,7 @@ nav strong {
   margin: 22px 0 0;
   padding: 18px 22px;
   border-left: 3px solid color-mix(in srgb, var(--art-control, var(--art-primary, #ff4fa3)), #f8f5ef 30%);
-  border-radius: 4px 20px 20px 4px;
+  border-radius: 12px;
   background: linear-gradient(100deg, color-mix(in srgb, var(--art-primary, #ff4fa3), #0d0d12 76%), color-mix(in srgb, var(--art-dark-surface, #17151b), transparent 12%));
   color: rgba(255, 255, 255, .92);
   font-size: clamp(15px, 2vw, 18px);
@@ -127,7 +127,7 @@ nav strong {
   margin: 0 0 16px;
   overflow: hidden;
   border: 1px solid color-mix(in srgb, var(--accent, #ff4fa3), white 22%);
-  border-radius: 30px 8px 30px 8px;
+  border-radius: 16px;
   background: linear-gradient(135deg, color-mix(in srgb, var(--accent, #ff4fa3), transparent 86%), rgba(13, 13, 15, .95));
 }
 .album-stack > header {
@@ -142,7 +142,7 @@ nav strong {
   width: 116px;
   height: 116px;
   object-fit: cover;
-  border-radius: 14px 4px 14px 4px;
+  border-radius: 10px;
 }
 .album-stack-kicker,
 .album-stack > header span {
@@ -192,14 +192,14 @@ nav strong {
   color: #fff;
   text-decoration: none;
   border: 1px solid color-mix(in srgb, var(--accent, #ff4fa3), white 18%);
-  border-radius: 18px 5px 18px 5px;
+  border-radius: 10px;
   background: rgba(0, 0, 0, .22);
   transition: transform .2s ease, border-radius .25s ease, background .25s ease;
 }
 .album-entry-mark {
   width: 8px;
   height: 8px;
-  border-radius: 2px 7px 2px 7px;
+  border-radius: 4px;
   background: color-mix(in srgb, var(--accent, #ff4fa3), white 34%);
   box-shadow: 0 0 10px color-mix(in srgb, var(--accent, #ff4fa3), transparent 45%);
 }
@@ -235,7 +235,7 @@ nav strong {
 .album-entry:hover,
 .album-entry:focus-visible {
   transform: translateX(5px);
-  border-radius: 5px 18px 5px 18px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, .08);
 }
 
@@ -261,7 +261,7 @@ nav strong {
   color: #fff;
   text-decoration: none;
   border: 1px solid color-mix(in srgb, var(--accent, #ff4fa3), white 18%);
-  border-radius: 22px 7px 22px 7px;
+  border-radius: 12px;
   background: linear-gradient(110deg, color-mix(in srgb, var(--accent, #ff4fa3), transparent 86%), rgba(13, 13, 15, .88));
   transition: transform .2s ease, border-radius .25s ease, background .25s ease;
 }
@@ -269,7 +269,7 @@ nav strong {
   width: 88px;
   height: 88px;
   object-fit: cover;
-  border-radius: 16px 5px 16px 5px;
+  border-radius: 8px;
 }
 .artist-signal-meta {
   min-width: 0;
@@ -308,7 +308,7 @@ nav strong {
 .artist-signal:hover,
 .artist-signal:focus-visible {
   transform: translateX(6px);
-  border-radius: 7px 22px 7px 22px;
+  border-radius: 12px;
   background: linear-gradient(110deg, color-mix(in srgb, var(--accent, #ff4fa3), transparent 76%), rgba(13, 13, 15, .88));
 }
 
@@ -337,7 +337,7 @@ nav strong {
   .artist-image {
     max-height: 200px;
     max-width: 100%;
-    border-radius: 20px 6px 20px 6px;
+    border-radius: 14px;
     box-shadow: 0 8px 24px color-mix(in srgb, var(--art-primary, #ff4fa3), transparent 60%);
   }
   .artist-heading-copy {
@@ -362,7 +362,7 @@ nav strong {
     line-height: 1.42;
     max-width: 480px;
     text-align: left;
-    border-radius: 4px 14px 14px 4px;
+    border-radius: 10px;
   }
   .album-stack > header {
     grid-template-columns: 76px minmax(0, 1fr);
@@ -372,7 +372,7 @@ nav strong {
   .album-stack > header img {
     width: 76px;
     height: 76px;
-    border-radius: 10px 4px 10px 4px;
+    border-radius: 8px;
   }
   .album-stack > header h2 {
     font-size: 26px;
@@ -389,7 +389,7 @@ nav strong {
   .artist-signal img {
     width: 60px;
     height: 60px;
-    border-radius: 8px 3px 8px 3px;
+    border-radius: 6px;
   }
   .artist-signal b {
     display: none;

@@ -2,13 +2,13 @@
 artist: "Metric"
 track: "Poster of a Girl"
 album: "Live It Out"
-cover: "../covers/metric-poster-of-a-girl.jpg"
+cover: "../covers/metric-empty.jpg"
 accent: "#ff2f92"
 ---
 
 # Poster of a Girl — Metric
 
-![cover](../covers/metric-poster-of-a-girl.jpg)
+![cover](../covers/metric-empty.jpg)
 
 **Album:** Live It Out
 **Accent:** `#ff2f92`
@@ -17,7 +17,7 @@ accent: "#ff2f92"
 
 
 
-## Sonical Attraction
+## Sonic Attraction
 
 
 

@@ -127,9 +127,9 @@ body::before {
   align-self: end;
   max-width: 430px;
   margin: 0 0 3px;
-  padding: 12px 0 12px 18px;
-  border-left: 2px solid color-mix(in srgb, #ff7fbb, transparent 18%);
-  background: linear-gradient(90deg, color-mix(in srgb, #ff7fbb, transparent 91%), transparent 74%);
+  padding: 0;
+  border-left: none;
+  background: none;
 }
 
 @media (min-width: 851px) {
@@ -165,7 +165,7 @@ body::before {
   color: #fff;
   text-decoration: none;
   border: 1px solid color-mix(in srgb, var(--accent), white 20%);
-  border-radius: 22px 10px 22px 10px;
+  border-radius: 16px;
   background: linear-gradient(118deg, color-mix(in srgb, var(--accent), transparent 86%), rgba(10, 9, 13, .95));
   box-shadow:
     0 18px 42px rgba(0, 0, 0, .30),
@@ -178,7 +178,7 @@ body::before {
   grid-template-columns: minmax(320px, .8fr) minmax(0, 1.2fr);
   min-height: clamp(430px, 43vw, 510px);
   border-width: 2px;
-  border-radius: 24px 36px 24px 36px;
+  border-radius: 20px;
   box-shadow:
     0 24px 56px rgba(0, 0, 0, .36),
     0 0 28px color-mix(in srgb, #35c9e9, transparent 74%),
@@ -301,34 +301,68 @@ body::before {
   padding-right: clamp(72px, 8vw, 96px);
 }
 
-.transmission-copy::after {
-  content: "↗";
+.transmission-arrow {
   position: absolute;
   top: 18px;
   right: 18px;
   z-index: 2;
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 36px;
   height: 36px;
   border: 1px solid color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), white 28%);
-  border-radius: 10px 3px 10px 3px;
+  border-radius: 10px;
   background: color-mix(in srgb, var(--art-surface, #17151b), transparent 18%);
   color: color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), white 40%);
-  font-family: var(--gsi-ui-font, Arial, sans-serif);
-  font-size: 16px;
-  font-weight: 800;
-  line-height: 1;
   opacity: .8;
-  transition: transform 280ms var(--gsi-motion), opacity 220ms ease, border-color 220ms ease, color 220ms ease, background 220ms ease, border-radius 280ms var(--gsi-motion);
+  transition: transform 180ms var(--ease-out, cubic-bezier(.23,1,.32,1)), opacity 180ms ease, border-color 180ms ease, color 180ms ease, background 180ms ease;
 }
 
-.transmission-card.is-current .transmission-copy::after {
+.transmission-arrow svg {
+  display: block;
+  width: 14px;
+  height: 14px;
+}
+
+.transmission-card.is-current .transmission-arrow {
   top: 22px;
   right: 22px;
 }
 
-.transmission-card-link:hover,
+.transmission-copy::after {
+  content: none !important;
+  display: none !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .transmission-card-link:hover {
+    transform: translateY(-4px);
+    border-color: color-mix(in srgb, #35c9e9, var(--art-primary, #ff65ad) 48%);
+    box-shadow:
+      0 24px 56px rgba(0, 0, 0, .38),
+      0 0 36px color-mix(in srgb, #35c9e9, transparent 60%),
+      0 0 30px color-mix(in srgb, #ff58a6, transparent 62%);
+  }
+
+  .transmission-card-link:hover .transmission-art img {
+    transform: scale(1.075) rotate(-1.6deg);
+  }
+
+  .transmission-card.is-current .transmission-card-link:hover .transmission-art img {
+    transform: scale(1.055) rotate(-1.1deg);
+  }
+
+  .transmission-card-link:hover .transmission-arrow,
+  .transmission-card-link:hover .transmission-copy::after {
+    opacity: 1;
+    transform: translate(2px, -2px);
+    border-color: #35c9e9;
+    color: #fff;
+    background: color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), #35c9e9 34%);
+  }
+}
+
 .transmission-card-link:focus-visible {
   transform: translateY(-4px);
   border-color: color-mix(in srgb, #35c9e9, var(--art-primary, #ff65ad) 48%);
@@ -338,23 +372,26 @@ body::before {
     0 0 30px color-mix(in srgb, #ff58a6, transparent 62%);
 }
 
-.transmission-card-link:hover .transmission-art img,
 .transmission-card-link:focus-visible .transmission-art img {
   transform: scale(1.075) rotate(-1.6deg);
 }
 
-.transmission-card.is-current .transmission-card-link:hover .transmission-art img,
 .transmission-card.is-current .transmission-card-link:focus-visible .transmission-art img {
   transform: scale(1.055) rotate(-1.1deg);
 }
 
-.transmission-card-link:hover .transmission-copy::after,
+.transmission-card-link:focus-visible .transmission-arrow,
 .transmission-card-link:focus-visible .transmission-copy::after {
   opacity: 1;
   transform: translate(2px, -2px);
   border-color: #35c9e9;
   color: #fff;
   background: color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), #35c9e9 34%);
+}
+
+.transmission-card-link:active {
+  transform: scale(0.985);
+  transition: transform 80ms ease-out;
 }
 
 .transmission-card.is-current .transmission-copy::before {
@@ -450,17 +487,17 @@ body::before {
   .transmission-card.is-current .transmission-card-link {
     grid-template-columns: 1fr;
     min-height: 0;
-    border-radius: 18px 28px 18px 28px;
+    border-radius: 16px;
   }
 
   .transmission-card.is-current .transmission-card-link {
-    border-radius: 20px 32px 20px 32px;
+    border-radius: 16px;
   }
 
   .transmission-card:not(.is-current) .transmission-card-link {
     grid-template-columns: 82px minmax(0, 1fr);
     min-height: 142px;
-    border-radius: 16px 8px 16px 8px;
+    border-radius: 12px;
   }
 
   .transmission-art,
@@ -485,13 +522,19 @@ body::before {
     padding: 16px 52px 16px 14px;
   }
 
+  .transmission-arrow,
+  .transmission-card.is-current .transmission-arrow,
   .transmission-copy::after {
     top: 12px;
     right: 12px;
     width: 30px;
     height: 30px;
-    font-size: 14px;
     opacity: .9;
+  }
+
+  .transmission-arrow svg {
+    width: 12px;
+    height: 12px;
   }
 
   .transmission-copy h2,
@@ -581,8 +624,8 @@ body.p53-landing-room .p53-landing > header > span {
 }
 
 body.p53-landing-room .p53-intro {
-  border-left-color: color-mix(in srgb, var(--art-primary, #ff65ad), transparent 18%);
-  background: linear-gradient(90deg, color-mix(in srgb, var(--art-primary, #ff65ad), transparent 86%), transparent 74%);
+  border-left: none;
+  background: none;
 }
 
 body.p53-landing-room .transmission-card-link {
@@ -639,6 +682,7 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
   box-shadow: 0 0 18px color-mix(in srgb, var(--art-primary, #b84093), transparent 76%);
 }
 
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-arrow,
 :root[data-gsi-theme="light"] body.p53-landing-room .transmission-copy::after {
   border-color: color-mix(in srgb, var(--art-primary, #b84093), var(--art-light-ink, #211823) 28%);
   background: rgba(255, 255, 255, .68);
@@ -669,7 +713,9 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
     0 0 28px color-mix(in srgb, #ff58a6, transparent 64%);
 }
 
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover .transmission-arrow,
 :root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover .transmission-copy::after,
+:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:focus-visible .transmission-arrow,
 :root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:focus-visible .transmission-copy::after {
   color: #1f1420;
   border-color: #1f1420;
@@ -681,6 +727,8 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
   .transmission-card-link:focus-visible,
   .transmission-card-link:hover .transmission-art img,
   .transmission-card-link:focus-visible .transmission-art img,
+  .transmission-card-link:hover .transmission-arrow,
+  .transmission-card-link:focus-visible .transmission-arrow,
   .transmission-card-link:hover .transmission-copy::after,
   .transmission-card-link:focus-visible .transmission-copy::after {
     transform: none;

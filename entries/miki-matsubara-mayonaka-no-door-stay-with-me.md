@@ -18,7 +18,7 @@ accent: "#bb907a"
 <!-- What state does this song trigger? -->
 
 
-## Sonical Attraction
+## Sonic Attraction
 
 <!-- What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence. -->
 I lose a bit of conscious at the third minute mark when the saxophone solo kicks in, then I totally transcend at the end with the synth + brass mix

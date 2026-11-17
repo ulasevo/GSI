@@ -17,7 +17,7 @@ accent: "#f38863"
 
 
 
-## Sonical Attraction
+## Sonic Attraction
 
 
 

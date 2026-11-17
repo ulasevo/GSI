@@ -11,6 +11,7 @@ Preserve its personal language and unusual section names. Do not normalize it in
 ## Working method
 
 - Inspect the current implementation before proposing changes.
+- Before building or changing UI, read `DESIGN.md`.
 - Explain proposed changes before editing.
 - Wait for explicit approval before substantial UI, architecture, or data-model changes.
 - Prefer small, named patches over broad rewrites.

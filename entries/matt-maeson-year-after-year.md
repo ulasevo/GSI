@@ -2,13 +2,13 @@
 artist: "Matt Maeson"
 track: "Year After Year"
 album: "A Quiet And Harmless Living"
-cover: "../covers/matt-maeson-year-after-year.jpg"
+cover: "../covers/matt-maeson-stubborn-as-religion.jpg"
 accent: "#0c87a9"
 ---
 
 # Year After Year — Matt Maeson
 
-![cover](../covers/matt-maeson-year-after-year.jpg)
+![cover](../covers/matt-maeson-stubborn-as-religion.jpg)
 
 **Album:** A Quiet And Harmless Living
 **Accent:** `#0c87a9`
@@ -17,7 +17,7 @@ accent: "#0c87a9"
 
 
 
-## Sonical Attraction
+## Sonic Attraction
 
 
 

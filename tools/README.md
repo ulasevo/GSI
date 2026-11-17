@@ -25,7 +25,7 @@ python tools/new_entry.py "https://music.apple.com/...?...&i=..."
 Apple's public lookup fills artist, track, album, and artwork metadata. The
 draft contains every configured review heading as an empty, prompted section.
 Add `--tags dreamy,bassline` and `--section "A new heading"` when needed.
-You can also use `--sections "Charge, Sonical Attraction"` or several
+You can also use `--sections "Charge, Sonic Attraction"` or several
 space-separated headings. The configured headings remain available by default.
 
 For the guided authoring flow, run:

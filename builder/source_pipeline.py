@@ -164,7 +164,7 @@ accent: {_frontmatter_value(accent)}
 def make_section_prompt(section: str) -> str:
     prompts = {
         "Charge": "What state does this song trigger?",
-        "Sonical Attraction": "What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence.",
+        "Sonic Attraction": "What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence.",
         "Lyric/Vocal Detail": "Any line, delivery, breath, pronunciation, or vocal moment worth preserving?",
         "Version of ulaş": "What version of me does this song store? Time period, grind, breakup, desire, motion.",
         "Lore": "Any personal history, repeated use, place, habit, person attached to this track?",
@@ -207,13 +207,15 @@ def sync_entry_metadata(
     accent: str,
 ) -> None:
     """Refresh generated metadata while preserving every authored body line."""
-    text = entry_path.read_text(encoding="utf-8")
+    text = entry_path.read_text(encoding="utf-8").lstrip("\ufeff")
     new_frontmatter = make_frontmatter(artist, track, album, cover_file, accent).strip()
-    if text.startswith("---"):
-        parts = text.split("---", 2)
-        body = parts[2].lstrip() if len(parts) == 3 else text
-    else:
-        body = text
+    body = text
+    while body.startswith("---"):
+        parts = body.split("---", 2)
+        if len(parts) == 3:
+            body = parts[2].lstrip("\r\n \ufeff")
+        else:
+            break
 
     lines = body.splitlines()
     title_index = next((index for index, line in enumerate(lines) if line.startswith("# ")), None)
@@ -231,6 +233,8 @@ def sync_entry_metadata(
     if cover_file and cover_index is None:
         lines[title_index + 1:title_index + 1] = ["", f"![cover](../covers/{cover_file})", ""]
         cover_index = title_index + 2
+    elif cover_file and cover_index is not None:
+        lines[cover_index] = f"![cover](../covers/{cover_file})"
 
     preamble_start = cover_index + 1 if cover_index is not None else title_index + 1
     section_index = next(

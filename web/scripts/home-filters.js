@@ -21,11 +21,50 @@
     homeState,
     renderFilterAlbumGroups,
     syncContext,
+    filterPanel = document.querySelector("#filter-panel"),
+    drawerToggle = document.querySelector("#filter-drawer-toggle"),
+    drawerBody = document.querySelector("#filter-drawer-body"),
+    activePill = document.querySelector("#filter-active-pill"),
+    activeIcon = document.querySelector("#filter-active-icon"),
+    activeText = document.querySelector("#filter-active-text"),
+    quickClearBtn = document.querySelector("#filter-clear-quick-btn"),
+    drawerCaret = document.querySelector("#filter-drawer-caret"),
   }) {
     let basslineResizeFrame = null;
     let signalTransformTimer = null;
     let filterEntranceTimer = null;
     let filterExitTimer = null;
+    let isDrawerExpanded = false;
+
+    function setDrawerExpanded(expanded) {
+      isDrawerExpanded = expanded;
+      if (filterPanel) {
+        filterPanel.classList.toggle("filter-panel--collapsed", !expanded);
+        filterPanel.classList.toggle("filter-panel--expanded", expanded);
+      }
+      if (drawerToggle) {
+        drawerToggle.setAttribute("aria-expanded", String(expanded));
+      }
+      if (drawerBody) {
+        drawerBody.hidden = !expanded;
+      }
+      if (drawerCaret && !drawerCaret.querySelector("svg")) {
+        drawerCaret.textContent = expanded ? "▴" : "▾";
+      }
+    }
+
+    if (drawerToggle) {
+      drawerToggle.addEventListener("click", () => {
+        setDrawerExpanded(!isDrawerExpanded);
+      });
+    }
+
+    if (quickClearBtn) {
+      quickClearBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        clearFilter(true);
+      });
+    }
 
     function renderRoomLabel(info, filterName) {
       // Bassline grows with its room but remains one intentionally unbroken word.
@@ -47,6 +86,8 @@
 
     function hidePlaylist() {
       playlistCard.classList.add("hidden");
+      playlistCard.hidden = true;
+      playlistCard.setAttribute("aria-hidden", "true");
       box.classList.remove("has-playlist");
       layoutFormatControls.classList.remove("has-playlist");
       playlistCard.removeAttribute("href");
@@ -71,6 +112,10 @@
       document.body.classList.remove("filter-active");
       document.body.removeAttribute("data-active-filter");
       document.documentElement.style.setProperty("--page-tint", "#ffffff");
+      if (activePill) activePill.hidden = true;
+      if (activeIcon) activeIcon.innerHTML = "";
+      if (activeText) activeText.textContent = "";
+      if (quickClearBtn) quickClearBtn.hidden = true;
       buttons.forEach(button => {
         button.classList.remove("active");
         button.setAttribute("aria-pressed", "false");
@@ -84,6 +129,8 @@
         filterExitTimer = window.setTimeout(() => {
           box.classList.remove("filter-collapsing");
           box.classList.add("hidden");
+          box.hidden = true;
+          box.setAttribute("aria-hidden", "true");
           title.textContent = "";
           description.textContent = "";
           box.removeAttribute("data-filter-label");
@@ -96,6 +143,8 @@
         }, 240);
       } else {
         box.classList.add("hidden");
+        box.hidden = true;
+        box.setAttribute("aria-hidden", "true");
         title.textContent = "";
         description.textContent = "";
         box.removeAttribute("data-filter-label");
@@ -128,6 +177,16 @@
       box.dataset.hasPlaylistCover = String(Boolean(info.playlist_cover));
       window.clearTimeout(filterExitTimer);
       box.classList.remove("hidden", "filter-entering", "filter-collapsing");
+      box.hidden = false;
+      box.removeAttribute("aria-hidden");
+      if (activePill) {
+        activePill.hidden = false;
+        if (activeIcon) activeIcon.innerHTML = info.icon || "";
+        if (activeText) activeText.textContent = info.label;
+      }
+      if (quickClearBtn) {
+        quickClearBtn.hidden = false;
+      }
       if (animate) {
         window.clearTimeout(filterEntranceTimer);
         window.requestAnimationFrame(() => {
@@ -165,6 +224,8 @@
           playlistCover.style.display = "none";
         }
         playlistCard.classList.remove("hidden");
+        playlistCard.hidden = false;
+        playlistCard.removeAttribute("aria-hidden");
         box.classList.add("has-playlist");
         layoutFormatControls.classList.add("has-playlist");
       } else {
@@ -180,7 +241,7 @@
     }
 
     buttons.forEach(button => button.addEventListener("click", () => setFilter(button.dataset.filter)));
-    return Object.freeze({ clearFilter, setFilter });
+    return Object.freeze({ clearFilter, setFilter, setDrawerExpanded });
   }
 
   window.GSIHomeFilters = Object.freeze({ create });

@@ -7,6 +7,68 @@ The central philosophy governing this roadmap is:
 
 ---
 
+## Current focus — 1 November 2026
+
+Chaperone is the preferred name, but the user is still designing its logo: a quarter note in a capped barrel inspired by GroEL/GroES. Do not replace the existing GSI name or assets until the identity is ready.
+
+- [x] First Android slice: archive → song detail → back; current Radio P53 is independent of selection; listening and website links use catalogue data; cards use semantic clicks and spring motion. A debug APK compiled. API 37 remains intentional. Review prose stays on the website until a native content-export decision.
+- [x] First website wording pass: simplify P53, entry and catalogue labels while keeping the user's writing and project terminology. The site was regenerated with internal links validated.
+- [x] First P53 share-card redesign: use the real album and note with quieter P53 artwork; remove the simulated image button and slug. Share the canonical URL when supported and retain image-only, download, and copy-link fallbacks. Visual/device review remains open; receiving apps can discard links.
+- [x] Export the nonempty authored review sections for songs in the app's bundled catalogue at Android build time, using the website's entry parser. A debug APK builds with the generated reviews included.
+- [ ] Try the Android APK on the Pixel: check appearance, native reviews, press and transition feel, links, scroll restoration and back navigation. The app has not been device-tested in this pass.
+- [ ] Visually review the redesigned P53 share card and test the actual link handoff in the intended destination apps.
+- [ ] Design a reliable catalogue and cover sync: review prose updates at build time, but new songs and covers are not automatically added to the app's existing bundled snapshot.
+- [ ] Once the logo and visual direction are ready, revisit the home page and song-room hierarchy on phone and desktop, then decide how Chaperone should appear across the site and app.
+
+The 26 October section below records background and options, not a list of simultaneous priorities.
+
+---
+
+## Design and Android planning — 26 October 2026
+
+These are directions for discussion and experiments, not approval to redesign, rename, or migrate the archive. Keep existing writing, the P53 identity, and album-specific atmospheres intact. The user has installed the Android prototype on a Pixel 10 and intentionally chose API 37 as its minimum; keep that choice.
+
+### Identity: GSI, Chaperone, or Sonome
+
+- GSI / Genome Stability Inducers carries the existing biological metaphor and personal history. Chaperone suggests protection, companionship, and a biological connection; Sonome suggests sound and genome. These are impressions, not final names.
+- Naming, a logo, and any eventual rename are separate decisions. P53 and the project's history do not need to disappear if the public-facing name changes. A paired name, such as a new title with GSI as a subtitle, is an option to explore rather than a decision.
+- Develop a small set of visibly different identity directions: a typographic archive or label mark; a protective or looping form for Chaperone; and an abstract sound or genome form for Sonome. Avoid treating a generic music note or DNA helix as the only possible answer.
+- Compare wordmarks, a monochrome mark, a small favicon, and an Android launcher icon at their real sizes and in both themes. Discuss pronunciation and emotional fit. Check names, domains, handles, and rights before any public rename; availability has not been checked.
+
+### Android: an expressive, complete journey
+
+- First slice: archive → song room → back. A tap should open the selected song, preserve archive position and filter state when returning, and leave the actual P53 current transmission separate from the selected song. The prototype currently hard-codes the P53 selection and reuses the selected song in its hero.
+- Motion language: make springy movement visible and purposeful: a quick press and release on cards, a responsive filter selection, and a distinctive but controlled archive-to-entry transition. Explore shape, position, and scale, not vibration alone. Support rapid taps, interrupted gestures, back navigation, and system motion settings; avoid perpetual bounce.
+- Material 3 Expressive provides motion schemes and Compose provides interruptible springs. Check the project's resolved Material 3 version before choosing specific APIs. Give the interactions GSI's character instead of applying default effects indiscriminately.
+- Use semantic clickable controls and comfortably sized touch targets. Coordinate subtle haptics with meaningful actions and respect system feedback preferences; cancelled gestures should not produce a success response.
+- Keep song metadata, writing, cover references, P53 records, and identity tied to the existing authored catalogue. Define an explicit repeatable export/sync path instead of maintaining a second handwritten catalogue. Confirm how and when bundled app content updates before adding network sync.
+- Load appropriately sized artwork on demand and bound its cache as the catalogue grows. Profile only when needed and evaluate the experience on the Pixel 10: taps, scroll, transition, back, settings, and actual haptic feel. The current source was inspected, but the app has not been visually evaluated in this planning session.
+
+### Website: hierarchy while keeping the atmosphere
+
+- Mobile homepage: compare two compact compositions that retain the introduction and P53 artwork while bringing an archive card into or close to the first viewport. Check selected and cleared filters, both themes, and desktop before choosing a direction.
+- Archive controls: explore a compact direct chooser or a clearer cycling affordance for WALL/GALLERY/POSTER and SONGS/ALBUMS. Make available choices and current state understandable without filling the page with permanent controls.
+- Song rooms: compare the existing immersive cover-first composition with one that reveals title and listening controls sooner on desktop and mobile. Preserve the shrine feeling, personal section names, writing, and per-album colour. Review long titles, contrast, section navigation, crosslinks, and touch targets.
+- PEEK: make the short-preview function and playing/paused state clear visually and to assistive technology. Verify playback, completion, failure, and navigation away without claiming a browser screenshot proves audio works.
+
+### P53 share: art direction and working handoff
+
+- Treat this as a fresh artistic direction, not a polish pass. Compare two or three distinct concepts using real transmission content and real story dimensions; decide the visual direction with the user before replacing the existing screen.
+- The current image contains a button-shaped “LISTEN TO TRANSMISSION”, but the image itself cannot be clicked. The normal image-share payload does not include the canonical URL; the fallback link-share path does. Design the card and a working route back to the transmission together, with clear copy-link and download fallbacks.
+- Test what the target share sheet and destinations actually preserve: a destination can discard accompanying text or URLs. Do not assume a native share sheet automatically creates a tappable story link. Check cancellation, unsupported sharing, errors, preview legibility, and keyboard/focus behaviour.
+
+### Suggested order and decisions
+
+1. Explore the three names and a few logo directions without changing the brand.
+2. Define and try one Android expressive-motion prototype and the archive-to-entry journey; get Pixel 10 feedback before expanding it.
+3. Present homepage, controls, and entry-room alternatives for desktop and mobile; choose a direction before implementation.
+4. Present P53 share-card art directions and the recipient's link journey; implement and test the chosen flow.
+5. Keep archive expansion active alongside this work: the machinery should make it easier to turn existing song notes into entries, not postpone that indefinitely.
+
+Open decisions: which name and relationship to GSI feel right; which mark and share-card direction fit; how much of the intro and P53 hero should be visible on arrival; and how lively the Android transitions should feel. A rename, UI redesign, and any change to the data model require explicit approval under the working instructions.
+
+---
+
 ## Active Horizons
 
 ### Horizon 1: Repository Sterility & Operational Hygiene *(Completed)*

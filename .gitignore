@@ -197,3 +197,11 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# Android & Local Studio Tooling
+sdk/
+.idea/
+android/.idea/
+android/.gradle/
+android/local.properties
+android/**/build/

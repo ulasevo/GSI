@@ -17,7 +17,7 @@ accent: "#d9a441"
 
  All the right vibes
 
-## Sonical Attraction
+## Sonic Attraction
 
 The second half of this song, especially the outro where the cello and the bassline take the wheel is almost heavenly. Not that there are many elements to go with it, but simplicity works in its favor.
 

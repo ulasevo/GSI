@@ -1,25 +1,24 @@
 /* Final card states, responsive compositions, and reduced-motion guardrails. */
         .card {
-            border-radius: 24px 8px 24px 8px;
+            border-radius: 16px;
+            overflow: hidden;
             transition:
-                transform 220ms cubic-bezier(.2,.8,.2,1),
-                border-radius 220ms cubic-bezier(.2,.8,.2,1),
-                box-shadow 200ms ease,
-                border-color 180ms ease;
+                transform 180ms var(--ease-out, cubic-bezier(.23,1,.32,1)),
+                box-shadow 180ms ease,
+                border-color 160ms ease;
         }
-        @media (hover: hover) {
+        @media (hover: hover) and (pointer: fine) {
             .card:hover {
-                border-radius: 8px 24px 8px 24px;
-                transform: translateY(-6px);
+                transform: translateY(-4px);
+                box-shadow: 0 16px 36px rgba(0,0,0,.42), 0 0 22px color-mix(in srgb, var(--accent, #fff), transparent 75%);
             }
         }
         .card:focus-visible {
-            border-radius: 8px 24px 8px 24px;
-            transform: translateY(-6px);
+            transform: translateY(-4px);
+            box-shadow: 0 16px 36px rgba(0,0,0,.42), 0 0 22px color-mix(in srgb, var(--accent, #fff), transparent 75%);
         }
         .card:active {
-            border-radius: 14px 18px 14px 18px;
-            transform: scale(0.97) translateY(0);
+            transform: scale(0.97);
             box-shadow: 0 4px 14px rgba(0,0,0,.45);
             transition: transform 80ms ease-out, box-shadow 80ms ease-out;
         }
@@ -28,7 +27,7 @@
             will-change: transform, opacity;
         }
         body[data-view="gallery"] .card {
-            border-radius: 12px 4px 12px 4px;
+            border-radius: 10px;
         }
         @media (max-width: 820px) {
             .filter-description { grid-template-columns: 1fr; }
@@ -66,7 +65,7 @@
                 flex-wrap: nowrap;
                 align-items: stretch;
                 justify-content: stretch;
-                gap: 3px;
+                gap: 6px;
                 margin: 0 auto 12px;
                 width: 100%;
                 max-width: 100%;
@@ -76,81 +75,61 @@
                 padding: 3px !important;
                 border-radius: 12px;
             }
-            .layout-format-controls > .view-control,
-            .layout-format-controls > .format-control {
-                flex: 1 1 0;
-                min-width: 0;
-                width: auto;
-            }
-            .view-cycle-btn,
-            .format-cycle-btn,
-            .recommend-link {
-                height: 100%;
-                min-height: 0;
+            .segmented-control button {
+                font-size: 10px;
+                letter-spacing: 0.04em;
                 padding: 0 4px;
-                gap: 4px;
-                border-radius: 8px;
-                font-size: 9px;
-                letter-spacing: 0.05em;
             }
-            .cycle-dots {
-                gap: 2.5px;
+            .site-masthead {
+                display: flex;
+                flex-direction: row;
+                align-items: flex-start;
+                justify-content: space-between;
+                gap: 8px;
+                padding-right: 0;
             }
-            .cycle-dots span {
-                width: 4px;
-                height: 4px;
-            }
-            .view-cycle-btn[data-current-view="wall"] .cycle-dots span:nth-child(1),
-            .view-cycle-btn[data-current-view="gallery"] .cycle-dots span:nth-child(2),
-            .view-cycle-btn[data-current-view="poster"] .cycle-dots span:nth-child(3),
-            .format-cycle-btn[data-current-format="songs"] .cycle-dots span:nth-child(1),
-            .format-cycle-btn[data-current-format="albums"] .cycle-dots span:nth-child(2) {
-                width: 7px;
-            }
-            .view-cycle-label,
-            .format-cycle-label {
-                font-size: 8px;
-            }
-            .view-cycle-value,
-            .format-cycle-value {
-                font-size: 9.5px;
-            }
-            .recommend-link {
-                flex: 1 1 0;
+            .site-branding {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
                 min-width: 0;
-                width: auto;
-                white-space: nowrap;
+                flex: 1 1 auto;
             }
-            .recommend-link .recommend-label {
-                font-size: 8px;
+            .site-branding .intro {
+                white-space: normal;
+                overflow-wrap: break-word;
             }
-            .recommend-link .recommend-words {
-                font-size: 9.5px;
+            .header-actions {
+                display: inline-flex;
+                align-items: center;
+                flex-wrap: nowrap;
+                gap: 8px;
+                margin: 0 0 0 auto;
+                flex-shrink: 0;
+                align-self: flex-start;
             }
             @media (max-width: 440px) {
                 .view-cycle-label,
-                .format-cycle-label,
-                .recommend-link .recommend-words {
+                .format-cycle-label {
                     display: none;
                 }
-                .recommend-link .recommend-label {
-                    font-size: 9px;
-                    font-weight: 950;
-                    color: #fff;
-                }
-            }
-            .site-masthead {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 4px;
-                padding-right: 104px;
             }
             .filter-panel {
                 padding: 10px 11px;
                 border-radius: 15px;
             }
+            .filter-panel.filter-panel--collapsed {
+                padding: 6px 11px;
+            }
+            .filter-panel.filter-panel--collapsed .filter-drawer-toggle {
+                min-height: 20px;
+                padding: 0 2px;
+            }
             .filter-panel-head {
                 margin-bottom: 7px;
+            }
+            .filter-panel.filter-panel--collapsed .filter-panel-head {
+                margin-bottom: 0;
             }
             .filter-row {
                 display: grid;
@@ -217,14 +196,14 @@
                 justify-self: stretch;
                 align-self: auto;
                 margin: 2px 0 0;
-                border-radius: 14px 5px 14px 5px;
+                border-radius: 12px;
                 transform: none;
             }
             .playlist-card img {
                 width: 42px;
                 height: 42px;
                 flex: 0 0 42px;
-                border-radius: 8px 3px 8px 3px;
+                border-radius: 8px;
             }
             .playlist-card-text {
                 font-size: 12px;
@@ -285,7 +264,7 @@
                 max-width:none;
                 min-height:64px;
                 justify-content:center;
-                border-radius:18px 8px 18px 8px;
+                border-radius: 14px;
             }
             .filter-description[data-has-playlist-cover="false"] .playlist-card-text {
                 padding:18px;

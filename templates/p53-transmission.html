@@ -7,6 +7,17 @@
     <meta name="theme-color" content="#25152b">
     <meta name="description" content="@@P53_DESCRIPTION@@">@@SHARING_META@@
     <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
+    <script>
+    (() => {
+        try {
+            const param = (new URLSearchParams(window.location.search)).get("theme");
+            const stored = localStorage.getItem("gsi-theme");
+            const choice = param || stored || "dark";
+            const mode = (choice === "light") ? "light" : "dark";
+            document.documentElement.dataset.gsiTheme = mode;
+        } catch {}
+    })();
+    </script>
     <script src="../scripts/theme-mode.js"></script>
     <link rel="stylesheet" href="../styles/gsi-tokens.css">
     <link rel="stylesheet" href="../styles/art-room.css">

@@ -247,7 +247,7 @@ def build_p53_archive(
         return f'''<li class="transmission-card{current_class}" id="signal-{number}" data-index="{index}">
     <a class="transmission-card-link" {current_attr} data-base-href="{html.escape(item["slug"], quote=True)}.html" href="{html.escape(item["slug"], quote=True)}.html">
         <div class="transmission-art">{cover(item, eager=index == 0)}</div>
-        <div class="transmission-copy"><div class="copy-content"><span class="signal-state">{state}</span><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small>{note_html}</div></div>
+        <div class="transmission-copy"><span class="transmission-arrow" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 11.5 11.5 4.5M6 4.5h5.5V10"/></svg></span><div class="copy-content"><span class="signal-state">{state}</span><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p><small>{html.escape(item["album"])}</small>{note_html}</div></div>
     </a>
 </li>'''
 

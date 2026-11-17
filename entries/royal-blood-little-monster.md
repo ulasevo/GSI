@@ -13,7 +13,7 @@ accent: "#c69d46"
 **Album:** Royal Blood (10th Anniversary Edition)
 **Accent:** `#c69d46`
 
-## Sonical Attraction
+## Sonic Attraction
 
 The song makes good use of the fact that its built on basically a single riff, and the anticipation at the end is nice.
 

@@ -9,13 +9,20 @@
   const requested = (() => {
     try {
       const value = new URL(window.location.href).searchParams.get("theme");
-      return value === "light" || value === "dark" ? value : null;
+      if (value === "light") return "light";
+      if (value === "dark" || value === "dim") return "dark";
+      return null;
     } catch { return null; }
   })();
   const stored = (() => {
-    try { return localStorage.getItem(storageKey); } catch { return null; }
+    try {
+      const value = localStorage.getItem(storageKey);
+      if (value === "light") return "light";
+      if (value === "dark" || value === "dim") return "dark";
+      return null;
+    } catch { return null; }
   })();
-  const initial = (stored === "light" || stored === "dark") ? stored : (requested || "light");
+  const initial = requested || stored || "dark";
   const SUN_ICON = '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"></path></svg>';
   const MOON_ICON = '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M20.4 15.4A8.5 8.5 0 0 1 8.6 3.6 8.5 8.5 0 1 0 20.4 15.4Z"></path></svg>';
 
