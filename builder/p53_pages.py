@@ -227,7 +227,6 @@ def build_p53_archive(
     remaining = [item for item in history if item["slug"] != current_slug]
     if current is None and remaining:
         current, remaining = remaining[-1], remaining[:-1]
-    remaining = list(reversed(remaining))
     transmissions = [current, *remaining] if current else remaining
 
     # Only the first image is eager; later covers can wait until the reader gets

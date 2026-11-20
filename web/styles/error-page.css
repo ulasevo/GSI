@@ -18,7 +18,7 @@
         @media (hover: hover) and (pointer: fine) { .home:hover { transform:translateY(-2px); } }
         .home:active { transform:scale(0.97); transition:transform 80ms ease-out; }
         .recommendation { overflow:hidden; color:var(--paper); border:1px solid color-mix(in srgb,var(--accent,var(--pink)),white 18%); border-radius:16px; background:#141417; box-shadow:0 20px 54px rgba(0,0,0,.38); }
-        .recommendation img { display:block; width:100%; aspect-ratio:1; object-fit:cover; background:#222; }
+        .recommendation img { display:block; width:100%; height:auto; aspect-ratio:1; object-fit:cover; background:#222; }
         .signal-copy { padding:20px; }
         .signal-copy span { color:color-mix(in srgb,var(--accent),white 44%); font:900 10px/1 var(--gsi-ui-font,Arial,sans-serif); letter-spacing:.2em; }
         .signal-copy strong, #signal-track { display:block; margin-top:10px; font-size:clamp(25px,4vw,44px); line-height:.96; overflow-wrap:anywhere; }

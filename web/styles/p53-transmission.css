@@ -206,6 +206,9 @@ body::before {
 
 .signal-cover {
     width: min(192px, 46%);
+    height: auto;
+    aspect-ratio: 1;
+    object-fit: cover;
     margin-bottom: 18px;
     border: 2px solid color-mix(in srgb, var(--accent), white 30%);
     border-radius: 16px;

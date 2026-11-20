@@ -236,10 +236,10 @@ class AuthoringAndSyncRegressionTests(unittest.TestCase):
             multi_html = (out_dir / "index.html").read_text(encoding="utf-8")
             self.assertIn("03 FACTORS", multi_html)
             active_pos = multi_html.index("Active Song")
-            newer_pos = multi_html.index("Newer Song")
             older_pos = multi_html.index("Older Song")
-            self.assertLess(active_pos, newer_pos)
-            self.assertLess(newer_pos, older_pos)
+            newer_pos = multi_html.index("Newer Song")
+            self.assertLess(active_pos, older_pos)
+            self.assertLess(older_pos, newer_pos)
 
     def test_build_album_pages_respects_output_dir_with_album_routes_and_singular_signal(self):
         with tempfile.TemporaryDirectory() as tmp:
