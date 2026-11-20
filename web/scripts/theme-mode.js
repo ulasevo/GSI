@@ -1,6 +1,6 @@
 /*
  * Persist the visitor's light/dark preference and carry it through shareable URLs.
- * Light is the first-visit default; the control is shared by every generated
+ * Dark is the first-visit default; the control is shared by every generated
  * room rather than being rebuilt per page.
  */
 (() => {
@@ -29,6 +29,10 @@
   function setTheme(theme, persist = true) {
     const next = theme === "light" ? "light" : "dark";
     root.dataset.gsiTheme = next;
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) {
+      themeMeta.setAttribute("content", next === "light" ? "#eee9e6" : "#0d0d0f");
+    }
     if (persist) {
       try { localStorage.setItem(storageKey, next); } catch { /* storage is optional */ }
     }

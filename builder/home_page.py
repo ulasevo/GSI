@@ -8,7 +8,7 @@ import html
 import json
 from pathlib import Path
 
-from gsi_assets import artwork_palette, compact_rim_gradient, palette_style, playlist_visuals
+from gsi_assets import artwork_palette, compact_rim_gradient, image_size_attrs, palette_style, playlist_visuals
 from gsi_data import current_p53_slug, load_config
 from builder.template_renderer import render_template
 
@@ -62,8 +62,11 @@ def build_index_html(
         safe_card_label = html.escape(f'{item["track"]} — {item["artist"]}', quote = True)
         cover_html = ""
         if item["cover_file"]:
-            vt_name = f'cover-{item["slug"]}'
-            cover_html = f'<img src="covers/{item["cover_file"]}" alt="{safe_album} cover" loading="lazy" decoding="async" style="view-transition-name: {vt_name};">'  # image tag
+            cover_file_attr = html.escape(item["cover_file"], quote=True)
+            size_attrs = image_size_attrs(base / "covers" / item["cover_file"])
+            cover_html = f'<img src="covers/{cover_file_attr}" alt="{safe_album} cover" loading="lazy" decoding="async" {size_attrs}>'  # image tag
+        else:
+            cover_html = '<div class="cover-missing" aria-hidden="true"></div>'
         tags = item.get("tags", "")
         tags_for_attr = tags.lower().replace(","," ")
         p53_order = int(item.get("p53_order", 999))
@@ -75,6 +78,7 @@ def build_index_html(
         card_art_style = palette_style(
             card_palette,
             f'covers/{item["cover_file"]}' if item.get("cover_file") else "",
+            rim_gradient="",
         )
         card_style = html.escape(
             f'--accent: {item["accent"]}; --p53-order: {p53_order}; {card_art_style}',
@@ -89,13 +93,14 @@ def build_index_html(
             data-track-number="{html.escape(str(item.get('track_number') or ''), quote=True)}"
             data-p53-order="{p53_order}"
             aria-label="{safe_card_label}"
+            title="{safe_card_label}"
             data-base-href="{html.escape(item["page_url"], quote = True)}"
             href="{html.escape(item["page_url"], quote = True)}" style="{card_style}">
             {cover_html}
             <div class="info">
-                <h2>{safe_track}</h2>
-                <p>{safe_artist}</p>
-                <span>{safe_album}</span>
+                <h2 dir="auto">{safe_track}</h2>
+                <p dir="auto">{safe_artist}</p>
+                <span dir="auto">{safe_album}</span>
             </div>
         </a>
         """  # one visual card, colored by album accent
@@ -137,11 +142,12 @@ def build_index_html(
             if filter_key in [tag.strip().lower() for tag in item.get("tags", "").split(",")]
         ]
         icon_svg = FILTER_ICONS.get(filter_key, "")
+        count_label = f"{len(filter_tracks):,}" if len(filter_tracks) >= 1000 else f"{len(filter_tracks):02d}"
         filter_buttons.append(
-            f'<button class="filter-btn filter-{safe_filter_key}" data-filter="{safe_filter_key}" aria-pressed="false" style="--filter-color: {safe_filter_color};">'
+            f'<button class="filter-btn filter-{safe_filter_key}" type="button" data-filter="{safe_filter_key}" aria-pressed="false" style="--filter-color: {safe_filter_color};">'
             f'<span class="filter-icon-wrapper" aria-hidden="true">{icon_svg}</span>'
             f'<span class="filter-name">{safe_label}</span>'
-            f'<small class="filter-pill-count" aria-hidden="true">{len(filter_tracks):02d}</small>'
+            f'<small class="filter-pill-count" aria-hidden="true">{count_label}</small>'
             f'</button>'
         )
 
@@ -182,7 +188,7 @@ def build_index_html(
             <div class="filter-room-label" id="filter-room-label" aria-hidden="true"></div>
             <div class="filter-decor" id="filter-decor" aria-hidden="true"></div>
             <div class="filter-copy">
-                <div class="filter-count" id="filter-count"></div>
+                <div class="filter-count" id="filter-count" role="status" aria-live="polite"></div>
                 <h2 id="filter-title"></h2>
                 <p id="filter-description"></p>
             </div>
@@ -215,14 +221,14 @@ def build_index_html(
         p53_html = f"""
         <a class="p53-broadcast" data-base-href="p53/index.html" href="p53/index.html" aria-label="Open Radio P53: current and previous transmissions" style="{html.escape(p53_style, quote=True)}">
             <div class="p53-art">
-                <img src="covers/P53_cover-runtime.webp" alt="P53 protein artwork" loading="eager" fetchpriority="high" decoding="async">
+                <img src="covers/P53_cover-runtime.webp" alt="P53 protein artwork" loading="eager" fetchpriority="high" decoding="async" {image_size_attrs(base / "covers" / "P53_cover-runtime.webp")}>
             </div>
             <div class="p53-overlay">
                 <div class="p53-ribbon-lead">
                     <div class="p53-radio">RADIO P53</div>
                 </div>
                 <div class="p53-ribbon-track">
-                    <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover" loading="lazy" decoding="async">
+                    <img class="p53-album" src="covers/{html.escape(p53_item['cover_file'], quote = True)}" alt="{html.escape(p53_item['album'], quote = True)} cover" loading="lazy" decoding="async" {image_size_attrs(base / "covers" / p53_item['cover_file'])}>
                     <div class="p53-signal-copy">
                         <strong>{html.escape(p53_item['track'])}</strong>
                         <small>{html.escape(p53_item['artist'])}</small>

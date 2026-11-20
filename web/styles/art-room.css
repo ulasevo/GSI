@@ -14,7 +14,7 @@ body.art-room::before {
   background-image: var(--art-image, none);
   background-position: center;
   background-size: cover;
-  filter: blur(32px) saturate(1.12);
+  filter: blur(18px) saturate(1.12);
   opacity: .24;
   transform: scale(1.08);
 }
@@ -57,7 +57,7 @@ body.art-room :is(a, button):focus-visible {
     position: absolute;
     inset: 0;
     opacity: .2;
-    filter: blur(24px) saturate(1.08);
+    filter: blur(16px) saturate(1.08);
     transform: none;
   }
   body.art-room::after { position: absolute; }

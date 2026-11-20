@@ -3,10 +3,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark light">
     <meta name="theme-color" content="#25152b">
     <meta name="description" content="@@P53_DESCRIPTION@@">@@SHARING_META@@
     <link rel="icon" href="../covers/GSI_favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="../fonts/SpaceGrotesk-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
     <script>
     (() => {
         try {
@@ -18,7 +20,7 @@
         } catch {}
     })();
     </script>
-    <script src="../scripts/theme-mode.js"></script>
+    <script src="../scripts/theme-mode.js" defer></script>
     <link rel="stylesheet" href="../styles/gsi-tokens.css">
     <link rel="stylesheet" href="../styles/art-room.css">
     <link rel="stylesheet" href="../styles/p53-transmission.css">
@@ -27,23 +29,24 @@
     <title>@@P53_TITLE@@</title>
 </head>
 <body class="art-room p53-transmission-room" style="@@ART_STYLE@@">
-    <main class="p53-page">
+    <a class="skip-link" href="#main-content">Skip to transmission</a>
+    <main class="p53-page" id="main-content">
         <header class="p53-nav">
             <nav class="p53-trace floating-path" aria-label="P53 path">
-                <a id="p53-trace-archive" href="../index.html" aria-label="Chaperone home" title="Chaperone"><span class="gsi-home-mark" data-gsi-mark="favicon-slot"><span class="gsi-home-mark-icon" aria-hidden="true"><img src="../covers/GSI_favicon.svg" alt=""></span></span></a><span class="trace-separator">→</span>
-                <a id="p53-trace-filter" class="hidden" href="../index.html"></a><span id="p53-trace-filter-separator" class="trace-separator hidden">→</span>
-                <a id="p53-trace-artist" class="hidden" href="../index.html"></a><span id="p53-trace-artist-separator" class="trace-separator hidden">→</span>
+                <a id="p53-trace-archive" href="../index.html" aria-label="Chaperone home" title="Chaperone"><span class="gsi-home-mark" data-gsi-mark="favicon-slot"><span class="gsi-home-mark-icon" aria-hidden="true"><img src="../covers/GSI_favicon.svg" alt="" width="19" height="19" loading="eager" decoding="async"></span></span></a><span class="trace-separator" aria-hidden="true">→</span>
+                <a id="p53-trace-filter" class="hidden" href="../index.html"></a><span id="p53-trace-filter-separator" class="trace-separator hidden" aria-hidden="true">→</span>
+                <a id="p53-trace-artist" class="hidden" href="../index.html"></a><span id="p53-trace-artist-separator" class="trace-separator hidden" aria-hidden="true">→</span>
                 <a id="p53-radio-index" href="index.html">RADIO P53</a>
             </nav>
         </header>
         <section class="transmission">
             <button class="share-transmission" id="share-transmission" type="button" aria-haspopup="dialog">Share</button>
-            <div class="protein-panel"><img src="../covers/P53_cover-runtime.webp" alt="Expressive P53 protein artwork" loading="eager" decoding="async"></div>
+            <div class="protein-panel"><img src="../covers/P53_cover-runtime.webp" alt="Expressive P53 protein artwork" width="900" height="900" loading="eager" decoding="async"></div>
             <div class="signal-panel">
                 @@COVER_HTML@@
-                <h1>@@TRACK@@</h1>
-                <p class="artist">@@ARTIST@@</p>
-                <p class="album">@@ALBUM@@</p>
+                <h1 dir="auto">@@TRACK@@</h1>
+                <p class="artist" dir="auto">@@ARTIST@@</p>
+                <p class="album" dir="auto">@@ALBUM@@</p>
                 @@NOTE_HTML@@
                 @@STREAMING_LINKS_HTML@@
             </div>
@@ -64,7 +67,7 @@
             </header>
             <div class="story-modal-body">
                 <div class="story-card-preview-wrap">
-                    <canvas id="story-card-canvas" width="1080" height="1920" class="story-card-canvas" aria-label="Radio P53 transmission story card preview"></canvas>
+                    <canvas id="story-card-canvas" role="img" width="1080" height="1920" class="story-card-canvas" aria-label="Radio P53 transmission story card preview"></canvas>
                 </div>
                 <div class="story-modal-actions">
                     <button type="button" class="story-btn story-btn-share" id="story-btn-share" disabled>Share card ↗</button>

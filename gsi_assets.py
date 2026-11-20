@@ -347,22 +347,81 @@ def local_image_metadata(image_path: Path) -> dict:
     return metadata
 
 
+_IMAGE_DIMENSIONS_CACHE: dict[tuple[str, int], tuple[int, int]] = {}
+
+
+def image_dimensions(image_path: Path, default_width: int = 600, default_height: int = 600) -> tuple[int, int]:
+    """Read image pixel dimensions cleanly from header bytes with mtime caching."""
+    try:
+        mtime = image_path.stat().st_mtime_ns
+        key = (str(image_path), mtime)
+        cached = _IMAGE_DIMENSIONS_CACHE.get(key)
+        if cached is not None:
+            return cached
+        with Image.open(image_path) as image:
+            width, height = image.size
+        size = (int(width), int(height)) if width and height else (default_width, default_height)
+        _IMAGE_DIMENSIONS_CACHE[key] = size
+        return size
+    except (OSError, ValueError):
+        return (default_width, default_height)
+
+
+def image_size_attrs(image_path: Path | None, default_width: int = 600, default_height: int = 600) -> str:
+    """Format explicit width and height HTML attributes for an image path."""
+    width, height = (
+        image_dimensions(image_path, default_width, default_height)
+        if image_path is not None
+        else (default_width, default_height)
+    )
+    return f'width="{width}" height="{height}"'
+
+
 # Generated output receives fresh copies so removed or renamed source assets do
 # not linger in the published tree.
-def copy_site_covers(covers_dir: Path, site_covers_dir: Path) -> None:
+def copy_site_covers(
+    covers_dir: Path,
+    site_covers_dir: Path,
+    *,
+    referenced_files: set[str] | None = None,
+) -> None:
     """Refresh generated artwork from the editable cover directory."""
     if site_covers_dir.exists():
         shutil.rmtree(site_covers_dir)
-    shutil.copytree(covers_dir, site_covers_dir)
-    print(f" Copied covers into generated site: {site_covers_dir}")
+    if referenced_files is None:
+        shutil.copytree(covers_dir, site_covers_dir)
+        print(f" Copied covers into generated site: {site_covers_dir}")
+        return
+    site_covers_dir.mkdir(parents=True, exist_ok=True)
+    copied = 0
+    for source in covers_dir.iterdir():
+        if source.is_file() and source.name in referenced_files:
+            shutil.copy2(source, site_covers_dir / source.name)
+            copied += 1
+    p53_source = covers_dir / "P53_cover.jpg"
+    if p53_source.is_file():
+        og_target = site_covers_dir / "P53_cover-og.jpg"
+        try:
+            with Image.open(p53_source) as image:
+                rgb = image.convert("RGB")
+                rgb.thumbnail((1200, 1200))
+                rgb.save(og_target, format="JPEG", quality=84, optimize=True)
+        except (OSError, ValueError):
+            pass
+    print(f" Copied {copied} referenced covers into generated site: {site_covers_dir}")
 
 
 def copy_site_scripts(web_dir: Path, site_scripts_dir: Path) -> None:
     """Copy source browser helpers into the generated GSI site."""
     site_scripts_dir.mkdir(parents=True, exist_ok=True)
     scripts_dir = web_dir / "scripts"
+    expected_names = set()
     for source in scripts_dir.glob("*.js"):
+        expected_names.add(source.name)
         shutil.copy2(source, site_scripts_dir / source.name)
+    for stale in site_scripts_dir.glob("*.js"):
+        if stale.name not in expected_names:
+            stale.unlink()
 
 
 def copy_site_fonts(web_dir: Path, site_fonts_dir: Path) -> None:
@@ -379,8 +438,13 @@ def copy_site_styles(web_dir: Path, site_styles_dir: Path) -> None:
     """Copy stylesheets and assemble the layered homepage stylesheet."""
     site_styles_dir.mkdir(parents=True, exist_ok=True)
     styles_dir = web_dir / "styles"
+    expected_names = {"gsi-home.css"}
     for source in styles_dir.glob("*.css"):
+        expected_names.add(source.name)
         shutil.copy2(source, site_styles_dir / source.name)
+    for stale in site_styles_dir.glob("*.css"):
+        if stale.name not in expected_names:
+            stale.unlink()
     home_parts_dir = styles_dir / "home"
     if home_parts_dir.is_dir():
         parts = []

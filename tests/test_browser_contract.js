@@ -81,7 +81,10 @@ assert.equal(
   }),
   "../index.html?filter=dreamy&view=gallery&format=albums&theme=dark",
 );
+assert.equal(homeState.signalLabel(1), "01 SIGNAL");
 assert.equal(homeState.signalLabel(3), "03 SIGNALS");
+assert.equal(homeState.signalLabel(1284), "1,284 SIGNALS");
+assert.equal(homeState.albumLabel(1), "01 signal");
 assert.equal(homeState.albumLabel(2), "02 signals");
 assert.equal(
   homeState.cardMatchesFilter({ dataset: { tags: "dreamy p53" } }, "dreamy"),

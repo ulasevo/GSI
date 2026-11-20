@@ -3,6 +3,8 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark">
+  <meta name="theme-color" content="#0d0d0f">
   <title>Authoring Room · GSI</title>
   <link rel="stylesheet" href="private-entry.css">
 </head>
@@ -31,15 +33,18 @@
     </header>
 
     <div class="mode-tabs" role="tablist">
-      <button id="tab-new" class="mode-tab active" type="button" role="tab" aria-selected="true">＋ NEW SIGNAL</button>
-      <button id="tab-edit" class="mode-tab" type="button" role="tab" aria-selected="false">✎ EDIT EXISTING</button>
+      <button id="tab-new" class="mode-tab active" type="button" role="tab" aria-selected="true" aria-controls="authoring-form">＋ NEW SIGNAL</button>
+      <button id="tab-edit" class="mode-tab" type="button" role="tab" aria-selected="false" aria-controls="chooser-section" tabindex="-1">✎ EDIT EXISTING</button>
     </div>
 
     <!-- Status message -->
     <div id="status-card" class="status-card" role="status" aria-live="polite">
       <p id="status">Paste an Apple Music or Spotify song link to begin.</p>
-      <div id="result-link-container" hidden>
-        <a id="result-link" class="view-entry-btn" href="#" target="_blank">OPEN GENERATED ROOM ↗</a>
+      <div class="status-actions">
+        <div id="result-link-container" hidden>
+          <a id="result-link" class="view-entry-btn" href="#" target="_blank">OPEN GENERATED ROOM ↗</a>
+        </div>
+        <button id="discard-draft-btn" class="quiet-btn" type="button" hidden>DISCARD LOCAL DRAFT</button>
       </div>
     </div>
 
@@ -52,7 +57,7 @@
     </section>
 
     <!-- Main Authoring Form -->
-    <form id="authoring-form" class="panel" novalidate>
+    <form id="authoring-form" class="panel" role="tabpanel" novalidate>
       <input id="edit-of" type="hidden">
 
       <!-- Link Resolver (prominent in New mode) -->

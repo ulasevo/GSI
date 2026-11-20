@@ -34,10 +34,13 @@
     let signalTransformTimer = null;
     let filterEntranceTimer = null;
     let filterExitTimer = null;
+    let drawerCloseTimer = null;
     let isDrawerExpanded = false;
+    const prefersReducedMotion = () => Boolean(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 
     function setDrawerExpanded(expanded) {
       isDrawerExpanded = expanded;
+      window.clearTimeout(drawerCloseTimer);
       if (filterPanel) {
         filterPanel.classList.toggle("filter-panel--collapsed", !expanded);
         filterPanel.classList.toggle("filter-panel--expanded", expanded);
@@ -46,7 +49,19 @@
         drawerToggle.setAttribute("aria-expanded", String(expanded));
       }
       if (drawerBody) {
-        drawerBody.hidden = !expanded;
+        if (expanded) {
+          drawerBody.classList.remove("is-closing");
+          drawerBody.hidden = false;
+        } else if (!drawerBody.hidden && !prefersReducedMotion()) {
+          drawerBody.classList.add("is-closing");
+          drawerCloseTimer = window.setTimeout(() => {
+            drawerBody.classList.remove("is-closing");
+            drawerBody.hidden = true;
+          }, 150);
+        } else {
+          drawerBody.classList.remove("is-closing");
+          drawerBody.hidden = true;
+        }
       }
       if (drawerCaret && !drawerCaret.querySelector("svg")) {
         drawerCaret.textContent = expanded ? "▴" : "▾";
@@ -63,6 +78,15 @@
       quickClearBtn.addEventListener("click", (e) => {
         e.stopPropagation();
         clearFilter(true);
+        drawerToggle?.focus();
+      });
+    }
+
+    const emptyClearBtn = document.querySelector("#empty-clear-filter-btn");
+    if (emptyClearBtn) {
+      emptyClearBtn.addEventListener("click", () => {
+        clearFilter(true);
+        drawerToggle?.focus();
       });
     }
 
@@ -112,7 +136,10 @@
       document.body.classList.remove("filter-active");
       document.body.removeAttribute("data-active-filter");
       document.documentElement.style.setProperty("--page-tint", "#ffffff");
-      if (activePill) activePill.hidden = true;
+      if (activePill) {
+        activePill.hidden = true;
+        activePill.style.removeProperty("--filter-color");
+      }
       if (activeIcon) activeIcon.innerHTML = "";
       if (activeText) activeText.textContent = "";
       if (quickClearBtn) quickClearBtn.hidden = true;
@@ -124,24 +151,8 @@
       window.clearTimeout(filterEntranceTimer);
       window.clearTimeout(filterExitTimer);
       box.classList.remove("filter-entering");
-      if (wasActive && !box.classList.contains("hidden")) {
-        box.classList.add("filter-collapsing");
-        filterExitTimer = window.setTimeout(() => {
-          box.classList.remove("filter-collapsing");
-          box.classList.add("hidden");
-          box.hidden = true;
-          box.setAttribute("aria-hidden", "true");
-          title.textContent = "";
-          description.textContent = "";
-          box.removeAttribute("data-filter-label");
-          box.removeAttribute("data-filter");
-          filterRoomLabel.replaceChildren();
-          filterDecor.replaceChildren();
-          filterCount.textContent = "";
-          delete box.dataset.hasPlaylistCover;
-          hidePlaylist();
-        }, 240);
-      } else {
+      const finalizeClear = () => {
+        box.classList.remove("filter-collapsing");
         box.classList.add("hidden");
         box.hidden = true;
         box.setAttribute("aria-hidden", "true");
@@ -154,6 +165,12 @@
         filterCount.textContent = "";
         delete box.dataset.hasPlaylistCover;
         hidePlaylist();
+      };
+      if (wasActive && !box.classList.contains("hidden") && !prefersReducedMotion()) {
+        box.classList.add("filter-collapsing");
+        filterExitTimer = window.setTimeout(finalizeClear, 180);
+      } else {
+        finalizeClear();
       }
       if (sync) syncContext();
     }
@@ -181,6 +198,7 @@
       box.removeAttribute("aria-hidden");
       if (activePill) {
         activePill.hidden = false;
+        activePill.style.setProperty("--filter-color", info.color || "#8c5de8");
         if (activeIcon) activeIcon.innerHTML = info.icon || "";
         if (activeText) activeText.textContent = info.label;
       }

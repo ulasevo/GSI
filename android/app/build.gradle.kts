@@ -6,7 +6,15 @@ plugins {
 val archiveRoot = rootProject.projectDir.parentFile
 val reviewAssetsDir = layout.buildDirectory.dir("generated/gsi-review-assets")
 val reviewAsset = reviewAssetsDir.map { it.file("data/reviews.json") }
+val syncAndroidArchive = tasks.register<Exec>("syncAndroidArchive") {
+    val siteCatalog = File(archiveRoot, "site/data/catalog.json")
+    val syncScript = File(archiveRoot, "tools/sync_android_assets.py")
+    onlyIf { siteCatalog.isFile && syncScript.isFile }
+    workingDir(archiveRoot)
+    commandLine("python", "-B", syncScript.absolutePath, "--root", archiveRoot.absolutePath)
+}
 val exportAndroidReviews = tasks.register<Exec>("exportAndroidReviews") {
+    dependsOn(syncAndroidArchive)
     val catalog = file("src/main/assets/data/catalog.json")
     val entries = File(archiveRoot, "entries")
     val exporter = File(archiveRoot, "tools/export_android_reviews.py")

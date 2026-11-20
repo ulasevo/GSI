@@ -3,6 +3,7 @@ package com.gsi.data
 import android.content.Context
 import android.graphics.BitmapFactory
 import android.util.Log
+import android.util.LruCache
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import com.gsi.model.Signal
@@ -11,7 +12,8 @@ import org.json.JSONObject
 
 object GsiRepository {
 
-    private val bitmapCache = mutableMapOf<String, ImageBitmap>()
+    private const val MAX_COVER_EDGE_PX = 512
+    private val bitmapCache = LruCache<String, ImageBitmap>(32)
 
     private fun loadReviews(context: Context): Map<String, List<ReviewSection>> = try {
         val raw = context.assets.open("data/reviews.json").bufferedReader().use { it.readText() }
@@ -125,18 +127,40 @@ object GsiRepository {
         return signals
     }
 
-    fun loadCoverBitmap(context: Context, fileName: String): ImageBitmap? {
-        if (bitmapCache.containsKey(fileName)) {
-            return bitmapCache[fileName]
+    private fun calculateInSampleSize(width: Int, height: Int, maxEdge: Int): Int {
+        var sampleSize = 1
+        var longestEdge = maxOf(width, height)
+        while (longestEdge > maxEdge) {
+            sampleSize *= 2
+            longestEdge /= 2
         }
+        return sampleSize
+    }
+
+    fun loadCoverBitmap(context: Context, fileName: String): ImageBitmap? {
+        bitmapCache.get(fileName)?.let { return it }
 
         return try {
-            val stream = context.assets.open("covers/$fileName")
-            val bitmap = BitmapFactory.decodeStream(stream)
-            stream.close()
+            val assetPath = "covers/$fileName"
+            val boundsOptions = BitmapFactory.Options().apply {
+                inJustDecodeBounds = true
+            }
+            context.assets.open(assetPath).use { stream ->
+                BitmapFactory.decodeStream(stream, null, boundsOptions)
+            }
+            val decodeOptions = BitmapFactory.Options().apply {
+                inSampleSize = calculateInSampleSize(
+                    boundsOptions.outWidth,
+                    boundsOptions.outHeight,
+                    MAX_COVER_EDGE_PX
+                )
+            }
+            val bitmap = context.assets.open(assetPath).use { stream ->
+                BitmapFactory.decodeStream(stream, null, decodeOptions)
+            }
             val imageBitmap = bitmap?.asImageBitmap()
             if (imageBitmap != null) {
-                bitmapCache[fileName] = imageBitmap
+                bitmapCache.put(fileName, imageBitmap)
             }
             imageBitmap
         } catch (_: Exception) {

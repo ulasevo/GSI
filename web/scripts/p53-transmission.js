@@ -18,47 +18,60 @@
   // page-specific style attributes.
   if (context.accent) document.body.style.setProperty("--accent", context.accent);
 
-  const archiveState = GSIContext.read();
   const filterLabels = context.filterLabels || {};
-  const artistRoute = archiveState.get("artist");
   const expectedArtistRoute = context.expectedArtistRoute || "";
   const artistName = context.artistName || "";
-  const archiveParams = GSIContext.archiveParams({ state: archiveState, filterLabels });
-  const archiveHref = GSIContext.href("../index.html", archiveParams);
 
-  document.querySelectorAll("#p53-trace-archive").forEach(link => { link.href = archiveHref; });
-
-  const p53IndexLink = document.querySelector("#p53-radio-index");
-  if (p53IndexLink) {
-    const p53IndexParams = new URLSearchParams(archiveParams);
-    if (artistRoute === expectedArtistRoute) p53IndexParams.set("artist", artistRoute);
-    p53IndexLink.href = `index.html${p53IndexParams.size ? `?${p53IndexParams}` : ""}`;
-  }
-
-  // Filter context stays in #p53-trace-archive and #p53-radio-index links while
-  // omitting the filter segment from the factor breadcrumb bar.
-  if (artistRoute === expectedArtistRoute) {
-    const traceArtist = document.querySelector("#p53-trace-artist");
-    if (traceArtist) {
-      traceArtist.textContent = artistName.toUpperCase();
-      traceArtist.href = `../artists/${artistRoute}.html${archiveParams.size ? `?${archiveParams}` : ""}`;
-      traceArtist.classList.remove("hidden");
-      document.querySelector("#p53-trace-artist-separator")?.classList.remove("hidden");
-    }
-  }
-
-  const routeParams = new URLSearchParams(archiveParams);
-  if (artistRoute === expectedArtistRoute) routeParams.set("artist", artistRoute);
-  function appendRouteParams(selector, params) {
-    if (!params.size) return;
+  function setRouteLinks(selector, params) {
     document.querySelectorAll(selector).forEach(link => {
-      if (!link || !link.href) return;
-      const sep = link.href.includes("?") ? "&" : "?";
-      link.href = `${link.href}${sep}${params}`;
+      if (!link) return;
+      const rawHref = (typeof link.getAttribute === "function" ? link.getAttribute("href") : "") || link.href || "";
+      const baseHref = (link.dataset && link.dataset.routeBaseHref) || String(rawHref).split("?")[0];
+      if (!baseHref) return;
+      if (link.dataset) link.dataset.routeBaseHref = baseHref;
+      link.href = params.size ? `${baseHref}?${params}` : baseHref;
     });
   }
-  appendRouteParams(".artist-link", archiveParams);
-  appendRouteParams(".entry-counterpart, .album-link", routeParams);
+
+  function syncLinks() {
+    const archiveState = GSIContext.read();
+    const artistRoute = archiveState.get("artist");
+    const archiveParams = GSIContext.archiveParams({ state: archiveState, filterLabels });
+    const archiveHref = GSIContext.href("../index.html", archiveParams);
+
+    document.querySelectorAll("#p53-trace-archive").forEach(link => { link.href = archiveHref; });
+
+    const p53IndexLink = document.querySelector("#p53-radio-index");
+    if (p53IndexLink) {
+      const p53IndexParams = new URLSearchParams(archiveParams);
+      if (artistRoute === expectedArtistRoute) p53IndexParams.set("artist", artistRoute);
+      p53IndexLink.href = `index.html${p53IndexParams.size ? `?${p53IndexParams}` : ""}`;
+    }
+
+    // Filter context stays in #p53-trace-archive and #p53-radio-index links while
+    // omitting the filter segment from the factor breadcrumb bar.
+    const traceArtist = document.querySelector("#p53-trace-artist");
+    const traceArtistSep = document.querySelector("#p53-trace-artist-separator");
+    if (artistRoute === expectedArtistRoute) {
+      if (traceArtist) {
+        traceArtist.textContent = artistName.toUpperCase();
+        traceArtist.href = `../artists/${artistRoute}.html${archiveParams.size ? `?${archiveParams}` : ""}`;
+        traceArtist.classList.remove("hidden");
+        traceArtistSep?.classList.remove("hidden");
+      }
+    } else if (traceArtist) {
+      traceArtist.classList.add("hidden");
+      traceArtistSep?.classList.add("hidden");
+    }
+
+    const routeParams = new URLSearchParams(archiveParams);
+    if (artistRoute === expectedArtistRoute) routeParams.set("artist", artistRoute);
+    setRouteLinks(".artist-link", archiveParams);
+    setRouteLinks(".entry-counterpart, .album-link", routeParams);
+  }
+
+  syncLinks();
+  window.addEventListener?.("gsi-theme-change", syncLinks);
 
   // Story Card generator & native mobile sharing controller.
   const shareButton = document.querySelector("#share-transmission");
@@ -499,12 +512,12 @@
 
     ctx.textAlign = "left";
     ctx.fillStyle = colors.inkPrimary;
-    ctx.font = "700 32px Arial, sans-serif";
+    ctx.font = '700 32px "Space Grotesk", Arial, sans-serif';
     ctx.fillText("Radio P53", contentX + 24, 165);
 
     ctx.textAlign = "right";
     ctx.fillStyle = colors.inkMuted;
-    ctx.font = "600 24px Arial, sans-serif";
+    ctx.font = '600 24px "Space Grotesk", Arial, sans-serif';
     ctx.fillText(status, contentRight, 163);
     ctx.textAlign = "left";
 
@@ -520,20 +533,20 @@
     const trackLineHeight = trackSize + 8;
 
     ctx.fillStyle = colors.inkPrimary;
-    ctx.font = `800 ${trackSize}px Arial, sans-serif`;
+    ctx.font = `800 ${trackSize}px "Space Grotesk", Arial, sans-serif`;
     const trackMeasured = measureWrappedLines(ctx, track, contentW, 2);
     paintLines(ctx, trackMeasured.lines, contentX, y, trackLineHeight);
     y += Math.max(1, trackMeasured.lines.length) * trackLineHeight - 4;
 
     ctx.fillStyle = colors.inkPrimary;
-    ctx.font = "700 38px Arial, sans-serif";
+    ctx.font = '700 38px "Space Grotesk", Arial, sans-serif';
     const artistMeasured = measureWrappedLines(ctx, artist, contentW, 2);
     paintLines(ctx, artistMeasured.lines, contentX, y, 46);
     y += Math.max(1, artistMeasured.lines.length) * 46 + 2;
 
     if (album) {
       ctx.fillStyle = colors.inkMuted;
-      ctx.font = "500 29px Arial, sans-serif";
+      ctx.font = '500 29px "Space Grotesk", Arial, sans-serif';
       const albumMeasured = measureWrappedLines(ctx, album, contentW, 2);
       paintLines(ctx, albumMeasured.lines, contentX, y, 38);
       y += Math.max(1, albumMeasured.lines.length) * 38;
@@ -558,7 +571,7 @@
       const noteTextX = contentX + 30;
       const noteTextW = contentW - 56;
 
-      ctx.font = `500 ${noteFontSize}px Arial, sans-serif`;
+      ctx.font = `500 ${noteFontSize}px "Space Grotesk", Arial, sans-serif`;
       const noteMeasured = measureWrappedLines(ctx, note, noteTextW, maxNoteLines);
       const noteBoxH = noteMeasured.lines.length * noteLineHeight + 40;
 
@@ -586,12 +599,12 @@
     ctx.fillStyle = hexToRgba(colors.inkPrimary, 0.18);
     ctx.fillRect(contentX, 1744, contentW, 1.5);
 
-    ctx.font = "600 24px Arial, sans-serif";
+    ctx.font = '600 24px "Space Grotesk", Arial, sans-serif';
     ctx.fillStyle = colors.inkMuted;
     ctx.textAlign = "left";
     ctx.fillText("Radio P53", contentX, 1790);
 
-    ctx.font = "700 24px Arial, sans-serif";
+    ctx.font = '700 24px "Space Grotesk", Arial, sans-serif';
     ctx.textAlign = "right";
     ctx.fillText("Chaperone", contentRight, 1790);
     ctx.textAlign = "left";
@@ -916,6 +929,21 @@
         audio.pause();
         setButtonState("paused", "Preview paused.");
       }
+    });
+
+    function pauseActiveAudio() {
+      if (audio && !audio.paused) {
+        audio.pause();
+        setButtonState("paused", "Preview paused.");
+      }
+    }
+
+    document.addEventListener?.("visibilitychange", () => {
+      if (document.visibilityState === "hidden") pauseActiveAudio();
+    });
+
+    document.querySelectorAll?.(".stream-link:not(.audition-trigger)")?.forEach?.(link => {
+      link.addEventListener?.("click", pauseActiveAudio);
     });
 
     window.addEventListener?.("pagehide", () => {

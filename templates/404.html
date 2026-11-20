@@ -3,10 +3,12 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark light">
     <meta name="robots" content="noindex">
     <meta name="theme-color" content="#0d0d0f">
     <base href="@@SITE_PATH@@">
+    <link rel="preload" href="fonts/SpaceGrotesk-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
     <script>
     (() => {
         try {
@@ -18,15 +20,17 @@
         } catch {}
     })();
     </script>
-    <script src="scripts/theme-mode.js?v=20260921-persist"></script>
+    <script src="scripts/theme-mode.js?v=20260921-persist" defer></script>
     <link rel="icon" id="favicon" href="covers/GSI_favicon.svg" type="image/svg+xml">
     <title>Signal Lost — Chaperone</title>
+    <link rel="stylesheet" href="styles/gsi-tokens.css">
     <link rel="stylesheet" href="styles/error-page.css">
     <link rel="stylesheet" href="styles/theme-mode.css?v=20260920-final8">
 </head>
-<body>
+<body class="error-page">
+    <a class="skip-link" href="#main-content">Skip to signal recovery</a>
     <div class="protein-rain" aria-hidden="true">@@PROTEIN_DROPS@@</div>
-    <main>
+    <main id="main-content">
         <section>
             <div class="eyebrow">@@EYEBROW@@</div>
             <h1>@@NOT_FOUND_TITLE@@</h1>
@@ -34,11 +38,11 @@
             <a class="home" id="home-link" href="./">RETURN TO CHAPERONE</a>
         </section>
         <article class="recommendation" id="recommendation" style="--accent:#ff4fa3">
-            <img id="signal-cover" alt="">
+            <img id="signal-cover" alt="" width="110" height="110" loading="eager" decoding="async">
             <div class="signal-copy">
                 <span>@@RECOMMENDATION_LABEL@@</span>
-                <strong id="signal-track"></strong>
-                <small id="signal-artist"></small>
+                <strong id="signal-track" dir="auto"></strong>
+                <small id="signal-artist" dir="auto"></small>
                 <div class="signal-actions">
                     <a id="signal-spotify" href="#" target="_blank" rel="noopener noreferrer">SPOTIFY ↗</a>
                     <a id="signal-apple" href="#" target="_blank" rel="noopener noreferrer">APPLE MUSIC ↗</a>
@@ -48,6 +52,7 @@
         </article>
     </main>
     <script id="error-page-data" type="application/json">@@ERROR_PAGE_DATA@@</script>
+    <script src="scripts/gsi-context.js"></script>
     <script src="scripts/error-page.js"></script>
 </body>
 </html>

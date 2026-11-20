@@ -1,13 +1,14 @@
 (() => {
   const DEFAULT_SECTIONS = [
     ["Charge", "What state does this song trigger?"],
-    ["Sonical Attraction", "What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence."],
+    ["Sonic Attraction", "What sound detail pulls you in? Rhythm, bass, vocal texture, distortion, switch, silence."],
     ["Lyric/Vocal Detail", "Any line, delivery, breath, pronunciation, or vocal moment worth preserving?"],
     ["Version of ulaş", "What version of me does this song store? Time period, grind, breakup, desire, motion."],
     ["Lore", "Any personal history, repeated use, place, habit, person attached to this track?"],
     ["Reading", "What do I think the song is doing or narrating?"],
     ["Comment", "Free field. Final take, vibe, joke, conclusion, or whatever does not fit elsewhere."]
   ];
+  let configuredSections = DEFAULT_SECTIONS.map(([title, prompt]) => [title, prompt]);
 
   const TOKEN_KEY = "gsi_local_auth_token";
   const AUTOSAVE_NEW_KEY = "gsi_new_entry_draft";
@@ -19,7 +20,8 @@
     artworkUrl: "",
     coverFile: "",
     signalId: "",
-    autosaveTimer: null
+    autosaveTimer: null,
+    dirty: false
   };
 
   const $ = (id) => document.getElementById(id);
@@ -89,6 +91,7 @@
       const chip = document.createElement("button");
       chip.type = "button";
       chip.className = "palette-chip";
+      chip.dataset.hex = hex.toLowerCase();
       chip.style.backgroundColor = hex;
       chip.title = `Use accent ${hex}`;
       chip.setAttribute("aria-label", `Select accent color ${hex}`);
@@ -188,22 +191,43 @@
     preview.hidden = false;
   }
 
+  function persistAutosave() {
+    try {
+      const payloadData = buildPayload();
+      if (state.mode === "new") {
+        localStorage.setItem(AUTOSAVE_NEW_KEY, JSON.stringify(payloadData));
+      } else {
+        const slug = $("edit-of").value;
+        if (slug) localStorage.setItem(AUTOSAVE_EDIT_PREFIX + slug, JSON.stringify(payloadData));
+      }
+      state.dirty = false;
+    } catch (_) {}
+  }
+
   function queueAutosave() {
+    state.dirty = true;
     clearTimeout(state.autosaveTimer);
-    state.autosaveTimer = setTimeout(() => {
-      try {
-        const payloadData = buildPayload();
-        if (state.mode === "new") {
-          localStorage.setItem(AUTOSAVE_NEW_KEY, JSON.stringify(payloadData));
-        } else {
-          const slug = $("edit-of").value;
-          if (slug) localStorage.setItem(AUTOSAVE_EDIT_PREFIX + slug, JSON.stringify(payloadData));
-        }
-      } catch (_) {}
-    }, 400);
+    state.autosaveTimer = setTimeout(persistAutosave, 400);
+  }
+
+  function flushAutosave() {
+    clearTimeout(state.autosaveTimer);
+    state.autosaveTimer = null;
+    if (state.dirty) {
+      persistAutosave();
+    }
+  }
+
+  function setDiscardDraftVisible(visible) {
+    const btn = $("discard-draft-btn");
+    if (btn) btn.hidden = !visible;
   }
 
   function clearCurrentAutosave() {
+    clearTimeout(state.autosaveTimer);
+    state.autosaveTimer = null;
+    state.dirty = false;
+    setDiscardDraftVisible(false);
     try {
       if (state.mode === "new") {
         localStorage.removeItem(AUTOSAVE_NEW_KEY);
@@ -266,8 +290,22 @@
   }
 
   function initDefaultSections() {
-    state.sections = DEFAULT_SECTIONS.map(([title, prompt]) => ({ title, prompt, content: "" }));
+    state.sections = configuredSections.map(([title, prompt]) => ({ title, prompt, content: "" }));
     renderSections();
+  }
+
+  async function loadEditorConfig() {
+    try {
+      const resp = await authFetch("/__local/editor/editor-config.json");
+      if (!resp.ok) return;
+      const cfg = await resp.json();
+      if (Array.isArray(cfg.sections) && cfg.sections.length > 0) {
+        const info = cfg.sectionInfo || {};
+        configuredSections = cfg.sections.map((title) => [title, info[title] || "Write what belongs here."]);
+      }
+    } catch (_) {
+      // Keep default sections when offline or unauthorized.
+    }
   }
 
   function setMode(mode) {
@@ -281,17 +319,21 @@
     const resultContainer = $("result-link-container");
 
     if (resultContainer) resultContainer.hidden = true;
+    clearTimeout(state.autosaveTimer);
+    state.dirty = false;
+    clearFormFields();
 
     if (mode === "new") {
       tabNew.classList.add("active");
       tabNew.setAttribute("aria-selected", "true");
+      tabNew.tabIndex = 0;
       tabEdit.classList.remove("active");
       tabEdit.setAttribute("aria-selected", "false");
+      tabEdit.tabIndex = -1;
       resolverPanel.hidden = false;
       chooserSection.hidden = true;
       heading.textContent = "Give a song a place to stay.";
       intro.textContent = "Paste an Apple Music or Spotify link, shape the review sections, and publish a new entry directly on this machine.";
-      $("edit-of").value = "";
 
       // Check if we have autosaved new draft
       const autosaved = localStorage.getItem(AUTOSAVE_NEW_KEY);
@@ -299,24 +341,28 @@
         try {
           const data = JSON.parse(autosaved);
           restoreFormData(data);
+          setDiscardDraftVisible(true);
           setStatus("Restored your unsaved new signal draft.", "success");
           return;
         } catch (_) {}
       }
 
-      // Default blank new state
-      clearFormFields();
+      setDiscardDraftVisible(false);
       initDefaultSections();
       setStatus("Paste an Apple Music or Spotify song link to begin.");
     } else {
       tabEdit.classList.add("active");
       tabEdit.setAttribute("aria-selected", "true");
+      tabEdit.tabIndex = 0;
       tabNew.classList.remove("active");
       tabNew.setAttribute("aria-selected", "false");
+      tabNew.tabIndex = -1;
       resolverPanel.hidden = true;
       chooserSection.hidden = false;
+      setDiscardDraftVisible(false);
       heading.textContent = "Refine an existing signal.";
       intro.textContent = "Select any represented track to refine its review sections, artist notes, album takes, or P53 status.";
+      initDefaultSections();
       setStatus("Select a signal from the list below.");
       loadCatalog();
     }
@@ -338,20 +384,27 @@
     state.artworkUrl = "";
     state.coverFile = "";
     state.signalId = "";
+    state.sections = [];
+    const list = $("section-list");
+    if (list) list.replaceChildren();
     showArtwork("");
     renderPalette([]);
   }
 
   function restoreFormData(data) {
-    if (!data || !data.record) return;
+    clearFormFields();
+    if (!data || !data.record) {
+      initDefaultSections();
+      return;
+    }
     const r = data.record;
     $("edit-of").value = data.editOf || "";
-    if (r.link) $("provider-link").value = r.link;
-    if (r.artist) $("artist").value = r.artist;
-    if (r.track) $("track").value = r.track;
-    if (r.album) $("album").value = r.album;
-    if (r.tags) $("tags").value = r.tags;
-    if (r.accent) $("accent").value = r.accent;
+    $("provider-link").value = r.link || "";
+    $("artist").value = r.artist || "";
+    $("track").value = r.track || "";
+    $("album").value = r.album || "";
+    $("tags").value = r.tags || "";
+    $("accent").value = r.accent || "";
     state.signalId = r.signal_id || "";
     state.coverFile = r.cover_file || r.cover || (data.editOf ? `${data.editOf}.jpg` : "");
     state.artworkUrl = r.cover_url || "";
@@ -364,23 +417,25 @@
 
     const coverSrc = state.artworkUrl || (state.coverFile ? `/covers/${state.coverFile}` : "");
     if (coverSrc) {
-      showArtwork(coverSrc, `${r.album || r.track || "SIGNAL"} / ARTWORK`, r.accent);
+      showArtwork(coverSrc, `${r.album || r.track || "SIGNAL"} / ARTWORK`, r.accent || "");
     } else {
       showArtwork("");
     }
 
-    if (data.p53) {
-      $("p53-enabled").checked = Boolean(data.p53.enabled);
-      $("p53-current").checked = Boolean(data.p53.current);
-      $("p53-note").value = data.p53.note || "";
-    }
-    if (data.catalogue) {
-      $("artist-note").value = data.catalogue.artist_note || "";
-      $("album-note").value = data.catalogue.album_note || "";
-    }
+    const p53 = data.p53 || {};
+    $("p53-enabled").checked = Boolean(p53.enabled);
+    $("p53-current").checked = Boolean(p53.current);
+    $("p53-note").value = p53.note || "";
+
+    const catalogue = data.catalogue || {};
+    $("artist-note").value = catalogue.artist_note || "";
+    $("album-note").value = catalogue.album_note || "";
+
     if (Array.isArray(data.sections) && data.sections.length > 0) {
       state.sections = data.sections;
       renderSections();
+    } else {
+      initDefaultSections();
     }
   }
 
@@ -489,10 +544,13 @@
     }
   }
 
-  async function loadEntry() {
+  async function loadEntry({ ignoreLocalDraft = false } = {}) {
     const slug = ($("entry-select").value || "").trim();
     if (!slug) return setStatus("Select a signal first.", "error");
 
+    clearTimeout(state.autosaveTimer);
+    state.dirty = false;
+    setDiscardDraftVisible(false);
     setStatus(`Loading ${slug}…`);
     try {
       const resp = await authFetch(`/api/local-entry/${encodeURIComponent(slug)}`);
@@ -502,16 +560,19 @@
       // Check if there is an autosaved edit draft for this slug
       let activeData = data;
       let restored = false;
-      try {
-        const raw = localStorage.getItem(AUTOSAVE_EDIT_PREFIX + slug);
-        if (raw) {
-          activeData = JSON.parse(raw);
-          restored = true;
-        }
-      } catch (_) {}
+      if (!ignoreLocalDraft) {
+        try {
+          const raw = localStorage.getItem(AUTOSAVE_EDIT_PREFIX + slug);
+          if (raw) {
+            activeData = JSON.parse(raw);
+            restored = true;
+          }
+        } catch (_) {}
+      }
 
       activeData.editOf = slug;
       restoreFormData(activeData);
+      setDiscardDraftVisible(restored);
 
       setStatus(
         restored
@@ -642,27 +703,55 @@
   const accentInput = $("accent");
   if (accentInput) {
     accentInput.addEventListener("input", () => {
-      const val = accentInput.value.trim();
+      const val = accentInput.value.trim().toLowerCase();
       const swatch = $("artwork-swatch");
       if (swatch) swatch.style.background = val || "#444";
       const paletteContainer = $("accent-palette");
       if (paletteContainer) {
         paletteContainer.querySelectorAll(".palette-chip").forEach((chip) => {
-          chip.classList.toggle("active", chip.style.backgroundColor.toLowerCase() === val.toLowerCase());
+          chip.classList.toggle("active", (chip.dataset.hex || "") === val);
         });
       }
     });
   }
 
-  // Tab listeners
-  $("tab-new").addEventListener("click", () => setMode("new"));
-  $("tab-edit").addEventListener("click", () => setMode("edit"));
+  // Tab listeners & Arrow key support
+  const tabNewBtn = $("tab-new");
+  const tabEditBtn = $("tab-edit");
+  tabNewBtn.addEventListener("click", () => setMode("new"));
+  tabEditBtn.addEventListener("click", () => setMode("edit"));
+  [tabNewBtn, tabEditBtn].forEach((tab) => {
+    tab.addEventListener("keydown", (event) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      event.preventDefault();
+      const next = tab === tabNewBtn ? tabEditBtn : tabNewBtn;
+      next.click();
+      next.focus();
+    });
+  });
 
   // Resolver & chooser listeners
   $("resolve-link").addEventListener("click", resolveLink);
-  $("load-entry").addEventListener("click", loadEntry);
-  $("entry-select").addEventListener("change", loadEntry);
+  $("load-entry").addEventListener("click", () => loadEntry());
+  $("entry-select").addEventListener("change", () => loadEntry());
   $("add-section-btn").addEventListener("click", () => addSection("Custom Heading", "Write what belongs here."));
+
+  const discardDraftBtn = $("discard-draft-btn");
+  if (discardDraftBtn) {
+    discardDraftBtn.addEventListener("click", () => {
+      clearCurrentAutosave();
+      if (state.mode === "edit" && ($("entry-select").value || "").trim()) {
+        loadEntry({ ignoreLocalDraft: true });
+      } else {
+        setMode("new");
+      }
+    });
+  }
+
+  window.addEventListener("pagehide", flushAutosave);
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "hidden") flushAutosave();
+  });
 
   // Action button listeners
   $("save-draft-btn").addEventListener("click", saveDraft);
@@ -711,5 +800,7 @@
   }
 
   updateAuthUI();
-  setMode("new");
+  loadEditorConfig().finally(() => {
+    setMode("new");
+  });
 })();

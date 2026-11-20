@@ -36,15 +36,24 @@
       cards.forEach(card => card.removeAttribute("data-album-pocket-hidden"));
     }
 
+    function syncEmptyState(visibleCount) {
+      const emptyEl = document.getElementById("grid-empty-state");
+      if (emptyEl) emptyEl.hidden = visibleCount > 0;
+    }
+
     function renderFilterAlbumGroups(filterName) {
       // An album appears when any represented song matches the room, but the
       // album page remains whole and still contains all of its songs.
       clearFilterAlbumGroups();
       const cardsInOrder = orderCardsForFilter(filterName);
       if (state.activeFormat !== "albums") {
+        let visibleCount = 0;
         cards.forEach(card => {
-          card.style.display = homeState.cardMatchesFilter(card, filterName) ? "flex" : "none";
+          const matches = homeState.cardMatchesFilter(card, filterName);
+          card.style.display = matches ? "flex" : "none";
+          if (matches) visibleCount += 1;
         });
+        syncEmptyState(visibleCount);
         return;
       }
 
@@ -115,6 +124,7 @@
         summary.append(summaryImage, summaryCopy);
         group.append(summary);
       });
+      syncEmptyState(grid.querySelectorAll(".filter-album-group").length);
     }
 
     function applyFormat(formatName, sync = true) {

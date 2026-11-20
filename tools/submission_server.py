@@ -13,6 +13,7 @@ import re
 import sys
 import csv
 import colorsys
+import threading
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -38,7 +39,8 @@ SUPPORTED_PROVIDERS = {
     "bandcamp.com", "deezer.com", "tidal.com",
 }
 
-PRIVATE_PATH_PREFIXES = ("/api/local-", "/__local/")
+PRIVATE_PATH_PREFIXES = ("/api/local-", "/__local/", "/api/entry-drafts")
+PUBLISH_LOCK = threading.Lock()
 
 
 def is_loopback_host(host: str) -> bool:
@@ -106,10 +108,11 @@ def _entry_sections(body: str) -> list[dict]:
     sections = []
     for index, match in enumerate(matches):
         end = matches[index + 1].start() if index + 1 < len(matches) else len(body)
+        cleaned = re.sub(r"<!--.*?-->", "", body[match.end():end], flags=re.DOTALL).strip()
         sections.append({
             "title": match.group(1).strip(),
             "prompt": "Write what belongs here.",
-            "content": body[match.end():end].strip(),
+            "content": cleaned,
         })
     return sections
 
@@ -218,7 +221,15 @@ def local_entry_payload(slug: str) -> tuple[dict | None, str | None]:
     signal_id = str(source.get("signal_id") or "").strip()
     tags = str(source.get("tags") or "").strip()
     link = str(source.get("apple_url") or source.get("spotify_url") or "").strip()
-    cover_file = str(frontmatter.get("cover") or source.get("cover_file") or f"{slug}.jpg").split("/")[-1]
+    raw_cover = str(frontmatter.get("cover") or source.get("cover_file") or f"{slug}.jpg").strip()
+    cover_name = Path(raw_cover.replace("\\", "/")).name or f"{slug}.jpg"
+    covers_root = (ROOT / "covers").resolve()
+    site_covers_root = (ROOT / "site" / "covers").resolve()
+    try:
+        (covers_root / cover_name).resolve().relative_to(covers_root)
+    except ValueError:
+        cover_name = f"{slug}.jpg"
+    cover_file = cover_name
     cover_url = str(source.get("cover_url") or "").strip()
     accent = str(frontmatter.get("accent") or source.get("accent") or "").strip()
 
@@ -226,10 +237,14 @@ def local_entry_payload(slug: str) -> tuple[dict | None, str | None]:
 
     # Extract distinct palette from cover image
     palette = []
-    cover_candidates = [
-        ROOT / "covers" / cover_file,
-        ROOT / "site" / "covers" / cover_file,
-    ]
+    cover_candidates = []
+    for candidate_root, candidate in ((covers_root, covers_root / cover_file), (site_covers_root, site_covers_root / cover_file)):
+        try:
+            resolved = candidate.resolve()
+            resolved.relative_to(candidate_root)
+            cover_candidates.append(resolved)
+        except ValueError:
+            continue
     cover_path = next((p for p in cover_candidates if p.is_file()), None)
     if cover_path:
         palette = extract_palette(cover_path)
@@ -267,16 +282,16 @@ def local_entry_payload(slug: str) -> tuple[dict | None, str | None]:
 
 
 class SubmissionHandler(BaseHTTPRequestHandler):
-    def _private_authorized(self) -> bool:
+    def _private_auth_source(self) -> str:
         expected = str(getattr(self.server, "gsi_auth_token", "") or "")
         if not expected:
-            return is_loopback_host(str(self.server.server_address[0]))
+            return "loopback" if is_loopback_host(str(self.server.server_address[0])) else ""
         if bearer_token_matches(self.headers.get("Authorization", ""), expected):
-            return True
+            return "bearer"
         query = parse_qs(urlparse(self.path).query)
         token_param = query.get("token", [""])[0].strip()
         if token_param and hmac.compare_digest(token_param, expected):
-            return True
+            return "query"
         cookie_header = self.headers.get("Cookie", "")
         if cookie_header:
             cookies = SimpleCookie()
@@ -285,19 +300,36 @@ class SubmissionHandler(BaseHTTPRequestHandler):
                 if "gsi_auth_token" in cookies:
                     cookie_val = cookies["gsi_auth_token"].value.strip()
                     if cookie_val and hmac.compare_digest(cookie_val, expected):
-                        return True
+                        return "cookie"
             except Exception:
                 pass
-        return False
+        return ""
 
-    def _guard_private_path(self, path: str) -> bool:
+    def _private_authorized(self) -> bool:
+        return bool(self._private_auth_source())
+
+    def _same_origin_post_allowed(self) -> bool:
+        host = (self.headers.get("Host") or "").strip().lower()
+        origin = (self.headers.get("Origin") or "").strip()
+        referer = (self.headers.get("Referer") or "").strip()
+        source = origin or referer
+        if not source or not host:
+            return True
+        parsed_source = urlparse(source)
+        return parsed_source.netloc.lower() == host
+
+    def _guard_private_path(self, path: str, *, is_post: bool = False) -> bool:
         if not private_path(path):
             return True
         self._private_response = True
-        if self._private_authorized():
-            return True
-        self._json(401, {"error": "private local authoring requires a bearer token"})
-        return False
+        auth_source = self._private_auth_source()
+        if not auth_source:
+            self._json(401, {"error": "private local authoring requires a bearer token"})
+            return False
+        if is_post and auth_source == "cookie" and not self._same_origin_post_allowed():
+            self._json(403, {"error": "cross-origin cookie request rejected"})
+            return False
+        return True
 
     def _json(self, status: int, body: dict) -> None:
         encoded = json.dumps(body).encode("utf-8")
@@ -313,7 +345,7 @@ class SubmissionHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802 - BaseHTTPRequestHandler hook
         path = urlparse(self.path).path
-        if not self._guard_private_path(path):
+        if not self._guard_private_path(path, is_post=True):
             return
         if path not in {"/api/recommendations", "/api/entry-drafts", "/api/local-entry-drafts", "/api/local-entry-publish"}:
             return self._json(404, {"error": "not found"})
@@ -334,7 +366,8 @@ class SubmissionHandler(BaseHTTPRequestHandler):
                 if edit_of and not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", edit_of):
                     return self._json(400, {"error": "invalid edit target"})
                 try:
-                    result = publish_draft(ROOT, {**clean, "editOf": edit_of})
+                    with PUBLISH_LOCK:
+                        result = publish_draft(ROOT, {**clean, "editOf": edit_of})
                 except (DraftMetadataError, OSError, ValueError) as publish_error:
                     return self._json(409, {"error": str(publish_error)})
                 return self._json(201, {"status": "built", **result})
@@ -380,6 +413,16 @@ class SubmissionHandler(BaseHTTPRequestHandler):
             relative_private = path.removeprefix("/__local/editor/").lstrip("/")
             if not relative_private:
                 relative_private = "edit-entry.html"
+            if relative_private == "editor-config.json":
+                config_path = ROOT / "config.json"
+                config_data = json.loads(config_path.read_text(encoding="utf-8")) if config_path.is_file() else {}
+                return self._json(
+                    200,
+                    {
+                        "sections": config_data.get("sections", []),
+                        "sectionInfo": config_data.get("section_info", {}),
+                    },
+                )
             editor_root = (ROOT / "tools" / "editor").resolve()
             private_root = (editor_root / "private").resolve()
             candidate = (private_root / relative_private).resolve()
@@ -397,7 +440,7 @@ class SubmissionHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(payload)))
             expected = str(getattr(self.server, "gsi_auth_token", "") or "")
             if expected:
-                self.send_header("Set-Cookie", f"gsi_auth_token={expected}; Path=/; SameSite=Lax")
+                self.send_header("Set-Cookie", f"gsi_auth_token={expected}; Path=/; HttpOnly; SameSite=Lax")
             self.end_headers()
             self.wfile.write(payload)
             return

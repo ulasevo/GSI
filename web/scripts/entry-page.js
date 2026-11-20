@@ -28,80 +28,98 @@
     });
 
     // Preserve the route that led here without replacing native browser Back.
-    const archiveState = GSIContext.read();
     const filterLabels = entryContext.filterLabels || {};
     const expectedArtistRoute = entryContext.artistSlug || "";
     const artistName = entryContext.artistName || "";
     const hasArtistRoom = entryContext.hasArtistRoom === true;
-    const filter = archiveState.get("filter");
-    const artistRoute = archiveState.get("artist");
-    const archiveParams = GSIContext.archiveParams({ state: archiveState, filterLabels });
-    const archiveHref = GSIContext.href("../index.html", archiveParams);
 
-    document.querySelectorAll("#trace-archive").forEach((link) => {
-        link.href = archiveHref;
-    });
-    document.querySelectorAll("[data-artist-base-href], [data-album-base-href]").forEach((link) => {
-        const contextParams = new URLSearchParams(archiveParams);
-        if (link.dataset.albumBaseHref && hasArtistRoom && artistRoute === expectedArtistRoute) {
-            contextParams.set("artist", artistRoute);
+    function syncLinks() {
+        const archiveState = GSIContext.read();
+        const filter = archiveState.get("filter");
+        const artistRoute = archiveState.get("artist");
+        const archiveParams = GSIContext.archiveParams({ state: archiveState, filterLabels });
+        const archiveHref = GSIContext.href("../index.html", archiveParams);
+
+        document.querySelectorAll("#trace-archive").forEach((link) => {
+            link.href = archiveHref;
+        });
+        document.querySelectorAll("[data-artist-base-href], [data-album-base-href]").forEach((link) => {
+            const contextParams = new URLSearchParams(archiveParams);
+            if (link.dataset.albumBaseHref && hasArtistRoom && artistRoute === expectedArtistRoute) {
+                contextParams.set("artist", artistRoute);
+            }
+            const baseHref = link.dataset.artistBaseHref || link.dataset.albumBaseHref;
+            link.href = `${baseHref}${contextParams.size ? `?${contextParams}` : ""}`;
+        });
+        document.querySelectorAll("[data-filter-route]").forEach((link) => {
+            if (link.dataset.filterRoute === filter) {
+                link.hidden = true;
+                return;
+            }
+            link.hidden = false;
+            const filterParams = new URLSearchParams(archiveParams);
+            filterParams.set("filter", link.dataset.filterRoute);
+            link.href = `../index.html?${filterParams}`;
+        });
+
+        const alsoAppears = document.querySelector("#also-appears");
+        if (alsoAppears) {
+            alsoAppears.querySelectorAll("a[href]:not([data-filter-route]):not([data-artist-base-href]):not([data-album-base-href])").forEach((link) => {
+                const rawHref = (typeof link.getAttribute === "function" ? link.getAttribute("href") : "") || link.href || "";
+                const baseHref = (link.dataset && link.dataset.routeBaseHref) || String(rawHref).split("?")[0];
+                if (!baseHref) return;
+                if (link.dataset) link.dataset.routeBaseHref = baseHref;
+                link.href = GSIContext.href(baseHref, archiveParams);
+            });
+            alsoAppears.hidden = !alsoAppears.querySelector("a:not([hidden])");
         }
-        const baseHref = link.dataset.artistBaseHref || link.dataset.albumBaseHref;
-        link.href = `${baseHref}${contextParams.size ? `?${contextParams}` : ""}`;
-    });
-    document.querySelectorAll("[data-filter-route]").forEach((link) => {
-        if (link.dataset.filterRoute === filter) {
-            link.hidden = true;
-            return;
+
+        document.querySelectorAll(".p53-counterpart[data-base-href]").forEach((link) => {
+            const p53Params = new URLSearchParams(archiveParams);
+            if (hasArtistRoom && artistRoute === expectedArtistRoute) {
+                p53Params.set("artist", artistRoute);
+            }
+            link.href = `${link.dataset.baseHref}${p53Params.size ? `?${p53Params}` : ""}`;
+        });
+
+        const hasFilterSegment = Boolean(filter && Object.hasOwn(filterLabels, filter));
+        const hasArtistSegment = Boolean(hasArtistRoom && artistRoute === expectedArtistRoute);
+        const contextSeparator = document.querySelector("#trace-context-separator");
+        const filterSeparator = document.querySelector("#trace-filter-separator");
+
+        if (contextSeparator) {
+            contextSeparator.classList.toggle("hidden", !(hasFilterSegment || hasArtistSegment));
         }
-        const filterParams = new URLSearchParams(archiveParams);
-        filterParams.set("filter", link.dataset.filterRoute);
-        link.href = `../index.html?${filterParams}`;
-    });
-
-    const alsoAppears = document.querySelector("#also-appears");
-    if (alsoAppears && !alsoAppears.querySelector("a:not([hidden])")) {
-        alsoAppears.hidden = true;
-    }
-
-    document.querySelectorAll(".p53-counterpart[data-base-href]").forEach((link) => {
-        const p53Params = new URLSearchParams(archiveParams);
-        if (hasArtistRoom && artistRoute === expectedArtistRoute) {
-            p53Params.set("artist", artistRoute);
+        if (filterSeparator) {
+            // Show the second separator only between Filter and Artist so no trailing arrow appears.
+            filterSeparator.classList.toggle("hidden", !(hasFilterSegment && hasArtistSegment));
         }
-        link.href = `${link.dataset.baseHref}${p53Params.size ? `?${p53Params}` : ""}`;
-    });
 
-    const hasFilterSegment = Boolean(filter && Object.hasOwn(filterLabels, filter));
-    const hasArtistSegment = Boolean(hasArtistRoom && artistRoute === expectedArtistRoute);
-    const contextSeparator = document.querySelector("#trace-context-separator");
-    const filterSeparator = document.querySelector("#trace-filter-separator");
-
-    if (contextSeparator) {
-        contextSeparator.classList.toggle("hidden", !(hasFilterSegment || hasArtistSegment));
-    }
-    if (filterSeparator) {
-        // Show the second separator only between Filter and Artist so no trailing arrow appears.
-        filterSeparator.classList.toggle("hidden", !(hasFilterSegment && hasArtistSegment));
-    }
-
-    if (hasFilterSegment) {
         const traceFilter = document.querySelector("#trace-filter");
         if (traceFilter) {
-            traceFilter.textContent = filterLabels[filter];
-            traceFilter.href = archiveHref;
-            traceFilter.classList.remove("hidden");
+            if (hasFilterSegment) {
+                traceFilter.textContent = filterLabels[filter];
+                traceFilter.href = archiveHref;
+                traceFilter.classList.remove("hidden");
+            } else {
+                traceFilter.classList.add("hidden");
+            }
+        }
+
+        const traceArtist = document.querySelector("#trace-artist");
+        if (traceArtist) {
+            if (hasArtistSegment) {
+                traceArtist.textContent = artistName.toUpperCase();
+                traceArtist.href = `../artists/${expectedArtistRoute}.html${archiveParams.size ? `?${archiveParams}` : ""}`;
+                traceArtist.classList.remove("hidden");
+            } else {
+                traceArtist.classList.add("hidden");
+            }
         }
     }
 
-    if (hasArtistSegment) {
-        const traceArtist = document.querySelector("#trace-artist");
-        if (traceArtist) {
-            traceArtist.textContent = artistName.toUpperCase();
-            traceArtist.href = `../artists/${expectedArtistRoute}.html${archiveParams.size ? `?${archiveParams}` : ""}`;
-            traceArtist.classList.remove("hidden");
-        }
-    }
+    syncLinks();
+    window.addEventListener("gsi-theme-change", syncLinks);
 
   // 30-Second Signal Audition Controller
   (() => {
@@ -264,6 +282,21 @@
         audio.pause();
         setButtonState("paused", "Preview paused.");
       }
+    });
+
+    function pauseActiveAudio() {
+      if (audio && !audio.paused) {
+        audio.pause();
+        setButtonState("paused", "Preview paused.");
+      }
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") pauseActiveAudio();
+    });
+
+    document.querySelectorAll(".stream-link:not(.audition-trigger)").forEach((link) => {
+      link.addEventListener("click", pauseActiveAudio);
     });
 
     window.addEventListener("pagehide", () => {

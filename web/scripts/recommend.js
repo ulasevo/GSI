@@ -1,4 +1,15 @@
 (() => {
+  function syncLinks() {
+    if (!window.GSIContext) return;
+    const params = GSIContext.archiveParams({ state: GSIContext.read() });
+    document.querySelectorAll('a[href^="index.html"]').forEach((link) => {
+      link.href = GSIContext.href("index.html", params);
+    });
+  }
+
+  syncLinks();
+  window.addEventListener("gsi-theme-change", syncLinks);
+
   const form = document.querySelector("#recommend-form");
   const status = document.querySelector("#recommend-status");
   if (!form || !status) return;

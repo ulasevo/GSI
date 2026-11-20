@@ -9,28 +9,33 @@
 
     function applyView(viewName, animate = true, sync = true) {
       if (!allowedViews.has(viewName)) viewName = "wall";
-      const updateView = () => {
+      const previousView = document.body.dataset.view;
+      viewButtons.forEach(button => {
+        const isActive = button.dataset.view === viewName;
+        button.classList.toggle("active", isActive);
+        button.setAttribute("aria-pressed", String(isActive));
+      });
+      storeView(viewName);
+
+      const commitView = () => {
         document.body.dataset.view = viewName;
-        viewButtons.forEach(button => {
-          const isActive = button.dataset.view === viewName;
-          button.classList.toggle("active", isActive);
-          button.setAttribute("aria-pressed", String(isActive));
-        });
-        storeView(viewName);
         if (sync) syncContext();
       };
 
-      if (animate && document.body.dataset.view && document.body.dataset.view !== viewName) {
+      const reduced = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (animate && !reduced && previousView && previousView !== viewName) {
         window.clearTimeout(viewSwitchTimer);
         grid.classList.add("view-switching");
         viewSwitchTimer = window.setTimeout(() => {
-          updateView();
+          commitView();
           window.requestAnimationFrame(() => {
             grid.classList.remove("view-switching");
           });
-        }, 120);
+        }, 80);
       } else {
-        updateView();
+        window.clearTimeout(viewSwitchTimer);
+        grid.classList.remove("view-switching");
+        commitView();
       }
     }
 

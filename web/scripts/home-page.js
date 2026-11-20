@@ -45,6 +45,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (state.activeFormat === "albums") params.set("format", state.activeFormat);
     const activeTheme = GSIContext.currentTheme();
     if (activeTheme) params.set("theme", activeTheme);
+    document.querySelectorAll(".recommend-link").forEach(link => {
+      link.href = activeTheme ? `recommend.html?theme=${encodeURIComponent(activeTheme)}` : "recommend.html";
+    });
     const query = params.size ? `?${params}` : "";
     window.history.replaceState(null, "", `${window.location.pathname}${query}${window.location.hash}`);
   }

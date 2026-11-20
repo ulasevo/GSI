@@ -32,13 +32,21 @@
     return (card.dataset.tags || "").split(" ").includes(filterName);
   }
 
+  function formatCount(count) {
+    const amount = Number(count) || 0;
+    return amount >= 1000
+      ? new Intl.NumberFormat("en-US").format(amount)
+      : String(amount).padStart(2, "0");
+  }
+
   function signalLabel(count) {
     const amount = Number(count) || 0;
-    return `${String(amount).padStart(2, "0")} SIGNAL${amount === 1 ? "" : "S"}`;
+    return `${formatCount(amount)} SIGNAL${amount === 1 ? "" : "S"}`;
   }
 
   function albumLabel(count) {
-    return `${String(Number(count) || 0).padStart(2, "0")} signals`;
+    const amount = Number(count) || 0;
+    return `${formatCount(amount)} signal${amount === 1 ? "" : "s"}`;
   }
 
   // Return fresh arrays so a decoration pass cannot mutate the source list.

@@ -1,3 +1,8 @@
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
 [hidden] {
   display: none !important;
 }
@@ -12,12 +17,19 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   background:
     radial-gradient(circle at 18% 4%, rgba(138, 56, 102, 0.35), transparent 45%),
     radial-gradient(circle at 85% 15%, rgba(68, 85, 140, 0.25), transparent 40%),
     #120e18;
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
+}
+
+@media (max-width: 1024px) {
+  body {
+    background-attachment: scroll;
+  }
 }
 
 .private-shell {
@@ -50,12 +62,14 @@ body {
   border-radius: 999px;
   background: rgba(255, 112, 189, 0.08);
   border: 1px solid rgba(255, 112, 189, 0.3);
-  transition: all 0.2s ease;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.crumb:hover {
-  background: rgba(255, 112, 189, 0.18);
-  border-color: #ff70bd;
+@media (hover: hover) and (pointer: fine) {
+  .crumb:hover {
+    background: rgba(255, 112, 189, 0.18);
+    border-color: #ff70bd;
+  }
 }
 
 .eyebrow {
@@ -70,7 +84,7 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 32px;
+  min-height: 36px;
   padding: 4px 12px;
   border: 1px solid rgba(255, 112, 189, 0.4);
   border-radius: 999px;
@@ -80,12 +94,14 @@ body {
   color: #ff70bd;
   background: rgba(255, 112, 189, 0.08);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 180ms ease, border-color 180ms ease, color 180ms ease, transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
 }
 
-.token-toggle:hover {
-  background: rgba(255, 112, 189, 0.18);
-  border-color: #ff70bd;
+@media (hover: hover) and (pointer: fine) {
+  .token-toggle:hover {
+    background: rgba(255, 112, 189, 0.18);
+    border-color: #ff70bd;
+  }
 }
 
 .token-toggle [data-active="true"] {
@@ -153,12 +169,14 @@ h1 {
   letter-spacing: 0.08em;
   font-size: 0.92rem;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 180ms ease, border-color 180ms ease, color 180ms ease, box-shadow 180ms ease;
 }
 
-.mode-tab:hover {
-  background: rgba(255, 112, 189, 0.15);
-  border-color: #ff70bd;
+@media (hover: hover) and (pointer: fine) {
+  .mode-tab:hover {
+    background: rgba(255, 112, 189, 0.15);
+    border-color: #ff70bd;
+  }
 }
 
 .mode-tab.active {
@@ -169,7 +187,8 @@ h1 {
 }
 
 .mode-tab:active {
-  transform: scale(0.98);
+  transform: scale(0.97);
+  transition: transform 80ms ease-out;
 }
 
 /* Status Card */
@@ -182,7 +201,14 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 10px;
-  transition: all 0.2s ease;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+
+.status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
 }
 
 .status-card p {
@@ -229,12 +255,15 @@ h1 {
   transition: transform 0.15s ease;
 }
 
-.view-entry-btn:hover {
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .view-entry-btn:hover {
+    transform: translateY(-2px);
+  }
 }
 
 .view-entry-btn:active {
-  transform: scale(0.96);
+  transform: scale(0.97);
+  transition: transform 80ms ease-out;
 }
 
 /* Panels */
@@ -295,12 +324,15 @@ button {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
-button:hover {
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  button:hover {
+    transform: translateY(-1px);
+  }
 }
 
 button:active {
   transform: scale(0.97);
+  transition: transform 80ms ease-out;
 }
 
 button.secondary {
@@ -309,8 +341,10 @@ button.secondary {
   color: #f8f2fa;
 }
 
-button.secondary:hover {
-  background: rgba(255, 255, 255, 0.14);
+@media (hover: hover) and (pointer: fine) {
+  button.secondary:hover {
+    background: rgba(255, 255, 255, 0.14);
+  }
 }
 
 button.quiet-btn {
@@ -321,8 +355,10 @@ button.quiet-btn {
   font-size: 0.78rem;
 }
 
-button.quiet-btn:hover {
-  background: rgba(255, 112, 189, 0.12);
+@media (hover: hover) and (pointer: fine) {
+  button.quiet-btn:hover {
+    background: rgba(255, 112, 189, 0.12);
+  }
 }
 
 /* Link resolver */
@@ -401,13 +437,16 @@ button.quiet-btn:hover {
   flex-shrink: 0;
 }
 
-.palette-chip:hover {
-  transform: scale(1.15);
-  border-color: #ffffff;
+@media (hover: hover) and (pointer: fine) {
+  .palette-chip:hover {
+    transform: scale(1.15);
+    border-color: #ffffff;
+  }
 }
 
 .palette-chip:active {
   transform: scale(0.95);
+  transition: transform 80ms ease-out;
 }
 
 .palette-chip.active {
@@ -528,14 +567,16 @@ h2 {
   color: #f8f2fa;
 }
 
-.section-actions button:hover {
-  background: rgba(255, 255, 255, 0.16);
-}
+@media (hover: hover) and (pointer: fine) {
+  .section-actions button:hover {
+    background: rgba(255, 255, 255, 0.16);
+  }
 
-.section-actions button.remove-btn:hover {
-  background: rgba(239, 68, 68, 0.25);
-  border-color: #ef4444;
-  color: #fca5a5;
+  .section-actions button.remove-btn:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: #ef4444;
+    color: #fca5a5;
+  }
 }
 
 .edit-actions {
@@ -551,9 +592,27 @@ h2 {
 }
 
 /* Mobile & Touch Ergonomics */
+@media (pointer: coarse) {
+  input, select, textarea {
+    font-size: 16px;
+  }
+  button, .mode-tab, .crumb, .token-toggle, .view-entry-btn {
+    touch-action: manipulation;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+  }
+}
+
 @media (max-width: 768px) {
   input, select, textarea {
-    font-size: 16px !important; /* Prevents auto-zoom in iOS Safari */
+    font-size: 16px; /* Prevents auto-zoom in iOS Safari */
+  }
+
+  .panel {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(24, 17, 31, 0.95);
   }
 
   .private-shell {
@@ -591,5 +650,20 @@ h2 {
     margin: 0;
     z-index: 1000;
     box-shadow: 0 -8px 30px rgba(0, 0, 0, 0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+  }
+  .crumb, .token-toggle, .mode-tab, .status-card, .view-entry-btn, input, select, textarea, button, .palette-chip {
+    transition-property: opacity, background-color, border-color, color;
+    transition-duration: 150ms;
+    transition-timing-function: ease;
+  }
+  .mode-tab:active, button:active, .view-entry-btn:active, .palette-chip:active {
+    transform: none;
   }
 }

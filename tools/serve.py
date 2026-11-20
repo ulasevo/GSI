@@ -49,7 +49,7 @@ def get_or_create_auth_token(override: str = "") -> str:
             return match.group(1).strip()
 
     # Generate a friendly, secure token
-    new_token = f"gsi-author-{secrets.token_hex(4)}"
+    new_token = f"gsi-author-{secrets.token_urlsafe(24)}"
     with open(ENV_FILE, "a", encoding="utf-8") as f:
         f.write(f"\nGSI_LOCAL_AUTH_TOKEN={new_token}\n")
     return new_token

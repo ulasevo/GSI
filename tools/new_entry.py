@@ -182,6 +182,8 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--p53", action="store_true", help="Also add an explicit P53 history record")
     parser.add_argument("--p53-note", default="", help="Transmission note to store for a P53 record")
     parser.add_argument("--p53-current", action="store_true", help="Make this P53 record the current transmission")
+    parser.add_argument("--artist-note", default="", help="Optional note shown in the artist room")
+    parser.add_argument("--album-note", default="", help="Optional take shown in the album room")
     parser.add_argument("--write", action="store_true", help="Write the draft and catalogue data")
     parser.add_argument("--timeout", type=int, default=15, help="Provider lookup timeout in seconds")
     return parser.parse_args()
@@ -232,6 +234,8 @@ def _interactive_namespace(args: argparse.Namespace, config: dict) -> argparse.N
     custom = input("Additional headings, comma separated (optional): ").strip()
     args.section = [value.strip() for value in custom.split(",") if value.strip()]
     args.p53 = input("Add to P53 history? [y/N]: ").strip().casefold() in {"y", "yes"}
+    args.artist_note = getattr(args, "artist_note", "")
+    args.album_note = getattr(args, "album_note", "")
     args.write = input("Write the source entry now? [y/N]: ").strip().casefold() in {"y", "yes"}
     return args
 
@@ -265,7 +269,7 @@ def _replace_track(root: Path, record: dict) -> None:
         None,
     )
     if target is None:
-        _append_tracks_row(root, record)
+        _append_track(root, record)
         return
     original_cover = target.get("cover_file", "")
     target.update({column: record.get(column, "") for column in TRACK_COLUMNS if column != "order"})
@@ -335,6 +339,9 @@ def _update_p53(root: Path, record: dict, *, enabled: bool, note: str = "", curr
         else:
             notes.pop(record["slug"], None)
         if current:
+            if existing is not None and existing in history:
+                history.remove(existing)
+                history.append(existing)
             config["p53_current_slug"] = record["slug"]
             config["p53_current_signal_id"] = record.get("signal_id", "")
         elif config.get("p53_current_slug") == record["slug"] or config.get("p53_current_signal_id") == record.get("signal_id"):
@@ -348,17 +355,34 @@ def _update_p53(root: Path, record: dict, *, enabled: bool, note: str = "", curr
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
-def _update_catalogue_notes(root: Path, record: dict, *, artist_note: str = "", album_note: str = "") -> None:
+def _update_catalogue_notes(
+    root: Path,
+    record: dict,
+    *,
+    artist_note: str = "",
+    album_note: str = "",
+    allow_clear: bool = False,
+) -> None:
     """Persist the optional notes owned by the generated artist/album rooms."""
     config_path = root / "config.json"
     config = load_config(config_path)
     artist_notes = config.setdefault("artist_notes", {})
-    if artist_note:
-        artist_notes[record["artist"]] = artist_note
+    clean_artist = artist_note.strip()
+    if clean_artist:
+        artist_notes[record["artist"]] = clean_artist
+    elif allow_clear:
+        artist_notes.pop(record["artist"], None)
     album_notes = config.setdefault("album_notes", {})
-    artist_albums = album_notes.setdefault(record["artist"], {})
-    if album_note:
-        artist_albums[record["album"]] = album_note
+    artist_albums = dict(album_notes.get(record["artist"], {}))
+    clean_album = album_note.strip()
+    if clean_album:
+        artist_albums[record["album"]] = clean_album
+    elif allow_clear:
+        artist_albums.pop(record["album"], None)
+    if artist_albums:
+        album_notes[record["artist"]] = artist_albums
+    else:
+        album_notes.pop(record["artist"], None)
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
 
 
@@ -460,9 +484,15 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
     entry_path = root / "entries" / f"{record['slug']}.md"
     artist_artwork = clean["catalogue"].get("artist_artwork")
     artist_artwork_path = _artist_artwork_path(root, record["artist"], artist_artwork)
+    artist_assets_dir = root / "artist-assets"
     snapshot_paths = [root / "tracks.csv", root / "config.json", entry_path, cover_path]
     if artist_artwork_path is not None:
         snapshot_paths.append(artist_artwork_path)
+    if artist_assets_dir.is_dir():
+        artist_slug = slugify(record["artist"])
+        for existing_art in artist_assets_dir.glob(f"{artist_slug}.*"):
+            if existing_art not in snapshot_paths:
+                snapshot_paths.append(existing_art)
     snapshot = _snapshot_files(snapshot_paths)
     try:
         persistent_snapshot = create_snapshot(root, snapshot_paths, record["slug"])
@@ -470,6 +500,7 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
         raise DraftMetadataError(f"could not create a recoverable source snapshot: {error}") from error
     build_output = ""
     artist_artwork_receipt = None
+    written_artist_art: Path | None = None
     cover_quality = None
     try:
         if not cover_path.exists():
@@ -505,10 +536,14 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
                     current=clean["p53"]["current"],
                 )
         artist_artwork_receipt = _store_artist_artwork(root, record, artist_artwork)
+        if artist_artwork_receipt is not None and artist_artwork_receipt.get("file"):
+            written_artist_art = artist_assets_dir / artist_artwork_receipt["file"]
         if artist_artwork_receipt is None:
             try:
                 from tools.fetch_artist_art import fetch_and_register_artist_asset
-                fetch_and_register_artist_asset(record["artist"], root=root)
+                fetched_art = fetch_and_register_artist_asset(record["artist"], root=root)
+                if isinstance(fetched_art, dict) and fetched_art.get("image_file"):
+                    written_artist_art = artist_assets_dir / str(fetched_art["image_file"])
             except Exception:
                 pass
         _update_catalogue_notes(
@@ -516,6 +551,7 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
             record,
             artist_note=clean["catalogue"]["artist_note"],
             album_note=clean["catalogue"]["album_note"],
+            allow_clear=bool(edit_of),
         )
 
         if build_site:
@@ -537,6 +573,8 @@ def publish_draft(root: Path, payload: dict, *, build_site: bool = True) -> dict
     except Exception as error:
         try:
             _restore_files(snapshot)
+            if written_artist_art is not None and written_artist_art not in snapshot and written_artist_art.is_file():
+                written_artist_art.unlink()
             rollback_output = _rebuild_after_rollback(root) if build_site else ""
         except Exception as rollback_error:
             raise DraftMetadataError(
@@ -716,13 +754,15 @@ def main() -> int:
             record,
             artist_note=draft.get("catalogue", {}).get("artist_note", ""),
             album_note=draft.get("catalogue", {}).get("album_note", ""),
+            allow_clear=bool(edit_of),
         )
-    elif args.artist_note or args.album_note:
+    elif getattr(args, "artist_note", "") or getattr(args, "album_note", ""):
         _update_catalogue_notes(
             root,
             record,
-            artist_note=args.artist_note or "",
-            album_note=args.album_note or "",
+            artist_note=getattr(args, "artist_note", "") or "",
+            album_note=getattr(args, "album_note", "") or "",
+            allow_clear=bool(edit_of),
         )
     print("Next: run the normal build and source validator.")
     return 0

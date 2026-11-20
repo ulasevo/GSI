@@ -1,5 +1,5 @@
 * { box-sizing: border-box; }
-body.recommend-room { min-height: 100vh; margin: 0; overflow-x: hidden; color: #f7f3ef; font-family: var(--gsi-reading-font, Arial, sans-serif); background: radial-gradient(circle at 82% 9%, rgba(255, 100, 174, .2), transparent 30rem), radial-gradient(circle at 12% 86%, rgba(72, 206, 237, .15), transparent 28rem), #0c0c11; }
+body.recommend-room { min-height: 100vh; min-height: 100dvh; margin: 0; overflow-x: hidden; color: #f7f3ef; font-family: var(--gsi-reading-font, Arial, sans-serif); background: radial-gradient(circle at 82% 9%, rgba(255, 100, 174, .2), transparent 30rem), radial-gradient(circle at 12% 86%, rgba(72, 206, 237, .15), transparent 28rem), #0c0c11; }
 .recommend-shell { width: min(820px, calc(100% - 36px)); margin: 0 auto; padding: 24px 0 72px; }
 .recommend-path { display: inline-flex; gap: 11px; align-items: center; padding: 12px 15px; border: 1px solid rgba(255,255,255,.18); border-radius: 10px; color: rgba(255,255,255,.62); font: 950 10px/1 var(--gsi-ui-font, Arial, sans-serif); letter-spacing: .15em; }
 .recommend-path a { color: #ff82be; text-decoration: none; }
@@ -14,9 +14,13 @@ body.recommend-room { min-height: 100vh; margin: 0; overflow-x: hidden; color: #
 .recommend-form textarea { resize: vertical; min-height: 150px; }
 .recommend-form :is(input,textarea):focus { border-color: #ff82be; box-shadow: 0 0 0 3px rgba(255,130,190,.12); }
 .recommend-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.recommend-actions button, .recommend-actions a { min-height: 44px; padding: 0 16px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; color: #fff; background: rgba(255,255,255,.08); font: 950 11px/44px var(--gsi-ui-font, Arial, sans-serif); letter-spacing: .14em; text-decoration: none; }
+.recommend-actions button, .recommend-actions a { min-height: 44px; padding: 0 16px; border: 1px solid rgba(255,255,255,.2); border-radius: 8px; color: #fff; background: rgba(255,255,255,.08); font: 950 11px/44px var(--gsi-ui-font, Arial, sans-serif); letter-spacing: .14em; text-decoration: none; transition: transform 180ms var(--ease-out, cubic-bezier(.23,1,.32,1)), border-color 180ms ease, background 180ms ease, box-shadow 180ms ease; }
 .recommend-actions button { border: 0; color: #170f18; background: linear-gradient(100deg, #ff70b6, #79d9ef); cursor: pointer; }
-.recommend-actions :is(button,a):hover { transform: translateY(-2px); }
+.recommend-actions :is(button,a):focus-visible { transform: translateY(-2px); outline: 2px solid #ff82be; outline-offset: 2px; }
+@media (hover: hover) and (pointer: fine) {
+  .recommend-actions :is(button,a):hover { transform: translateY(-2px); }
+}
+.recommend-actions :is(button,a):active { transform: scale(0.97); transition: transform 80ms ease-out; }
 .recommend-status { min-height: 1.4em; margin: 0; color: #ffb8d9; font-size: 14px; }
 .recommend-status[data-kind="success"] { color: #a9eddb; }
 .recommend-footnote { margin: 0; color: rgba(255,255,255,.46); font-size: 12px; line-height: 1.5; }
@@ -58,7 +62,7 @@ body.recommend-room {
   margin: 0 0 26px;
   color: #f7f1e9;
   font-size: clamp(54px, 7.2vw, 108px);
-  line-height: .88;
+  line-height: .92;
   letter-spacing: -.065em;
   text-wrap: balance;
   max-width: 12ch;
@@ -92,6 +96,7 @@ body.recommend-room {
 @media (max-width: 820px) {
   .recommend-shell { width: min(100% - 28px, 650px); }
   .recommend-main-grid { grid-template-columns: 1fr; min-height: 0; gap: 34px; padding: 72px 0 34px; }
+  .recommend-main-grid::before { inset: 0; }
   .recommend-header h1 { font-size: clamp(52px, 14vw, 86px); }
 }
 @media (max-width: 560px) {
@@ -111,8 +116,21 @@ body.recommend-room {
 }
 
 .recommend-header h1 {
-  font-family: "Trebuchet MS", Arial, sans-serif;
-  font-weight: 900;
-  -webkit-text-stroke: .25px currentColor;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, .34), 0 0 1px currentColor;
+  font-family: var(--gsi-display-font, "Space Grotesk", sans-serif);
+  font-weight: 700;
+  line-height: .92;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity, color, background-color, border-color !important;
+    transition-duration: 150ms !important;
+  }
+  .recommend-actions :is(button,a):hover,
+  .recommend-actions :is(button,a):focus-visible,
+  .recommend-actions :is(button,a):active {
+    transform: none !important;
+  }
 }

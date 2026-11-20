@@ -6,6 +6,7 @@ existing command and tests continue to work while the migration settles.
 """
 
 import argparse # command-line options such as the source-safe site build
+import shutil
 from pathlib import Path # cross OS handling
 from gsi_assets import copy_site_covers, copy_site_editor, copy_site_fonts, copy_site_scripts, copy_site_styles
 from gsi_artists import artist_catalogue_records, copy_site_artist_assets, write_artist_manifest
@@ -111,17 +112,23 @@ def main() -> None:
     }
     # Assets and manifests are copied before pages so every generated reference
     # points at a deterministic file in the output tree.
-    copy_site_covers(COVERS_DIR, SITE_COVERS_DIR)
+    referenced_covers = {"GSI_favicon.svg", "GSI_share.png", "P53_cover-runtime.webp"}
+    for item in (*archive_tracks, *tracks, *p53_history):
+        cover_name = str(item.get("cover_file") or "").replace("\\", "/").strip()
+        if cover_name:
+            referenced_covers.add(Path(cover_name).name)
+    for settings in config.get("filters", {}).values():
+        playlist_cover = str(settings.get("playlist_cover") or "").replace("\\", "/").strip()
+        if playlist_cover:
+            referenced_covers.add(Path(playlist_cover).name)
+    copy_site_covers(COVERS_DIR, SITE_COVERS_DIR, referenced_files=referenced_covers)
     copy_site_artist_assets(ARTIST_ASSETS_DIR, SITE_ARTIST_ASSETS_DIR)
     copy_site_scripts(WEB_DIR, SITE_SCRIPTS_DIR)
     copy_site_fonts(WEB_DIR, SITE_DIR / "fonts")
     copy_site_styles(WEB_DIR, SITE_STYLES_DIR)
-    copy_site_editor(
-        BASE / "tools" / "editor",
-        SITE_EDITOR_DIR,
-        config.get("sections", []),
-        config.get("section_info", {}),
-    )
+    # Keep private authoring tools out of the public Pages tree.
+    if SITE_EDITOR_DIR.exists():
+        shutil.rmtree(SITE_EDITOR_DIR)
     write_catalog_manifest(archive_tracks)
     write_generation_manifest(inventory)
     write_artist_manifest(

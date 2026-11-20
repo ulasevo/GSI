@@ -15,25 +15,30 @@
   }
   // Keep the landing return path aligned with the same shared URL rules as the
   // homepage and permanent transmission pages.
-  const p53State = GSIContext.read();
-  const p53Params = GSIContext.archiveParams({
-    state: p53State,
-    filterLabels: landingContext.filterLabels || {},
-  });
-  const p53Artist = p53State.get("artist");
-  const artistSlugs = Array.isArray(landingContext.artistSlugs) ? landingContext.artistSlugs : [];
-  if (p53Artist && artistSlugs.includes(p53Artist)) p53Params.set("artist", p53Artist);
+  function syncLinks() {
+    const p53State = GSIContext.read();
+    const p53Params = GSIContext.archiveParams({
+      state: p53State,
+      filterLabels: landingContext.filterLabels || {},
+    });
+    const p53Artist = p53State.get("artist");
+    const artistSlugs = Array.isArray(landingContext.artistSlugs) ? landingContext.artistSlugs : [];
+    if (p53Artist && artistSlugs.includes(p53Artist)) p53Params.set("artist", p53Artist);
 
-  const query = p53Params.size ? `?${p53Params}` : "";
-  const homeParams = new URLSearchParams(p53Params);
-  homeParams.delete("artist");
-  const homeQuery = homeParams.size ? `?${homeParams}` : "";
+    const query = p53Params.size ? `?${p53Params}` : "";
+    const homeParams = new URLSearchParams(p53Params);
+    homeParams.delete("artist");
+    const homeQuery = homeParams.size ? `?${homeParams}` : "";
 
-  const homeReturn = document.querySelector("#p53-home-return");
-  if (homeReturn) homeReturn.href = `../index.html${homeQuery}`;
-  document.querySelectorAll("[data-base-href]").forEach(link => {
-    link.href = `${link.dataset.baseHref}${query}`;
-  });
+    const homeReturn = document.querySelector("#p53-home-return");
+    if (homeReturn) homeReturn.href = `../index.html${homeQuery}`;
+    document.querySelectorAll("[data-base-href]").forEach(link => {
+      link.href = `${link.dataset.baseHref}${query}`;
+    });
+  }
+
+  syncLinks();
+  window.addEventListener("gsi-theme-change", syncLinks);
 
   const cards = [...document.querySelectorAll(".transmission-card")];
   if (!cards.length || !("IntersectionObserver" in window)) return;

@@ -8,7 +8,7 @@ body.art-room {
     var(--art-light-surface, #ded9df),
     var(--art-light-surface-2, #ded9df));
 }
-body.art-room::before { opacity: .4; filter: blur(36px) saturate(1.16); }
+body.art-room::before { opacity: .4; filter: blur(18px) saturate(1.16); }
 body.art-room::after {
   background: linear-gradient(140deg,
     color-mix(in srgb, var(--art-primary), transparent 22%),
@@ -38,12 +38,17 @@ body.art-room .album-song {
   background: linear-gradient(110deg, rgba(255,255,255,.34), rgba(255,255,255,.12));
   box-shadow: 0 12px 30px color-mix(in srgb, var(--art-primary), transparent 82%);
 }
-body.art-room .album-song:hover, body.art-room .album-song:focus-visible {
+body.art-room .album-song:focus-visible {
   background: linear-gradient(110deg, rgba(255,255,255,.5), rgba(255,255,255,.2));
+}
+@media (hover: hover) and (pointer: fine) {
+  body.art-room .album-song:hover {
+    background: linear-gradient(110deg, rgba(255,255,255,.5), rgba(255,255,255,.2));
+  }
 }
 body.art-room .album-song b { color: color-mix(in srgb, var(--art-primary), #17121a 34%); }
 body.art-room .album-note {
-  border-left-color: color-mix(in srgb, var(--art-primary), white 16%);
+  border-inline-start-color: color-mix(in srgb, var(--art-primary), white 16%);
   background: rgba(255,255,255,.26);
   color: color-mix(in srgb, var(--art-surface), #17121a 40%);
 }
@@ -53,16 +58,13 @@ body.art-room :is(a,button):focus-visible {
   outline-offset: 3px;
   box-shadow: 0 0 0 5px color-mix(in srgb, var(--art-focus, #f8f5ef), transparent 72%);
 }
-body.art-room nav a:hover,
 body.art-room nav a:focus-visible,
-body.art-room .artist-link:hover,
 body.art-room .artist-link:focus-visible {
   color: var(--art-control-ink, var(--art-copy, #211823));
   text-decoration: underline;
   text-decoration-thickness: 2px;
   text-underline-offset: 4px;
 }
-body.art-room .album-song:hover,
 body.art-room .album-song:focus-visible {
   color: var(--art-control-ink, var(--art-copy, #211823));
   border-color: var(--art-edge, var(--art-soft, #b7afbc));
@@ -73,9 +75,25 @@ body.art-room .album-song-arc {
   color: color-mix(in srgb, var(--art-copy, #211823), transparent 28%);
   text-shadow: none;
 }
-body.art-room .album-song:hover .album-song-arc,
 body.art-room .album-song:focus-visible .album-song-arc {
   color: var(--art-control-ink, var(--art-copy, #211823));
+}
+@media (hover: hover) and (pointer: fine) {
+  body.art-room nav a:hover,
+  body.art-room .artist-link:hover {
+    color: var(--art-control-ink, var(--art-copy, #211823));
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 4px;
+  }
+  body.art-room .album-song:hover {
+    color: var(--art-control-ink, var(--art-copy, #211823));
+    border-color: var(--art-edge, var(--art-soft, #b7afbc));
+    background: var(--art-control-hover, #b897b5);
+  }
+  body.art-room .album-song:hover .album-song-arc {
+    color: var(--art-control-ink, var(--art-copy, #211823));
+  }
 }
 
 /* The room sheets are dark-first, but the shared light palette was still

@@ -308,7 +308,7 @@ class BuilderAssetAndHookTests(unittest.TestCase):
         )
 
         self.assertEqual(prev_ctx["signalLabel"], "PREVIOUS")
-        self.assertIn('<div class="transmission-note"><p>Bienvenue.</p></div>', previous_page)
+        self.assertIn('<div class="transmission-note" dir="auto"><p>Bienvenue.</p></div>', previous_page)
         self.assertNotIn("A note", previous_page)
         self.assertIn('<a class="album-link" href="../albums/wet-leg-moisturizer.html">Moisturizer</a>', previous_page)
         self.assertIn('class="entry-counterpart entry-card-companion"', previous_page)

@@ -135,13 +135,13 @@ def print_provider_link_audit(audit: dict) -> None:
 def streaming_link_markup(item: dict) -> str:
     """Render stable provider links while retaining a truthful fallback label."""
     links = resolve_provider_links(item)
-    artist = html.escape(str(item.get("artist", "")), quote=True)
-    track = html.escape(str(item.get("track", "")), quote=True)
+    raw_artist = str(item.get("artist", ""))
+    raw_track = str(item.get("track", ""))
 
     def link_markup(provider: str, label: str) -> str:
         link = links[provider]
         action = "Open" if link["kind"] == "canonical" else "Search"
-        accessible_label = f"{action} {label} for {track} by {artist}"
+        accessible_label = f"{action} {label} for {raw_track} by {raw_artist}"
         return (
             f'<a class="stream-link" data-link-kind="{link["kind"]}" '
             f'aria-label="{html.escape(accessible_label, quote=True)}" '
@@ -152,7 +152,8 @@ def streaming_link_markup(item: dict) -> str:
     preview_url = (item.get("preview_url") or "").strip()
     audition_button = ""
     if preview_url:
-        audition_button = f'<button class="stream-link audition-trigger" type="button" data-preview-url="{html.escape(preview_url, quote=True)}" aria-label="Peek signal of {track}">PEEK <span class="peek-icon">▶</span></button>'
+        peek_label = html.escape(f"Peek signal of {raw_track}", quote=True)
+        audition_button = f'<button class="stream-link audition-trigger" type="button" aria-pressed="false" data-preview-url="{html.escape(preview_url, quote=True)}" aria-label="{peek_label}">PEEK <span class="peek-icon" aria-hidden="true">▶</span></button>'
 
     return f"""
                 <div class="stream-block">
@@ -210,7 +211,11 @@ def catalogue_record(item: dict, covers_dir: Path, cover_metadata: dict) -> dict
                 "preferred"
             ),
         },
-        "palette": dict(item.get("palette") or {}),
+        "palette": {
+            key: value
+            for key, value in (item.get("palette") or {}).items()
+            if key != "rim_gradient"
+        },
     }
     if item.get("p53_order") is not None and item.get("p53_order") != 999:
         record["p53_order"] = item["p53_order"]

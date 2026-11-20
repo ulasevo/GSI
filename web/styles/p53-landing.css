@@ -17,6 +17,7 @@ body {
 
 body {
   min-height: 100vh;
+  min-height: 100dvh;
   color: #faf6ee;
   font-family: var(--gsi-reading-font, Arial, sans-serif);
   background:
@@ -110,7 +111,7 @@ body::before {
   font-family: var(--gsi-reading-font, Arial, sans-serif);
   font-size: clamp(62px, 10.5vw, 146px);
   font-weight: 950;
-  line-height: .78;
+  line-height: .9;
   letter-spacing: -.07em;
 }
 
@@ -128,7 +129,7 @@ body::before {
   max-width: 430px;
   margin: 0 0 3px;
   padding: 0;
-  border-left: none;
+  border-inline-start: none;
   background: none;
 }
 
@@ -153,7 +154,7 @@ body::before {
   scroll-margin-top: 28px;
   content-visibility: auto;
   contain-intrinsic-size: 220px;
-  transition: transform 320ms var(--gsi-motion), filter 260ms ease;
+  transition: transform 200ms var(--ease-out, cubic-bezier(.23,1,.32,1));
 }
 
 .transmission-card-link {
@@ -171,7 +172,7 @@ body::before {
     0 18px 42px rgba(0, 0, 0, .30),
     0 0 22px color-mix(in srgb, #35c9e9, transparent 82%),
     0 0 18px color-mix(in srgb, #ff58a6, transparent 84%);
-  transition: transform 320ms var(--gsi-motion), border-radius 320ms var(--gsi-motion), box-shadow 260ms ease, border-color 220ms ease;
+  transition: transform 200ms var(--ease-out, cubic-bezier(.23,1,.32,1)), box-shadow 220ms ease, border-color 200ms ease;
 }
 
 .transmission-card.is-current .transmission-card-link {
@@ -211,7 +212,7 @@ body::before {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 420ms var(--gsi-motion), filter 320ms ease;
+  transition: transform 240ms var(--ease-out, cubic-bezier(.23,1,.32,1));
 }
 
 .cover-missing {
@@ -583,8 +584,10 @@ body::before {
   *::before,
   *::after {
     scroll-behavior: auto !important;
-    transition-duration: .01ms !important;
     animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-property: opacity, color, background-color, border-color !important;
+    transition-duration: 150ms !important;
   }
 }
 
@@ -665,7 +668,7 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
   color: color-mix(in srgb, var(--accent, #ff7fbb), white 68%);
   background: linear-gradient(90deg, color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), transparent 86%), transparent 90%);
   border: 0;
-  border-left: 3px solid color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), white 28%);
+  border-inline-start: 3px solid color-mix(in srgb, var(--art-primary, var(--accent, #ff65ad)), white 28%);
   border-radius: 0 12px 12px 0;
   box-shadow: none;
 }
@@ -706,7 +709,23 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
     0 0 24px color-mix(in srgb, #ff58a6, transparent 74%);
 }
 
-:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover,
+@media (hover: hover) and (pointer: fine) {
+  :root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover {
+    border-color: color-mix(in srgb, #0287ac, var(--art-primary, #b84093) 48%);
+    box-shadow:
+      0 24px 54px color-mix(in srgb, var(--art-primary, #8c5de8), transparent 70%),
+      0 0 34px color-mix(in srgb, #35c9e9, transparent 62%),
+      0 0 28px color-mix(in srgb, #ff58a6, transparent 64%);
+  }
+
+  :root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover .transmission-arrow,
+  :root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover .transmission-copy::after {
+    color: #1f1420;
+    border-color: #1f1420;
+    background: linear-gradient(120deg, color-mix(in srgb, var(--art-primary, #b84093), white 46%), color-mix(in srgb, #35c9e9, white 52%));
+  }
+}
+
 :root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:focus-visible {
   border-color: color-mix(in srgb, #0287ac, var(--art-primary, #b84093) 48%);
   box-shadow:
@@ -715,8 +734,6 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
     0 0 28px color-mix(in srgb, #ff58a6, transparent 64%);
 }
 
-:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover .transmission-arrow,
-:root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:hover .transmission-copy::after,
 :root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:focus-visible .transmission-arrow,
 :root[data-gsi-theme="light"] body.p53-landing-room .transmission-card-link:focus-visible .transmission-copy::after {
   color: #1f1420;
@@ -727,12 +744,13 @@ body.p53-landing-room .transmission-card.is-current .transmission-copy::before {
 @media (prefers-reduced-motion: reduce) {
   .transmission-card-link:hover,
   .transmission-card-link:focus-visible,
+  .transmission-card-link:active,
   .transmission-card-link:hover .transmission-art img,
   .transmission-card-link:focus-visible .transmission-art img,
   .transmission-card-link:hover .transmission-arrow,
   .transmission-card-link:focus-visible .transmission-arrow,
   .transmission-card-link:hover .transmission-copy::after,
   .transmission-card-link:focus-visible .transmission-copy::after {
-    transform: none;
+    transform: none !important;
   }
 }

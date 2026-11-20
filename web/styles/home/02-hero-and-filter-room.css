@@ -24,11 +24,17 @@
         .signal-transform {
             display: none;
         }
+        .site-hero,
+        #main-content {
+            width: 100%;
+            max-width: 1600px;
+            margin-inline: auto;
+        }
         .site-hero {
             display: flex;
             flex-direction: column;
             gap: 14px;
-            margin: 0 0 14px;
+            margin: 0 auto 14px;
             padding: 0;
         }
         .site-masthead {
@@ -67,11 +73,13 @@
             animation: none;
             white-space: nowrap;
         }
-        .wordmark:hover {
-            animation: none;
-            border-radius: 0;
-            transform: none;
-            text-shadow: none;
+        @media (hover: hover) and (pointer: fine) {
+            .wordmark:hover {
+                animation: none;
+                border-radius: 0;
+                transform: none;
+                text-shadow: none;
+            }
         }
         .site-branding .intro {
             margin: 0;
@@ -99,9 +107,13 @@
             box-shadow: 0 4px 14px rgba(0, 0, 0, .14);
             border: 1px solid var(--gsi-mode-line, rgba(255, 255, 255, .16));
         }
-        .site-hero .theme-toggle:hover,
         .site-hero .theme-toggle:focus-visible {
             transform: translateY(-1px);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .site-hero .theme-toggle:hover {
+                transform: translateY(-1px);
+            }
         }
         .site-hero .recommend-link {
             position: static;
@@ -109,10 +121,8 @@
             align-items: center;
             gap: 6px;
             margin: 0;
-            height: 38px;
             min-height: 38px;
-            max-height: 38px;
-            padding: 0 14px;
+            padding: 8px 14px;
             border-radius: 999px;
             border: 1px solid var(--gsi-mode-line, rgba(255, 255, 255, .16));
             background: var(--gsi-mode-surface, rgba(18, 16, 23, .84));
@@ -135,11 +145,17 @@
             line-height: 1;
             color: inherit;
         }
-        .site-hero .recommend-link:hover,
         .site-hero .recommend-link:focus-visible {
             border-color: var(--gsi-mode-control, #ff65ad);
             color: var(--gsi-mode-control, #ff65ad);
             transform: translateY(-1px);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .site-hero .recommend-link:hover {
+                border-color: var(--gsi-mode-control, #ff65ad);
+                color: var(--gsi-mode-control, #ff65ad);
+                transform: translateY(-1px);
+            }
         }
         .site-hero .recommend-link:active {
             transform: scale(0.96);
@@ -154,9 +170,11 @@
             color: var(--gsi-mode-muted, rgba(255, 255, 255, .62));
             transition: transform 180ms ease, color 180ms ease;
         }
-        .site-hero .recommend-link:hover .recommend-arrow {
-            color: inherit;
-            transform: translate(2px, -2px);
+        @media (hover: hover) and (pointer: fine) {
+            .site-hero .recommend-link:hover .recommend-arrow {
+                color: inherit;
+                transform: translate(2px, -2px);
+            }
         }
 
         /* Aligned Radio P53 ribbon: preserves RADIO P53 typography in a compact bar. */
@@ -207,7 +225,7 @@
             transform: scale(1.06);
             opacity: .56;
             display: block;
-            transition: transform 700ms cubic-bezier(.2,.8,.2,1), opacity 220ms ease;
+            transition: transform 240ms var(--ease-out, cubic-bezier(.23,1,.32,1)), opacity 220ms ease;
         }
         .p53-art::after {
             content: "";
@@ -219,9 +237,11 @@
                 var(--signal-accent, #ff65ad);
             mix-blend-mode: color;
         }
-        .p53-broadcast:hover .p53-art img {
-            transform: scale(1.09);
-            opacity: .72;
+        @media (hover: hover) and (pointer: fine) {
+            .p53-broadcast:hover .p53-art img {
+                transform: scale(1.09);
+                opacity: .72;
+            }
         }
         .p53-overlay {
             position: relative;
@@ -313,7 +333,11 @@
             width: 13px;
             height: 13px;
         }
-        .p53-broadcast:hover .p53-arrow,
         .p53-broadcast:focus-visible .p53-arrow {
             transform: translate(2px, -2px);
+        }
+        @media (hover: hover) and (pointer: fine) {
+            .p53-broadcast:hover .p53-arrow {
+                transform: translate(2px, -2px);
+            }
         }

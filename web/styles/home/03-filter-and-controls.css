@@ -7,7 +7,6 @@
             background: var(--gsi-mode-surface, rgba(14,14,18,.78));
             backdrop-filter: blur(14px);
             -webkit-backdrop-filter: blur(14px);
-            transition: padding 200ms var(--ease-drawer, cubic-bezier(0.32, 0.72, 0, 1));
         }
         .filter-panel.filter-panel--collapsed {
             padding: 8px 12px;
@@ -18,7 +17,7 @@
             justify-content: space-between;
             gap: 8px;
             margin: 0;
-            min-height: 28px;
+            min-height: 38px;
         }
         .filter-panel--expanded .filter-panel-head {
             margin-bottom: 8px;
@@ -30,30 +29,40 @@
             display: flex;
             align-items: center;
             justify-content: space-between;
+            gap: 8px;
             width: 100%;
-            height: 28px;
-            min-height: 28px;
-            padding: 0 4px;
+            min-width: 0;
+            height: auto;
+            min-height: 38px;
+            padding: 6px 8px;
             border: 0;
             border-radius: 10px;
             background: transparent;
             color: var(--gsi-mode-ink, #f0ede6);
             cursor: pointer;
             font-family: var(--gsi-ui-font, "Space Grotesk", sans-serif);
-            transition: background 160ms ease;
+            transition: background 160ms ease, transform 120ms var(--ease-out, cubic-bezier(.23,1,.32,1));
         }
         .filter-panel.filter-panel--collapsed .filter-drawer-toggle {
-            height: 28px;
-            min-height: 28px;
-            padding: 0 4px;
+            height: auto;
+            min-height: 38px;
+            padding: 6px 8px;
         }
-        .filter-drawer-toggle:hover {
-            background: rgba(255, 255, 255, 0.05);
+        @media (hover: hover) and (pointer: fine) {
+            .filter-drawer-toggle:hover {
+                background: rgba(255, 255, 255, 0.05);
+            }
+        }
+        .filter-drawer-toggle:active {
+            transform: scale(0.99);
+            transition: transform 80ms ease-out;
         }
         .filter-drawer-lead {
             display: inline-flex;
             align-items: center;
             gap: 10px;
+            min-width: 0;
+            overflow: hidden;
         }
         .filter-guide-label {
             display: inline-flex;
@@ -67,11 +76,15 @@
             line-height: 1;
             margin: 0;
             padding: 0;
+            flex-shrink: 0;
         }
         .filter-active-pill {
             display: inline-flex;
             align-items: center;
             gap: 6px;
+            max-width: 100%;
+            min-width: 0;
+            overflow: hidden;
             padding: 3px 10px;
             border-radius: 999px;
             border: 1px solid var(--filter-color, var(--gsi-mode-control, #8c5de8));
@@ -80,17 +93,25 @@
             font-size: 11px;
             font-weight: 700;
         }
+        #filter-active-text {
+            min-width: 0;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
         .filter-active-pill[hidden],
         .filter-clear-quick-btn[hidden],
         .filter-drawer-body[hidden],
         .filter-description[hidden],
-        .playlist-card[hidden] {
+        .playlist-card[hidden],
+        .grid-empty-state[hidden] {
             display: none !important;
         }
         .filter-active-icon {
             display: inline-flex;
             align-items: center;
             justify-content: center;
+            flex-shrink: 0;
             width: 13px;
             height: 13px;
             color: var(--filter-color, currentColor);
@@ -105,6 +126,7 @@
             justify-content: center;
             width: 22px;
             height: 22px;
+            flex-shrink: 0;
             color: var(--gsi-mode-muted, rgba(255, 255, 255, .65));
             transition: transform 240ms var(--ease-drawer, cubic-bezier(0.32, 0.72, 0, 1)), color 160ms ease;
         }
@@ -117,15 +139,19 @@
         .filter-drawer-toggle[aria-expanded="true"] .filter-drawer-caret {
             transform: rotate(180deg);
         }
-        .filter-drawer-toggle:hover .filter-drawer-caret {
-            color: var(--gsi-mode-ink, #f0ede6);
+        @media (hover: hover) and (pointer: fine) {
+            .filter-drawer-toggle:hover .filter-drawer-caret {
+                color: var(--gsi-mode-ink, #f0ede6);
+            }
         }
         .filter-clear-quick-btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 28px;
-            height: 28px;
+            width: 36px;
+            height: 36px;
+            min-width: 36px;
+            min-height: 36px;
             border: 1px solid var(--gsi-mode-line, rgba(255, 255, 255, .16));
             border-radius: 999px;
             background: var(--gsi-mode-surface, rgba(255, 255, 255, .08));
@@ -136,20 +162,32 @@
             flex-shrink: 0;
             transition: background 160ms ease, color 160ms ease, transform 160ms ease;
         }
-        .filter-clear-quick-btn:hover {
-            border-color: #ff4fa3;
-            color: #ff4fa3;
+        @media (hover: hover) and (pointer: fine) {
+            .filter-clear-quick-btn:hover {
+                border-color: #ff4fa3;
+                color: #ff4fa3;
+            }
         }
         .filter-clear-quick-btn:active {
             transform: scale(0.92);
         }
         .filter-drawer-body {
             margin-top: 10px;
-            animation: drawerReveal 220ms var(--ease-drawer, cubic-bezier(0.32, 0.72, 0, 1)) forwards;
+            opacity: 1;
+            transform: translateY(0);
+            transition: opacity 200ms ease, transform 200ms var(--ease-drawer, cubic-bezier(0.32, 0.72, 0, 1));
         }
-        @keyframes drawerReveal {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
+        @starting-style {
+            .filter-drawer-body {
+                opacity: 0;
+                transform: translateY(-4px);
+            }
+        }
+        .filter-drawer-body.is-closing {
+            opacity: 0;
+            transform: translateY(-4px);
+            pointer-events: none;
+            transition: opacity 150ms ease, transform 150ms ease;
         }
         .filter-row {
             display: grid;
@@ -163,9 +201,9 @@
             gap: 8px;
             width: 100%;
             min-width: 0;
-            height: 42px;
+            height: auto;
             min-height: 42px;
-            padding: 0 12px;
+            padding: 6px 12px;
             border-radius: 11px;
             border: 1px solid color-mix(in srgb, var(--filter-color, #ffffff), rgba(255, 255, 255, .24) 76%);
             background:
@@ -182,7 +220,7 @@
             filter: none !important;
             transition:
                 border-color 180ms ease,
-                transform 160ms cubic-bezier(.2,.8,.2,1),
+                transform 160ms var(--ease-out, cubic-bezier(.23,1,.32,1)),
                 color 160ms ease,
                 background 180ms ease;
         }
@@ -211,16 +249,20 @@
         }
         .filter-pill-count {
             flex-shrink: 0;
-            color: rgba(255, 255, 255, .44);
+            color: rgba(255, 255, 255, .68);
             font-size: 11px;
             font-weight: 600;
             font-variant-numeric: tabular-nums;
         }
-        @media (hover: hover) {
+        @media (hover: hover) and (pointer: fine) {
             .filter-btn:hover {
                 transform: translateY(-1.5px);
                 border-color: color-mix(in srgb, var(--filter-color, #ffffff), white 24%);
                 background: linear-gradient(135deg, color-mix(in srgb, var(--filter-color, #ffffff), transparent 74%), rgba(24, 24, 31, .94));
+            }
+            .filter-btn.filter-p53:hover {
+                border-color: #ff78b9;
+                box-shadow: none !important;
             }
         }
         .filter-btn:focus-visible {
@@ -240,7 +282,6 @@
         .filter-btn.active .filter-pill-count {
             color: rgba(255, 255, 255, .86);
         }
-        .filter-btn.filter-p53:hover,
         .filter-btn.filter-p53:focus-visible,
         .filter-btn.filter-p53.active {
             border-color: #ff78b9;
@@ -264,34 +305,21 @@
             overflow: hidden;
             border-radius: 20px;
             transition:
-                min-height 240ms cubic-bezier(.2,.8,.2,1),
-                max-height 240ms cubic-bezier(.2,.8,.2,1),
-                opacity 200ms ease,
-                transform 240ms cubic-bezier(.2,.8,.2,1);
+                opacity 180ms ease,
+                transform 200ms var(--ease-out, cubic-bezier(.23,1,.32,1));
         }
         .filter-description.filter-collapsing {
-            max-height: 0 !important;
-            min-height: 0 !important;
-            padding-top: 0 !important;
-            padding-bottom: 0 !important;
-            margin-top: 0 !important;
-            margin-bottom: 0 !important;
-            opacity: 0 !important;
+            opacity: 0;
             transform: translateY(-8px) scale(0.98);
-            overflow: hidden !important;
-            pointer-events: none !important;
+            pointer-events: none;
             transition:
-                max-height 240ms cubic-bezier(.2,.8,.2,1),
-                min-height 240ms cubic-bezier(.2,.8,.2,1),
-                padding 240ms cubic-bezier(.2,.8,.2,1),
-                margin 240ms cubic-bezier(.2,.8,.2,1),
                 opacity 180ms ease,
-                transform 220ms cubic-bezier(.2,.8,.2,1) !important;
+                transform 180ms var(--ease-out, cubic-bezier(.23,1,.32,1));
         }
         .filter-description.filter-collapsing .playlist-card {
-            opacity: 0 !important;
-            transform: scale(0.92) translateY(-6px) !important;
-            transition: opacity 160ms ease, transform 180ms cubic-bezier(.2,.8,.2,1) !important;
+            opacity: 0;
+            transform: scale(0.92) translateY(-6px);
+            transition: opacity 150ms ease, transform 180ms var(--ease-out, cubic-bezier(.23,1,.32,1));
         }
         .filter-room-label {
             position: absolute;
@@ -370,7 +398,7 @@
         .filter-description[data-filter="distortion"] .playlist-card img { animation:distorted-cover 2.6s steps(7,end) infinite; }
         @keyframes distortion-scan { 0% { transform:translateY(-12px); opacity:.25; } 50% { transform:translateY(8px); opacity:.62; } 100% { transform:translateY(-12px); opacity:.25; } }
         @keyframes distortion-echo { 0%,100% { transform:translate(0); opacity:.28; } 24% { transform:translate(11px,-3px) skewX(-4deg); opacity:.5; } 27% { transform:translate(-8px,4px); } 70% { transform:translate(4px); opacity:.34; } }
-        @keyframes distorted-cover { 0%,100% { transform:translate(0) scale(1.01); filter:saturate(1); } 22% { transform:translate(5px,-2px) scale(1.025); filter:saturate(1.35) contrast(1.12); } 25% { transform:translate(-4px,2px) scale(1.02); filter:hue-rotate(12deg) contrast(1.18); } 64% { transform:translate(2px) scale(1.015); filter:saturate(.86); } }
+        @keyframes distorted-cover { 0%,100% { transform:translate(0) scale(1.01); } 22% { transform:translate(5px,-2px) scale(1.025); } 25% { transform:translate(-4px,2px) scale(1.02); } 64% { transform:translate(2px) scale(1.015); } }
         .filter-description[data-filter="ulas"] .filter-decor::before,
         .filter-description[data-filter="ulas"] .filter-decor::after {
             width:90px; height:90px; border-color:color-mix(in srgb,var(--page-tint),transparent 42%); border-style:solid; border-radius:16px;
@@ -448,7 +476,6 @@
                 linear-gradient(135deg, color-mix(in srgb, var(--playlist-accent, var(--page-tint, #fff)), transparent 78%), rgba(12, 12, 16, 0.88) 65%),
                 rgba(10, 10, 14, 0.86);
             box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
-            backdrop-filter: blur(12px);
             transform: rotate(0.8deg);
             transition: transform 200ms var(--ease-out, cubic-bezier(.23,1,.32,1)), border-color 180ms ease, box-shadow 200ms ease;
         }
@@ -510,7 +537,7 @@
             gap: 8px;
             margin: 0 auto 16px;
             width: 100%;
-            height: 42px;
+            height: auto;
             min-height: 42px;
             contain: layout;
             box-sizing: border-box;
@@ -528,7 +555,7 @@
             display: flex;
             align-items: stretch;
             gap: 3px;
-            height: 100%;
+            min-height: 32px;
             padding: 2px;
             border-radius: 10px;
             background: rgba(0, 0, 0, 0.22);
@@ -541,7 +568,8 @@
         .segmented-control button {
             flex: 1 1 0;
             min-width: 0;
-            height: 100%;
+            min-height: 32px;
+            padding: 5px 8px;
             display: inline-flex;
             align-items: center;
             justify-content: center;
@@ -562,17 +590,73 @@
             display: block;
             flex-shrink: 0;
         }
-        .segmented-control button:hover {
-            color: var(--gsi-mode-ink, #ffffff);
-            background: rgba(255, 255, 255, 0.06);
+        @media (hover: hover) and (pointer: fine) {
+            .segmented-control button:hover {
+                color: var(--gsi-mode-ink, #ffffff);
+                background: rgba(255, 255, 255, 0.06);
+            }
         }
         .segmented-control button.active,
         .segmented-control button[aria-pressed="true"] {
-            background: var(--gsi-mode-surface-strong, rgba(255, 255, 255, 0.14));
+            background: rgba(255, 255, 255, 0.16);
             color: var(--gsi-mode-ink, #ffffff);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 2px 6px rgba(0, 0, 0, 0.2);
         }
         .segmented-control button:active {
+            transform: scale(0.97);
+            transition: transform 80ms ease-out;
+        }
+
+        .grid-empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            margin: 20px auto 0;
+            padding: clamp(28px, 5vw, 48px) 20px;
+            text-align: center;
+            border: 1px dashed var(--gsi-mode-line, rgba(255, 255, 255, 0.16));
+            border-radius: 18px;
+            background: var(--gsi-mode-surface, rgba(14, 14, 18, 0.62));
+            color: var(--gsi-mode-muted, rgba(255, 255, 255, 0.72));
+        }
+        .grid-empty-state p {
+            margin: 0;
+            font-size: 15px;
+            line-height: 1.45;
+            color: var(--gsi-mode-ink, #f0ede6);
+        }
+        #empty-clear-filter-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            padding: 10px 18px;
+            border: 1px solid var(--gsi-mode-line, rgba(255, 255, 255, 0.18));
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.08);
+            color: var(--gsi-mode-ink, #f0ede6);
+            font-family: var(--gsi-ui-font, "Space Grotesk", sans-serif);
+            font-size: 12px;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: border-color 160ms ease, background 160ms ease, transform 120ms var(--ease-out, cubic-bezier(.23,1,.32,1));
+        }
+        @media (hover: hover) and (pointer: fine) {
+            #empty-clear-filter-btn:hover {
+                border-color: var(--gsi-mode-control, #ff65ad);
+                background: rgba(255, 255, 255, 0.14);
+                transform: translateY(-1px);
+            }
+        }
+        #empty-clear-filter-btn:focus-visible {
+            border-color: var(--gsi-mode-control, #ff65ad);
+            background: rgba(255, 255, 255, 0.14);
+        }
+        #empty-clear-filter-btn:active {
             transform: scale(0.97);
             transition: transform 80ms ease-out;
         }

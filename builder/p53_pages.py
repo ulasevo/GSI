@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 from gsi_data import current_p53_slug, load_config
-from gsi_assets import artwork_palette, palette_style
+from gsi_assets import artwork_palette, image_size_attrs, palette_style
 from gsi_text import make_streaming_links, simple_markdown_to_html, slugify
 from builder.entry_pages import excerpt_text, extract_sections_from_markdown, p53_art_context
 from builder.template_renderer import render_template
@@ -160,18 +160,20 @@ def build_p53_page(
     p53_description = f"Radio P53 transmission: {item['track']} by {item['artist']}."
     sharing_meta = ""
     if p53_permalink:
+        og_asset = "/covers/P53_cover-og.jpg" if (base / "covers" / "P53_cover.jpg").is_file() else "/covers/P53_cover-runtime.webp"
         sharing_meta = f'''\n    <link rel="canonical" href="{html.escape(p53_permalink, quote=True)}">
     <meta property="og:url" content="{html.escape(p53_permalink, quote=True)}">
     <meta property="og:type" content="website">
     <meta property="og:site_name" content="Chaperone / Radio P53">
     <meta property="og:title" content="{html.escape(f'Radio P53 — {item["track"]}', quote=True)}">
     <meta property="og:description" content="{html.escape(p53_description, quote=True)}">
-    <meta property="og:image" content="{html.escape(site_url + '/covers/P53_cover.jpg', quote=True)}">
+    <meta property="og:image" content="{html.escape(site_url + og_asset, quote=True)}">
     <meta name="twitter:card" content="summary_large_image">'''
     art_style = html.escape(p53_style, quote=True)
-    cover_html = f'<img class="signal-cover" src="{cover_src}" alt="{html.escape(item["album"], quote=True)} cover" loading="eager" fetchpriority="high" decoding="async">' if cover_src else ""
+    cover_size_attrs = image_size_attrs(track_cover_path) if cover_src else ""
+    cover_html = f'<img class="signal-cover" src="{html.escape(cover_src, quote=True)}" alt="{html.escape(item["album"], quote=True)} cover" loading="eager" fetchpriority="high" decoding="async" {cover_size_attrs}>' if cover_src else '<div class="cover-missing signal-cover" aria-hidden="true"></div>'
     note_html = (
-        f'<div class="transmission-note">{simple_markdown_to_html(transmission_note)}</div>'
+        f'<div class="transmission-note" dir="auto">{simple_markdown_to_html(transmission_note)}</div>'
         if transmission_note else ""
     )
     entry_counterpart_html = _build_entry_companion_html(
@@ -224,7 +226,8 @@ def build_p53_archive(
     current = next((item for item in history if item["slug"] == current_slug), None)
     remaining = [item for item in history if item["slug"] != current_slug]
     if current is None and remaining:
-        current, remaining = remaining[0], remaining[1:]
+        current, remaining = remaining[-1], remaining[:-1]
+    remaining = list(reversed(remaining))
     transmissions = [current, *remaining] if current else remaining
 
     # Only the first image is eager; later covers can wait until the reader gets
@@ -232,7 +235,8 @@ def build_p53_archive(
     def cover(item: dict, eager: bool = False) -> str:
         if item.get("cover_file"):
             loading = 'loading="eager" fetchpriority="high" decoding="async"' if eager else 'loading="lazy" decoding="async"'
-            return f'<img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover" {loading}>'
+            size_attrs = image_size_attrs(base / "covers" / item["cover_file"])
+            return f'<img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover" {loading} {size_attrs}>'
         return '<div class="cover-missing" aria-hidden="true">P53</div>'
 
     transmission_notes = config.get("p53_transmission_notes", {})
@@ -256,15 +260,19 @@ def build_p53_archive(
         "filterLabels": filter_labels or {},
         "artistSlugs": sorted(artist_slugs or set()),
     }, ensure_ascii=False).replace("</", "<\\/")
+    total_factors = len(transmissions)
+    count_label = f"{total_factors:,}" if total_factors >= 1000 else str(total_factors).zfill(2)
     page = render_template(
         "p53-landing.html",
         {
-            "transmission_count": str(len(transmissions)).zfill(2),
+            "transmission_count": count_label,
+            "factor_unit": "FACTOR" if total_factors == 1 else "FACTORS",
             "cards_html": cards_html,
             "landing_context": landing_context,
             "p53_style": html.escape(p53_style, quote=True),
         },
     )
+    output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / "index.html"
     output_path.write_text(page, encoding="utf-8")
     print(f"Built Radio P53 landing: {output_path}")

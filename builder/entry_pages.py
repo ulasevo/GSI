@@ -12,7 +12,7 @@ from pathlib import Path
 from urllib.parse import quote
 
 from gsi_data import load_config
-from gsi_assets import artwork_palette, compact_rim_gradient, palette_style
+from gsi_assets import artwork_palette, compact_rim_gradient, image_size_attrs, palette_style
 from gsi_text import make_streaming_links, simple_markdown_to_html, slugify
 from builder.template_renderer import render_template
 
@@ -63,7 +63,7 @@ def _build_p53_companion_html(item: dict, config: dict, base: Path) -> str:
         f'href="../p53/{safe_slug}.html" '
         f'aria-label="{safe_aria}" '
         f'style="{safe_style}">'
-        f'<div class="p53-card-art"><img src="../covers/P53_cover-runtime.webp" alt="Radio P53 artwork" loading="lazy" decoding="async"></div>'
+        f'<div class="p53-card-art"><img src="../covers/P53_cover-runtime.webp" alt="Radio P53 artwork" loading="lazy" decoding="async" {image_size_attrs(base / "covers" / "P53_cover-runtime.webp")}></div>'
         f'<div class="p53-card-body"><span class="p53-card-kicker">RADIO P53</span><strong class="p53-card-title">{safe_track}</strong>{note_excerpt_html}</div>'
         f'<span class="p53-card-cta" aria-hidden="true">↗</span>'
         f'</a>'
@@ -144,14 +144,16 @@ def build_entry_page(
         # request eager while allowing the browser to decode it off the main
         # thread.  The explicit priority avoids the cover arriving after the
         # prose on slower mobile connections.
-        vt_name = f'cover-{item["slug"]}'
-        cover_html = f'<img class = "cover" src = "{cover_src}" alt = "{html.escape(item["album"])} cover" loading="eager" fetchpriority="high" decoding="async" style="view-transition-name: {vt_name};">'
+        size_attrs = image_size_attrs(base / "covers" / item["cover_file"])
+        cover_html = f'<img class = "cover" src = "{html.escape(cover_src, quote=True)}" alt = "{html.escape(item["album"])} cover" loading="eager" fetchpriority="high" decoding="async" {size_attrs}>'
         # Keep the cover treatment as a custom property on the page body. This
         # lets the shared stylesheet stay static while the URL remains escaped.
         bg_style = html.escape(
             f'--entry-background:linear-gradient(120deg, rgba(0,0,0,.78), rgba(0,0,0,.96)), url("{cover_src}");',
             quote=True,
         )
+    else:
+        cover_html = '<div class="cover-missing cover" aria-hidden="true"></div>'
     # Empty sections do not become doors in the reading room.
     section_cards = []
     for section in sections:
@@ -169,7 +171,7 @@ def build_entry_page(
             help_button = f'<button class="section-info-button" type="button" aria-label="{safe_section_label}" aria-controls="{help_id}" aria-expanded="false">i</button>'
             help_panel = f'<div class="section-help" id="{help_id}" aria-hidden="true"><div><p>{safe_section_help}</p></div></div>'
         section_cards.append(f"""
-        <section class="section-card" id="{section_id}">
+        <section class="section-card" id="{section_id}" dir="auto">
             <div class="section-heading">
                 <h2>{html.escape(section_title)}</h2>
                 {help_button}

@@ -3,7 +3,8 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark light">
     <meta name="description" content="@@SAFE_META_DESCRIPTION@@">
     <meta name="theme-color" content="#0d0d0f">
     <meta property="og:type" content="website">
@@ -11,6 +12,7 @@
     <meta property="og:title" content="@@SAFE_PAGE_TITLE@@">
     <meta property="og:description" content="@@SAFE_META_DESCRIPTION@@">@@HOMEPAGE_URL_META@@@@SHARE_IMAGE_META@@
     <link rel="icon" href="covers/GSI_favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="fonts/SpaceGrotesk-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
     <script>
     (() => {
         try {
@@ -22,13 +24,14 @@
         } catch {}
     })();
     </script>
-    <script src="scripts/theme-mode.js?v=20260921-persist"></script>
+    <script src="scripts/theme-mode.js?v=20260921-persist" defer></script>
     <link rel="stylesheet" href="styles/gsi-tokens.css">
     <link rel="stylesheet" href="styles/gsi-home.css">
     <link rel="stylesheet" href="styles/theme-mode.css?v=20260920-final8">
     <title>@@SAFE_PAGE_TITLE@@</title>
 </head>
 <body data-view="wall" data-format="songs">
+    <a class="skip-link" href="#main-content">Skip to archive</a>
     <div class="signal-transform" aria-hidden="true"></div>
     <header class="site-hero">
         <div class="site-masthead">
@@ -46,6 +49,7 @@
         </div>
         @@P53_HTML@@
     </header>
+    <main id="main-content">
     @@FILTERS_HTML@@
     <div class="layout-format-controls">
       <div class="segmented-control view-segmented" role="group" aria-label="Layout density">
@@ -89,6 +93,11 @@
     <div class="grid">
         @@CARDS_HTML@@
     </div>
+    <div class="grid-empty-state" id="grid-empty-state" hidden>
+        <p>No signals match this filter yet.</p>
+        <button type="button" id="empty-clear-filter-btn">Clear filter</button>
+    </div>
+    </main>
 <script src="scripts/gsi-context.js"></script>
 <script id="gsi-filter-data" type="application/json">@@FILTER_DATA_JSON@@</script>
 <script src="scripts/home-state.js"></script>

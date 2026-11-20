@@ -12,8 +12,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const favicon = document.querySelector("#favicon");
   const homeLink = document.querySelector("#home-link");
   if (favicon) favicon.href = root + "covers/GSI_favicon.svg";
-  if (homeLink) homeLink.href = root;
-  if (!tracks.length) return;
+
+  function syncThemeLinks(readBaseUrl) {
+    if (!window.GSIContext) return;
+    const params = GSIContext.archiveParams({ state: GSIContext.read() });
+    if (homeLink) homeLink.href = GSIContext.href(root, params);
+    const read = document.querySelector("#signal-read");
+    if (read && readBaseUrl) read.href = GSIContext.href(readBaseUrl, params);
+  }
+
+  if (!tracks.length) {
+    syncThemeLinks("");
+    window.addEventListener("gsi-theme-change", () => syncThemeLinks(""));
+    return;
+  }
 
   // A different existing signal on each visit keeps the recovery page alive
   // without inventing a recommendation or storing visitor history.
@@ -34,5 +46,8 @@ document.addEventListener("DOMContentLoaded", () => {
   if (artist) artist.textContent = selected.artist || "";
   if (spotify) spotify.href = selected.spotify || "#";
   if (apple) apple.href = selected.apple || "#";
-  if (read) read.href = root + (selected.url || "");
+  const readBaseUrl = root + (selected.url || "");
+  if (read) read.href = readBaseUrl;
+  syncThemeLinks(readBaseUrl);
+  window.addEventListener("gsi-theme-change", () => syncThemeLinks(readBaseUrl));
 });

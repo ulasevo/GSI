@@ -10,7 +10,7 @@ import json
 from pathlib import Path
 
 from gsi_artists import artist_image_markup, resolve_artist_asset
-from gsi_assets import artwork_palette, palette_style
+from gsi_assets import artwork_palette, image_size_attrs, palette_style
 from gsi_data import load_config
 from gsi_text import simple_markdown_to_html, slugify
 from builder.template_renderer import render_template
@@ -48,7 +48,7 @@ def build_artist_pages(
         artist_image_src = f'../artist-assets/{artist_asset["file"]}' if artist_asset.get("file") else ""
         artist_heading_class = "artist-heading has-artist-image" if artist_image_html else "artist-heading"
         note = str(artist_notes.get(artist, "")).strip()
-        note_html = f'<div class="artist-note">{simple_markdown_to_html(note)}</div>' if note else ""
+        note_html = f'<div class="artist-note" dir="auto">{simple_markdown_to_html(note)}</div>' if note else ""
         albums: dict[str, list[dict]] = {}
         for item in artist_tracks:
             albums.setdefault(item["album"], []).append(item)
@@ -101,9 +101,14 @@ def build_artist_pages(
                 meta_parts.append(f"TRACK {int(t_num):02d}")
             arc_str = " · ".join(meta_parts)
             arc_html = f'<small class="artist-signal-arc">{arc_str}</small>' if arc_str else ""
+            signal_cover = str(item.get("cover_file") or "").strip()
+            signal_cover_html = (
+                f'<img src="../covers/{html.escape(signal_cover, quote=True)}" alt="{html.escape(item["album"], quote=True)} cover" loading="lazy" decoding="async" {image_size_attrs(BASE / "covers" / signal_cover)}>'
+                if signal_cover else '<div class="cover-missing" aria-hidden="true"></div>'
+            )
             return f'''<a class="artist-signal" data-entry-base-href="{entry_base_href(item)}" href="{entry_href(item)}" style="--accent:{item["accent"]}">
-                <img src="../covers/{html.escape(item["cover_file"], quote=True)}" alt="{html.escape(item["album"], quote=True)} cover" loading="lazy" decoding="async">
-                <div class="artist-signal-meta"><h2>{html.escape(item["track"])}</h2><p>{html.escape(item["artist"])}</p>{arc_html}</div>
+                {signal_cover_html}
+                <div class="artist-signal-meta"><h2 dir="auto">{html.escape(item["track"])}</h2><p dir="auto">{html.escape(item["artist"])}</p>{arc_html}</div>
                 <b>{transmission_label}</b>
             </a>'''
 
@@ -118,9 +123,14 @@ def build_artist_pages(
                 f'href="{html.escape(album_href, quote=True)}">{html.escape(album)}</a>'
             )
             album_note = str(album_notes.get(artist, {}).get(album, "")).strip()
-            album_note_html = f'<div class="album-note-preview">{simple_markdown_to_html(album_note)}</div>' if album_note else ""
+            album_note_html = f'<div class="album-note-preview" dir="auto">{simple_markdown_to_html(album_note)}</div>' if album_note else ""
+            stack_cover = str(items[0].get("cover_file") or "").strip()
+            stack_cover_html = (
+                f'<img src="../covers/{html.escape(stack_cover, quote=True)}" alt="{html.escape(album, quote=True)} cover" loading="lazy" decoding="async" {image_size_attrs(BASE / "covers" / stack_cover)}>'
+                if stack_cover else '<div class="cover-missing" aria-hidden="true"></div>'
+            )
             album_sections.append(f'''<section class="album-stack" style="--accent:{items[0]["accent"]}">
-                <header><img src="../covers/{html.escape(items[0]["cover_file"], quote=True)}" alt="{html.escape(album, quote=True)} cover" loading="lazy" decoding="async"><div style="min-width:0"><span class="album-stack-kicker" style="display:block;margin-bottom:6px;font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2>{album_title_link}</h2>{album_note_html}</div></header>
+                <header>{stack_cover_html}<div style="min-width:0"><span class="album-stack-kicker" style="display:block;margin-bottom:6px;font-size:9px;font-weight:950;letter-spacing:.18em">ALBUM</span><h2 dir="auto">{album_title_link}</h2>{album_note_html}</div></header>
                 <div>{''.join(entry_tile(item, compact=True) for item in items)}</div>
             </section>''')
         albums_html = "".join(album_sections)
@@ -196,7 +206,10 @@ def build_album_pages(
             if artist_room_exists else html.escape(artist)
         )
         cover = items[0].get("cover_file", "")
-        cover_html = f'<img class="album-cover" src="../covers/{html.escape(cover, quote=True)}" alt="{html.escape(album, quote=True)} cover" loading="eager" fetchpriority="high" decoding="async">' if cover else ""
+        cover_html = (
+            f'<img class="album-cover" src="../covers/{html.escape(cover, quote=True)}" alt="{html.escape(album, quote=True)} cover" loading="eager" fetchpriority="high" decoding="async" {image_size_attrs(BASE / "covers" / cover)}>'
+            if cover else '<div class="cover-missing album-cover" aria-hidden="true"></div>'
+        )
 
         # Sort items by ascending track number
         items.sort(key=lambda x: (int(x.get("track_number") or 999), str(x.get("track", ""))))
@@ -272,11 +285,13 @@ def build_album_pages(
                     f'<b class="album-song-chevron" aria-hidden="true">›</b></a>'
                 )
         note = str(notes.get(artist, {}).get(album, "")).strip()
-        note_html = f'<section class="album-note"><span>My take</span>{simple_markdown_to_html(note)}</section>' if note else ""
+        note_html = f'<section class="album-note" dir="auto"><span>My take</span>{simple_markdown_to_html(note)}</section>' if note else ""
         album_room_data = json.dumps(
             {"filterKeys": list(config.get("filters", {}).keys())},
             ensure_ascii=False,
         ).replace("</", "<\\/")
+        total_signals = len(items)
+        signal_count_label = f"{total_signals:,}" if total_signals >= 1000 else f"{total_signals:02d}"
         page = render_template(
             "album.html",
             {
@@ -287,7 +302,8 @@ def build_album_pages(
                 "accent": html.escape(str(accent), quote=True),
                 "artist_nav": artist_nav,
                 "cover_html": cover_html,
-                "signal_count": f"{len(items):02d}",
+                "signal_count": signal_count_label,
+                "signal_unit": "SIGNAL" if total_signals == 1 else "SIGNALS",
                 "archived_badge_html": archived_badge_html,
                 "artist_display": artist_display,
                 "note_html": note_html,
@@ -296,7 +312,10 @@ def build_album_pages(
                 "art_style": art_style,
             },
         )
-        path = SITE_DIR / route if route else albums_dir / f"{slug}.html"
+        if output_dir is not None:
+            path = albums_dir / Path(route).name if route else albums_dir / f"{slug}.html"
+        else:
+            path = SITE_DIR / route if route else albums_dir / f"{slug}.html"
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(page, encoding="utf-8")
         print(f"Built album room: {path}")
