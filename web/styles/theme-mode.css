@@ -386,12 +386,15 @@
 }
 
 /* Light-mode section cards blend a soft pastel veil over sampled cover edges,
-   so dark ink remains readable across every corner of the card. */
+   so guaranteed dark ink remains legible across every cover palette. */
 :root[data-gsi-theme="light"] body.entry-room .section-card,
 :root[data-gsi-theme="light"] body.entry-room .section-card h2,
 :root[data-gsi-theme="light"] body.entry-room .section-card p,
+:root[data-gsi-theme="light"] body.entry-room .section-card li,
+:root[data-gsi-theme="light"] body.entry-room .section-card blockquote,
 :root[data-gsi-theme="light"] body.entry-room .section-card a {
-  color: var(--art-section-ink, var(--room-ink, #211823));
+  color: #1b1320;
+  text-shadow: none;
 }
 
 /* Room-specific contrast pass. These selectors sit after each page family so
@@ -739,17 +742,43 @@
 
 :root[data-gsi-theme="light"] body.entry-room .section-card,
 :root[data-gsi-theme="light"] body.entry-room .section-card:nth-child(even) {
-  color: var(--room-ink, #211823);
+  color: #1b1320;
+  border-color: color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 22%);
   background:
     linear-gradient(135deg,
-      color-mix(in srgb, var(--room-left, #ded9df), white 68%),
-      color-mix(in srgb, var(--room-field-soft, #ded9df), white 74%) 52%,
-      color-mix(in srgb, var(--room-right, #ded9df), white 68%));
+      color-mix(in srgb, var(--room-left, #ded9df), white 78%),
+      color-mix(in srgb, var(--room-field-soft, #ded9df), white 84%) 52%,
+      color-mix(in srgb, var(--room-right, #ded9df), white 78%));
   background-blend-mode: normal;
+  box-shadow: 0 14px 34px rgba(31, 20, 32, .08);
 }
 
-:root[data-gsi-theme="light"] body.entry-room .section-card p {
-  opacity: .94;
+:root[data-gsi-theme="light"] body.entry-room .section-card h2 {
+  color: color-mix(in srgb, var(--art-primary, #5d3a8c), #17101c 68%);
+  text-shadow: none;
+}
+
+:root[data-gsi-theme="light"] body.entry-room .section-card p,
+:root[data-gsi-theme="light"] body.entry-room .section-card li,
+:root[data-gsi-theme="light"] body.entry-room .section-card blockquote {
+  color: #1b1320;
+  opacity: 1;
+}
+
+:root[data-gsi-theme="light"] body.entry-room .section-card a {
+  color: color-mix(in srgb, var(--art-primary, #5d3a8c), #17101c 62%);
+}
+
+:root[data-gsi-theme="light"] body.entry-room .section-card .section-info-button {
+  color: #251a2a;
+  border-color: rgba(37, 26, 42, .32);
+  background: rgba(255, 255, 255, .64);
+}
+
+:root[data-gsi-theme="light"] body.entry-room .section-card .section-help {
+  color: #251a2a;
+  border-color: rgba(37, 26, 42, .24);
+  background: rgba(255, 255, 255, .74);
 }
 
 /* Entry dark-mode polish: anchor paths, index pills, links, and PEEK states
@@ -1139,26 +1168,48 @@
 }
 
 :root[data-gsi-theme="light"] body.album-room .album-song--unreviewed,
+:root[data-gsi-theme="light"] body.album-room .album-song--unreviewed:hover,
 :root[data-gsi-theme="light"] body.album-room .album-song--unreviewed:focus-visible {
   opacity: 1;
-  color: rgba(31, 20, 32, 0.72);
+  color: rgba(31, 20, 32, 0.78);
   border-color: rgba(31, 20, 32, 0.22);
-  background: rgba(255, 255, 255, 0.26);
+  background: rgba(255, 255, 255, 0.34);
   box-shadow: none;
+  transform: none;
 }
 
 :root[data-gsi-theme="light"] body.album-room .album-song--unreviewed .album-song-mark {
-  background: rgba(31, 20, 32, 0.34);
+  background: rgba(31, 20, 32, 0.32);
   box-shadow: none;
 }
 
 :root[data-gsi-theme="light"] body.album-room .album-song--unreviewed .album-song-meta span {
-  color: rgba(31, 20, 32, 0.72);
+  color: rgba(31, 20, 32, 0.8);
 }
 
 :root[data-gsi-theme="light"] body.album-room .album-song--unreviewed .album-song-arc {
   color: rgba(31, 20, 32, 0.62);
   text-shadow: none;
+}
+
+:root[data-gsi-theme="light"] body.album-room .album-request-btn {
+  color: #1f1420;
+  border-color: color-mix(in srgb, var(--accent, var(--art-primary, #8c5de8)), #1f1420 34%);
+  background: color-mix(in srgb, var(--accent, var(--art-primary, #8c5de8)), white 76%);
+}
+
+:root[data-gsi-theme="light"] body.album-room .album-request-btn:focus-visible {
+  color: #17101c;
+  border-color: #17101c;
+  background: color-mix(in srgb, var(--accent, var(--art-primary, #8c5de8)), white 58%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  :root[data-gsi-theme="light"] body.album-room .album-request-btn:hover {
+    color: #17101c;
+    border-color: #17101c;
+    background: color-mix(in srgb, var(--accent, var(--art-primary, #8c5de8)), white 58%);
+  }
 }
 
 /* Annotation pass: light-mode controls, catalogue cards, and rooms.  These
@@ -2140,103 +2191,102 @@ html:has(body[data-view])::after {
   }
 }
 
-/* Entry page P53 companion banner: horizontal card under the hero in both themes. */
+/* Entry page P53 companion banner: wraps the exact same border framing as Entry section cards in both themes. */
 :root[data-gsi-theme="light"] body.entry-room .p53-counterpart.p53-card-companion {
-  color: var(--art-light-ink, #211823);
-  border-color: color-mix(in srgb, var(--art-primary, var(--p53-accent, #b84093)), var(--art-light-ink, #211823) 26%);
+  color: #1b1320;
+  border: 1px solid color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 22%);
+  border-top: 3px solid color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 22%);
+  border-radius: 16px;
   background:
-    var(--art-rim-gradient, none),
-    linear-gradient(125deg,
-      color-mix(in srgb, var(--art-light-surface, #e0abcf), white 54%),
-      color-mix(in srgb, var(--art-light-surface-2, #adb7d2), white 64%));
-  box-shadow:
-    0 14px 36px color-mix(in srgb, var(--art-primary, var(--p53-accent, #b84093)), transparent 84%),
-    0 0 20px color-mix(in srgb, #35c9e9, transparent 86%);
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--room-left, #ded9df), white 78%),
+      color-mix(in srgb, var(--room-field-soft, #ded9df), white 84%) 52%,
+      color-mix(in srgb, var(--room-right, #ded9df), white 78%));
+  background-blend-mode: normal;
+  box-shadow: 0 14px 34px rgba(31, 20, 32, .08);
 }
 
 :root[data-gsi-theme="light"] body.entry-room .p53-counterpart.p53-card-companion:focus-visible {
-  border-color: color-mix(in srgb, var(--art-primary, var(--p53-accent, #b84093)), var(--art-light-ink, #211823) 44%);
-  box-shadow:
-    0 18px 42px color-mix(in srgb, var(--art-primary, var(--p53-accent, #b84093)), transparent 74%),
-    0 0 26px color-mix(in srgb, #35c9e9, transparent 74%),
-    0 0 22px color-mix(in srgb, #ff58a6, transparent 76%);
+  border-color: color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 42%);
+  border-top-color: color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 42%);
+  box-shadow: 0 18px 42px rgba(31, 20, 32, .14);
 }
 @media (hover: hover) and (pointer: fine) {
   :root[data-gsi-theme="light"] body.entry-room .p53-counterpart.p53-card-companion:hover {
-    border-color: color-mix(in srgb, var(--art-primary, var(--p53-accent, #b84093)), var(--art-light-ink, #211823) 44%);
-    box-shadow:
-      0 18px 42px color-mix(in srgb, var(--art-primary, var(--p53-accent, #b84093)), transparent 74%),
-      0 0 26px color-mix(in srgb, #35c9e9, transparent 74%),
-      0 0 22px color-mix(in srgb, #ff58a6, transparent 76%);
+    border-color: color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 42%);
+    border-top-color: color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 42%);
+    box-shadow: 0 18px 42px rgba(31, 20, 32, .14);
   }
 }
 
 :root[data-gsi-theme="light"] body.entry-room .p53-card-companion .p53-card-art {
-  border-color: color-mix(in srgb, var(--art-primary, var(--p53-accent, #b84093)), var(--art-light-ink, #211823) 26%);
+  border-color: color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 22%);
   background: rgba(255, 255, 255, .56);
 }
 
 :root[data-gsi-theme="light"] body.entry-room .p53-card-companion .p53-card-kicker {
-  color: color-mix(in srgb, var(--art-primary, var(--p53-accent, #b84093)), var(--art-light-ink, #211823) 60%);
+  color: color-mix(in srgb, var(--p53-accent, var(--art-primary, #b84093)), #1b1320 52%);
 }
 
 :root[data-gsi-theme="light"] body.entry-room .p53-card-companion .p53-card-title {
-  color: var(--art-light-ink, #211823);
+  color: #1b1320;
 }
 
 :root[data-gsi-theme="light"] body.entry-room .p53-card-companion .p53-card-note {
-  color: color-mix(in srgb, var(--art-light-ink, #211823), transparent 12%);
+  color: rgba(27, 19, 32, .84);
 }
 
 :root[data-gsi-theme="light"] body.entry-room .p53-card-companion .p53-card-cta {
-  border-color: color-mix(in srgb, var(--art-primary, var(--p53-accent, #8c5de8)), var(--art-light-ink, #211823) 34%);
-  background: rgba(255, 255, 255, .66);
-  color: color-mix(in srgb, var(--art-primary, var(--p53-accent, #8c5de8)), var(--art-light-ink, #211823) 64%);
+  border-color: color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 28%);
+  background: rgba(255, 255, 255, .68);
+  color: color-mix(in srgb, var(--art-primary, #6d4f8a), #1b1320 62%);
 }
 
 :root[data-gsi-theme="light"] body.entry-room .p53-card-companion:focus-visible .p53-card-cta {
   border-color: #17111d;
-  background: color-mix(in srgb, var(--art-primary, var(--p53-accent, #8c5de8)), white 72%);
+  background: color-mix(in srgb, var(--art-primary, #6d4f8a), white 72%);
   color: #17111d;
 }
 @media (hover: hover) and (pointer: fine) {
   :root[data-gsi-theme="light"] body.entry-room .p53-card-companion:hover .p53-card-cta {
     border-color: #17111d;
-    background: color-mix(in srgb, var(--art-primary, var(--p53-accent, #8c5de8)), white 72%);
+    background: color-mix(in srgb, var(--art-primary, #6d4f8a), white 72%);
     color: #17111d;
   }
 }
 
 :root[data-gsi-theme="dark"] body.entry-room .p53-counterpart.p53-card-companion {
-  color: var(--art-dark-ink, #f8f5ef);
-  border-color: color-mix(in srgb, var(--art-control, var(--p53-accent, #e7c4ff)), transparent 38%);
+  color: var(--room-ink, var(--art-dark-ink, #f8f5ef));
+  border: 1px solid color-mix(in srgb, var(--room-ink), var(--room-field) 70%);
+  border-top: 3px solid color-mix(in srgb, var(--room-accent, var(--art-control, #e7c4ff)), var(--room-field) 28%);
+  border-radius: 16px;
   background:
-    linear-gradient(rgba(7, 7, 10, .24), rgba(7, 7, 10, .3)),
-    var(--art-rim-gradient, none),
-    linear-gradient(125deg,
-      color-mix(in srgb, var(--art-primary, var(--p53-accent, #777)), #0d0d12 74%),
-      color-mix(in srgb, var(--art-dark-surface, #17151b), #0b0b0f 46%));
+    linear-gradient(rgba(7, 7, 10, .30), rgba(7, 7, 10, .36)),
+    var(--art-section-rim-gradient, var(--art-rim-gradient, none)),
+    linear-gradient(135deg,
+      color-mix(in srgb, var(--room-left), var(--room-field) 78%),
+      color-mix(in srgb, var(--room-field), var(--room-field-soft) 38%) 52%,
+      color-mix(in srgb, var(--room-right), var(--room-field) 78%));
+  background-blend-mode: normal;
   box-shadow:
-    0 18px 46px rgba(0, 0, 0, .28),
-    0 0 22px color-mix(in srgb, #35c9e9, transparent 84%),
-    0 0 18px color-mix(in srgb, #ff58a6, transparent 86%),
-    inset 0 1px 0 rgba(255, 255, 255, .08);
+    inset 0 1px 0 color-mix(in srgb, var(--room-ink), transparent 86%),
+    0 18px 44px color-mix(in srgb, var(--room-field), black 24%);
 }
 
 :root[data-gsi-theme="dark"] body.entry-room .p53-counterpart.p53-card-companion:focus-visible {
-  border-color: var(--art-control, #f3d8ff);
+  border-color: color-mix(in srgb, var(--room-accent, var(--art-control, #f3d8ff)), var(--room-ink) 28%);
+  border-top-color: var(--room-accent, var(--art-control, #f3d8ff));
   box-shadow:
-    0 22px 54px rgba(0, 0, 0, .36),
-    0 0 28px color-mix(in srgb, #35c9e9, transparent 70%),
-    0 0 24px color-mix(in srgb, #ff58a6, transparent 72%);
+    inset 0 1px 0 color-mix(in srgb, var(--room-ink), transparent 80%),
+    0 22px 54px rgba(0, 0, 0, .36);
 }
 @media (hover: hover) and (pointer: fine) {
   :root[data-gsi-theme="dark"] body.entry-room .p53-counterpart.p53-card-companion:hover {
-    border-color: var(--art-control, #f3d8ff);
+    border-color: color-mix(in srgb, var(--room-accent, var(--art-control, #f3d8ff)), var(--room-ink) 28%);
+    border-top-color: var(--room-accent, var(--art-control, #f3d8ff));
     box-shadow:
-      0 22px 54px rgba(0, 0, 0, .36),
-      0 0 28px color-mix(in srgb, #35c9e9, transparent 70%),
-      0 0 24px color-mix(in srgb, #ff58a6, transparent 72%);
+      inset 0 1px 0 color-mix(in srgb, var(--room-ink), transparent 80%),
+      0 22px 54px rgba(0, 0, 0, .36);
   }
 }
 
@@ -2253,20 +2303,20 @@ html:has(body[data-view])::after {
 }
 
 :root[data-gsi-theme="dark"] body.entry-room .p53-card-companion .p53-card-cta {
-  border-color: color-mix(in srgb, var(--art-control, var(--cyan, #35c9e9)), transparent 34%);
-  background: color-mix(in srgb, var(--art-control, var(--cyan, #35c9e9)), transparent 86%);
+  border-color: color-mix(in srgb, var(--art-control, #e7c4ff), transparent 34%);
+  background: color-mix(in srgb, var(--art-control, #e7c4ff), transparent 86%);
   color: var(--art-control, #f3d8ff);
 }
 
 :root[data-gsi-theme="dark"] body.entry-room .p53-card-companion:focus-visible .p53-card-cta {
   border-color: var(--art-control, #ffffff);
-  background: color-mix(in srgb, var(--art-control, var(--cyan, #35c9e9)), transparent 68%);
+  background: color-mix(in srgb, var(--art-control, #e7c4ff), transparent 68%);
   color: #ffffff;
 }
 @media (hover: hover) and (pointer: fine) {
   :root[data-gsi-theme="dark"] body.entry-room .p53-card-companion:hover .p53-card-cta {
     border-color: var(--art-control, #ffffff);
-    background: color-mix(in srgb, var(--art-control, var(--cyan, #35c9e9)), transparent 68%);
+    background: color-mix(in srgb, var(--art-control, #e7c4ff), transparent 68%);
     color: #ffffff;
   }
 }

@@ -1,0 +1,118 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global default-deny safety net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isValidId(id) {
+      return id is string &&
+        id.size() >= 15 &&
+        id.size() <= 170 &&
+        id.matches('^[a-z0-9-]+__[a-zA-Z0-9_\\-]{12,48}$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner() {
+      return isSignedIn() &&
+        request.auth.token.email == 'cagri.ulas.6a@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
+    function isValidOptionalString(data, key, maxLen) {
+      return !(key in data) || (data[key] is string && data[key].size() <= maxLen);
+    }
+
+    function isValidHeartFeedback(data, heartId) {
+      return data.keys().hasAll([
+          'slug',
+          'pageType',
+          'track',
+          'artist',
+          'visitorToken',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.keys().hasOnly([
+          'slug',
+          'pageType',
+          'track',
+          'artist',
+          'visitorToken',
+          'note',
+          'senderName',
+          'createdAt',
+          'updatedAt'
+        ]) &&
+        data.slug is string &&
+        data.slug.size() >= 1 &&
+        data.slug.size() <= 120 &&
+        data.slug.matches('^[a-z0-9-]+$') &&
+        data.pageType is string &&
+        data.pageType.size() <= 10 &&
+        (data.pageType == 'entry' || data.pageType == 'p53') &&
+        data.track is string &&
+        data.track.size() >= 1 &&
+        data.track.size() <= 160 &&
+        data.artist is string &&
+        data.artist.size() >= 1 &&
+        data.artist.size() <= 160 &&
+        data.visitorToken is string &&
+        data.visitorToken.size() >= 12 &&
+        data.visitorToken.size() <= 48 &&
+        data.visitorToken.matches('^[a-zA-Z0-9_\\-]{12,48}$') &&
+        heartId == data.slug + '__' + data.visitorToken &&
+        isValidOptionalString(data, 'note', 400) &&
+        isValidOptionalString(data, 'senderName', 60) &&
+        data.createdAt is timestamp &&
+        data.updatedAt is timestamp;
+    }
+
+    match /hearts/{heartId} {
+      // Strictly owner-only reads so heart counts and listener notes remain 100% private.
+      allow get: if isOwner() && isValidId(heartId);
+      allow list: if isOwner();
+
+      // Visitors can create their own opaque-token heart document with strict schema and server timestamps.
+      allow create: if isValidId(heartId) &&
+        isValidHeartFeedback(incoming(), heartId) &&
+        incoming().createdAt == request.time &&
+        incoming().updatedAt == request.time;
+
+      // Visitors can attach or revise their optional note/signature on their own heart document, or owner can moderate.
+      allow update: if isValidId(heartId) &&
+        isValidHeartFeedback(incoming(), heartId) &&
+        incoming().slug == existing().slug &&
+        incoming().pageType == existing().pageType &&
+        incoming().track == existing().track &&
+        incoming().artist == existing().artist &&
+        incoming().visitorToken == existing().visitorToken &&
+        incoming().createdAt == existing().createdAt &&
+        incoming().updatedAt == request.time &&
+        (
+          isOwner() ||
+          incoming().diff(existing()).affectedKeys().hasOnly(['note', 'senderName', 'updatedAt'])
+        );
+
+      // Visitors holding the unguessable token doc ID can toggle off (delete) their own heart, or owner can remove.
+      allow delete: if isValidId(heartId) &&
+        (
+          isOwner() ||
+          heartId == existing().slug + '__' + existing().visitorToken
+        );
+    }
+  }
+}

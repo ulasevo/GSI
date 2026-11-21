@@ -1,0 +1,79 @@
+{
+  "entities": {
+    "HeartFeedback": {
+      "title": "HeartFeedback",
+      "description": "A private listener heart and optional short feedback note for a Chaperone entry or Radio P53 transmission.",
+      "type": "object",
+      "properties": {
+        "slug": {
+          "type": "string",
+          "description": "Kebab-case track slug matching the Entry or P53 page.",
+          "minLength": 1,
+          "maxLength": 120,
+          "pattern": "^[a-z0-9-]+$"
+        },
+        "pageType": {
+          "type": "string",
+          "description": "Whether the heart originated on an Entry page or a Radio P53 transmission page.",
+          "enum": ["entry", "p53"]
+        },
+        "track": {
+          "type": "string",
+          "description": "Track title.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "artist": {
+          "type": "string",
+          "description": "Artist name.",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "visitorToken": {
+          "type": "string",
+          "description": "Client-generated opaque anonymous token (12-48 chars) pairing the browser to its own heart document.",
+          "minLength": 12,
+          "maxLength": 48,
+          "pattern": "^[a-zA-Z0-9_-]{12,48}$"
+        },
+        "note": {
+          "type": "string",
+          "description": "Optional short listener feedback note.",
+          "maxLength": 400
+        },
+        "senderName": {
+          "type": "string",
+          "description": "Optional short listener name or handle.",
+          "maxLength": 60
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the heart was first created."
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time",
+          "description": "Server timestamp when the heart or optional note was last updated."
+        }
+      },
+      "required": [
+        "slug",
+        "pageType",
+        "track",
+        "artist",
+        "visitorToken",
+        "createdAt",
+        "updatedAt"
+      ]
+    }
+  },
+  "firestore": {
+    "/hearts/{heartId}": {
+      "schema": {
+        "$ref": "#/entities/HeartFeedback"
+      },
+      "description": "Private heart feedback records keyed by <slug>__<visitorToken>. Write-only for unauthenticated archive visitors; readable only by the verified archive owner."
+    }
+  }
+}

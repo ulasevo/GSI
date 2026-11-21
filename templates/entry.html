@@ -30,6 +30,7 @@
     <title>@@SAFE_PAGE_TITLE@@</title>
 <link rel="stylesheet" href="../styles/entry-room.css?v=20260920-rim32">
 <link rel="stylesheet" href="../styles/story-studio.css">
+<link rel="stylesheet" href="../styles/heart-feedback.css">
 <link rel="stylesheet" href="../styles/theme-mode.css?v=20260920-final8">
 </head>
 <body class="art-room entry-room" style="--accent:@@ACCENT@@;@@ART_STYLE@@;@@BG_STYLE@@">
@@ -46,16 +47,43 @@
         </header>
 
         <section class="hero">
-            <div class="cover-frame">@@COVER_HTML@@</div>
+            <div class="cover-frame">
+                <button class="entry-share-trigger" id="entry-share-trigger" type="button" aria-haspopup="dialog">Share</button>
+                @@COVER_HTML@@
+            </div>
             <div class="meta">
                 <div class="entry-architecture" aria-hidden="true"><span>GENOME</span><span>STABILITY</span><span>INDUCER</span></div>
-                <h1 dir="auto">@@TRACK@@</h1>
+                <div class="entry-title-row">
+                    <h1 dir="auto">@@TRACK@@</h1>
+                    <button class="heart-trigger heart-trigger--entry" id="heart-trigger" type="button" aria-pressed="false" aria-label="Heart @@TRACK@@">
+                        <span class="heart-pulse-ring" aria-hidden="true"></span>
+                        <svg class="heart-svg" viewBox="0 0 24 24" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="gsi-heart-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stop-color="var(--art-primary, var(--accent, #ff65ad))"/>
+                                    <stop offset="52%" stop-color="var(--art-glow, var(--art-control, #ff8bc2))"/>
+                                    <stop offset="100%" stop-color="var(--art-secondary, #35c9e9)"/>
+                                </linearGradient>
+                                <linearGradient id="gsi-heart-sheen" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" stop-color="rgba(255,255,255,0)"/>
+                                    <stop offset="50%" stop-color="rgba(255,255,255,0.68)"/>
+                                    <stop offset="100%" stop-color="rgba(255,255,255,0)"/>
+                                </linearGradient>
+                                <clipPath id="gsi-heart-clip">
+                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                </clipPath>
+                            </defs>
+                            <path class="heart-outline-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            <path class="heart-fill-path" fill="url(#gsi-heart-grad)" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                            <g clip-path="url(#gsi-heart-clip)">
+                                <rect class="heart-shimmer-path" x="-6" y="0" width="14" height="24" fill="url(#gsi-heart-sheen)" transform="skewX(-18)"/>
+                            </g>
+                        </svg>
+                    </button>
+                </div>
                 <p>@@ARTIST_DISPLAY@@</p>
                 <p class="album">@@ALBUM_DISPLAY@@</p>
                 @@STREAMING_LINKS_HTML@@
-                <div class="entry-share-row" style="margin-top:14px">
-                    <button class="entry-share-trigger" id="entry-share-trigger" type="button" aria-haspopup="dialog">Share 9:16 card ↗</button>
-                </div>
             </div>
         </section>
 
@@ -73,29 +101,53 @@
         <div class="story-modal-shell">
             <header class="story-modal-header">
                 <div class="story-modal-heading">
-                    <span class="story-modal-kicker">Chaperone · 9:16 Story Card</span>
-                    <h2 id="entry-story-modal-title" class="story-modal-title">Share signal card</h2>
+                    <h2 id="entry-story-modal-title" class="story-modal-title">Share Card</h2>
                 </div>
-                <button type="button" class="story-modal-close" id="entry-story-close" aria-label="Close share studio">✕</button>
+                <button type="button" class="story-modal-close" id="entry-story-close" aria-label="Close share card">✕</button>
             </header>
             <div class="story-modal-body">
                 <div class="story-studio-preview-col">
                     <div class="story-card-preview-wrap">
-                        <canvas id="entry-story-canvas" role="img" width="1080" height="1920" class="story-card-canvas" aria-label="Chaperone 9:16 story card preview"></canvas>
+                        <canvas id="entry-story-canvas" role="img" width="1080" height="1920" class="story-card-canvas" aria-label="Chaperone 9:16 share card preview"></canvas>
                     </div>
                 </div>
                 <div class="story-studio-controls-col">
                     <div class="story-control-group">
-                        <span class="story-control-label">Sleeve Surface</span>
-                        <div class="story-mode-toggle" role="group" aria-label="Card surface style">
-                            <button type="button" class="story-mode-btn" data-story-mode="dark" aria-pressed="true">Dark Room</button>
-                            <button type="button" class="story-mode-btn" data-story-mode="paper" aria-pressed="false">Archival Paper</button>
+                        <span class="story-control-label">BACKGROUND</span>
+                        <div class="story-mode-toggle" role="group" aria-label="Card background style">
+                            <button type="button" class="story-mode-btn" data-story-mode="paper" aria-pressed="false">LIT</button>
+                            <button type="button" class="story-mode-btn" data-story-mode="dark" aria-pressed="true">DIM</button>
                         </div>
                     </div>
+                    <div class="story-control-group story-sliders-group">
+                        <label class="story-slider-field" for="entry-story-gradient-slider">
+                            <span class="story-slider-header">
+                                <span class="story-control-label">GRADIENT</span>
+                                <span class="story-slider-value" id="entry-story-gradient-value">65%</span>
+                            </span>
+                            <input type="range" id="entry-story-gradient-slider" class="story-range-input" min="0" max="100" step="5" value="65">
+                        </label>
+                        <label class="story-slider-field" for="entry-story-cover-slider">
+                            <span class="story-slider-header">
+                                <span class="story-control-label">COVER SIZE</span>
+                                <span class="story-slider-value" id="entry-story-cover-value">80%</span>
+                            </span>
+                            <input type="range" id="entry-story-cover-slider" class="story-range-input" min="60" max="100" step="2" value="80">
+                        </label>
+                    </div>
                     <div class="story-control-group">
-                        <span class="story-control-label">Excerpt Source</span>
+                        <span class="story-control-label">QUOTE</span>
                         <div class="story-quote-chips" id="entry-story-quote-chips"></div>
-                        <textarea id="entry-story-quote-input" class="story-quote-textarea" rows="3" maxlength="320" placeholder="Optional note or excerpt on card…"></textarea>
+                        <textarea id="entry-story-quote-input" class="story-quote-textarea" rows="3" maxlength="320" placeholder="Custom quote (leave blank for none)…"></textarea>
+                    </div>
+                    <div class="story-control-group">
+                        <button type="button" class="story-watermark-toggle" id="entry-story-watermark-toggle" role="switch" aria-checked="true">
+                            <span class="story-watermark-copy">
+                                <span class="story-control-label">WATERMARK</span>
+                                <span class="story-watermark-sample">view now in Chaperone!</span>
+                            </span>
+                            <span class="story-switch-track" aria-hidden="true"><span class="story-switch-thumb"></span></span>
+                        </button>
                     </div>
                     <div class="story-modal-actions">
                         <button type="button" class="story-btn story-btn-share" id="entry-story-btn-share" disabled>Share card ↗</button>
@@ -112,5 +164,6 @@
     <script src="../scripts/gsi-context.js"></script>
     <script src="../scripts/entry-page.js?v=20260919-path"></script>
     <script src="../scripts/story-studio.js"></script>
+    <script type="module" src="../scripts/heart-feedback.js"></script>
 </body>
 </html>

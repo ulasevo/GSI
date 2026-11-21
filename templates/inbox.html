@@ -1,0 +1,87 @@
+<!-- Private Owner Inbox: authenticated Firestore heart counts, notes, and local archive sync. -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="color-scheme" content="dark light">
+    <meta name="robots" content="noindex, nofollow">
+    <link rel="icon" href="covers/GSI_favicon.svg" type="image/svg+xml">
+    <link rel="preload" href="fonts/SpaceGrotesk-VariableFont_wght.ttf" as="font" type="font/ttf" crossorigin>
+    <script>
+    (() => {
+        try {
+            const param = (new URLSearchParams(window.location.search)).get("theme");
+            const stored = localStorage.getItem("gsi-theme");
+            const choice = param || stored || "dark";
+            document.documentElement.dataset.gsiTheme = (choice === "light") ? "light" : "dark";
+        } catch {}
+    })();
+    </script>
+    <script src="scripts/theme-mode.js" defer></script>
+    <link rel="stylesheet" href="styles/gsi-tokens.css">
+    <link rel="stylesheet" href="styles/inbox.css">
+    <link rel="stylesheet" href="styles/theme-mode.css">
+    <title>Chaperone — Private Feedback Inbox</title>
+</head>
+<body class="inbox-room">
+    <main class="inbox-page" id="main-content">
+        <header class="inbox-header">
+            <a class="inbox-home-link" href="index.html">← Chaperone</a>
+            <div class="inbox-auth-controls" id="inbox-auth-controls">
+                <span class="inbox-user-email" id="inbox-user-email" hidden></span>
+                <button type="button" class="inbox-btn inbox-btn-primary" id="inbox-signin-btn">Sign in with Google</button>
+                <button type="button" class="inbox-btn" id="inbox-signout-btn" hidden>Sign out</button>
+            </div>
+        </header>
+
+        <section class="inbox-hero">
+            <p class="inbox-kicker">PRIVATE CURATOR VIEW</p>
+            <h1>Heart Feedback Inbox</h1>
+            <p class="inbox-subtitle">Private listener hearts and notes from GitHub Pages and local sessions. Counts are never shown publicly.</p>
+        </section>
+
+        <p class="inbox-status" id="inbox-status" role="status" aria-live="polite"></p>
+
+        <section class="inbox-gate" id="inbox-gate">
+            <p>Sign in with the archive owner Google account to view private heart counts and listener notes.</p>
+        </section>
+
+        <section class="inbox-dashboard" id="inbox-dashboard" hidden>
+            <div class="inbox-toolbar">
+                <div class="inbox-metrics">
+                    <div class="inbox-metric">
+                        <span class="inbox-metric-label">TOTAL HEARTS</span>
+                        <strong class="inbox-metric-value" id="metric-total-hearts">0</strong>
+                    </div>
+                    <div class="inbox-metric">
+                        <span class="inbox-metric-label">TRACKS HEARTED</span>
+                        <strong class="inbox-metric-value" id="metric-unique-tracks">0</strong>
+                    </div>
+                    <div class="inbox-metric">
+                        <span class="inbox-metric-label">NOTES LEFT</span>
+                        <strong class="inbox-metric-value" id="metric-total-notes">0</strong>
+                    </div>
+                </div>
+                <div class="inbox-actions">
+                    <button type="button" class="inbox-btn" id="inbox-refresh-btn">Refresh</button>
+                    <button type="button" class="inbox-btn inbox-btn-primary" id="inbox-sync-btn">Sync to Local Archive</button>
+                    <button type="button" class="inbox-btn" id="inbox-export-btn">Download JSON</button>
+                </div>
+            </div>
+
+            <div class="inbox-grid">
+                <section class="inbox-panel">
+                    <h2>Resonance by Track</h2>
+                    <div class="inbox-track-list" id="inbox-track-list"></div>
+                </section>
+                <section class="inbox-panel">
+                    <h2>Listener Notes</h2>
+                    <div class="inbox-notes-list" id="inbox-notes-list"></div>
+                </section>
+            </div>
+        </section>
+    </main>
+    <script type="module" src="scripts/inbox.js"></script>
+</body>
+</html>

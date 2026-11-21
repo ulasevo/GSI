@@ -84,33 +84,79 @@ h1{margin:12px 0 8px;font-size:clamp(46px,8vw,104px);line-height:.94;letter-spac
     vertical-align: middle;
 }
 .album-song--unreviewed {
-    opacity: 0.38;
-    pointer-events: none;
+    opacity: 1;
     cursor: default;
-    background: rgba(255, 255, 255, .02);
-    border-color: rgba(255, 255, 255, .08);
+    border-style: dashed;
+    border-color: rgba(255, 255, 255, .14);
+    background: rgba(255, 255, 255, .025);
+    box-shadow: none;
 }
 .album-song--unreviewed:focus-visible {
     transform: none;
-    background: rgba(255, 255, 255, .02);
+    border-color: rgba(255, 255, 255, .18);
+    background: rgba(255, 255, 255, .035);
+    box-shadow: none;
 }
 @media (hover: hover) and (pointer: fine) {
     .album-song--unreviewed:hover {
         transform: none;
-        background: rgba(255, 255, 255, .02);
+        border-color: rgba(255, 255, 255, .18);
+        background: rgba(255, 255, 255, .035);
+        box-shadow: none;
     }
 }
+.album-song--unreviewed:active {
+    transform: none;
+}
 .album-song--unreviewed .album-song-mark {
-    background: rgba(255, 255, 255, .2);
+    background: rgba(255, 255, 255, .28);
     box-shadow: none;
 }
 .album-song--unreviewed .album-song-meta span {
-    font-style: italic;
-    color: rgba(255, 255, 255, .6);
+    font-weight: 700;
+    color: rgba(255, 255, 255, .74);
 }
 .album-song--unreviewed .album-song-arc {
-    color: rgba(255, 255, 255, .4);
+    color: rgba(255, 255, 255, .48);
     text-shadow: none;
+}
+.album-request-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 38px;
+    padding: 0 14px;
+    margin-left: auto;
+    border: 1px solid color-mix(in srgb, var(--accent, #ff65ad), rgba(255, 255, 255, .45) 45%);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--accent, #ff65ad), rgba(14, 12, 20, .86) 80%);
+    color: rgba(255, 255, 255, .94);
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: transform 160ms var(--ease-out, cubic-bezier(.23,1,.32,1)), border-color 180ms ease, background-color 180ms ease, color 180ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+    .album-request-btn:hover {
+        transform: translateY(-1px);
+        border-color: color-mix(in srgb, var(--accent, #ff65ad), white 60%);
+        background: color-mix(in srgb, var(--accent, #ff65ad), rgba(14, 12, 20, .62) 60%);
+        color: #fff;
+    }
+}
+.album-request-btn:focus-visible {
+    outline: 2px solid var(--art-control, #f3d8ff);
+    outline-offset: 2px;
+    border-color: color-mix(in srgb, var(--accent, #ff65ad), white 60%);
+    background: color-mix(in srgb, var(--accent, #ff65ad), rgba(14, 12, 20, .62) 60%);
+    color: #fff;
+}
+.album-request-btn:active {
+    transform: scale(0.97);
 }
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {

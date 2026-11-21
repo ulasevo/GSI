@@ -1,8 +1,8 @@
 /*
  * Shared 9:16 Interactive Share Card Studio renderer & clipboard/share bridge
  * for Chaperone (GSI) Entry reading rooms.
- * Supports Archival Paper and Dark Room sleeves, quote section chips,
- * custom quote editing, Image-to-Clipboard (ClipboardItem), Web Share, and PNG download.
+ * Supports LIT/DIM backgrounds, background gradient intensity & locked cover size sliders,
+ * quote section chips + custom quote editor, subtle Chaperone mark, Copy Image, Web Share, and PNG download.
  */
 (() => {
   function parseHex(hex, fallback) {
@@ -31,6 +31,33 @@
     );
   }
 
+  function mixRgb(first, second, t) {
+    return first.map((c, i) => Math.round(c + (second[i] - c) * t));
+  }
+
+  function relativeLuminance(rgb) {
+    const [r, g, b] = rgb.map((v) => {
+      const c = v / 255;
+      return c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    });
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  }
+
+  function contrastRatio(first, second) {
+    const l1 = relativeLuminance(first);
+    const l2 = relativeLuminance(second);
+    return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+  }
+
+  function ensureContrast(fgRgb, bgRgb, targetRgb, minRatio) {
+    if (contrastRatio(fgRgb, bgRgb) >= minRatio) return fgRgb;
+    for (let step = 1; step <= 12; step++) {
+      const candidate = mixRgb(fgRgb, targetRgb, step / 12);
+      if (contrastRatio(candidate, bgRgb) >= minRatio) return candidate;
+    }
+    return targetRgb;
+  }
+
   function mixHex(a, b, t) {
     const ca = parseHex(a, [18, 16, 22]);
     const cb = parseHex(b, [246, 242, 234]);
@@ -44,6 +71,15 @@
   function hexToRgba(hex, alpha) {
     const [r, g, b] = parseHex(hex, [255, 101, 173]);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function syncSliderFill(slider) {
+    if (!slider || !slider.style?.setProperty) return;
+    const min = Number(slider.min ?? 0);
+    const max = Number(slider.max ?? 100);
+    const val = Number(slider.value ?? min);
+    const pct = max > min ? Math.max(0, Math.min(100, ((val - min) / (max - min)) * 100)) : 0;
+    slider.style.setProperty("--slider-pct", `${pct.toFixed(1)}%`);
   }
 
   function drawAsymmRoundRect(ctx, x, y, w, h, tl, tr, br, bl) {
@@ -118,6 +154,7 @@
     if (existing && existing.complete && existing.naturalWidth > 0) {
       return Promise.resolve(existing);
     }
+    if (typeof Image === "undefined") return Promise.resolve(null);
     return new Promise((resolve) => {
       const img = new Image();
       img.crossOrigin = "anonymous";
@@ -134,38 +171,69 @@
     const mode = options.mode === "paper" ? "paper" : "dark";
     const quote = String(options.quote || "").trim();
     const quoteLabel = String(options.quoteLabel || "").trim();
+    const showWatermark = options.watermark !== false;
+    const gradientIntensity = Math.max(0, Math.min(1, Number(options.gradientIntensity ?? 65) / 100));
+    const coverScale = Math.max(0.6, Math.min(1, Number(options.coverScale ?? 80) / 100));
+
     const tp = context.trackPalette || {};
     const primary = tp.primary || context.accent || "#ff65ad";
     const secondary = tp.secondary || "#35c9e9";
     const glow = tp.glow || primary;
     const surface = tp.surface || "#16131c";
 
-    const palette =
-      mode === "paper"
-        ? {
-            outerTop: mixHex("#14101a", surface, 0.45),
-            outerBottom: mixHex("#09070d", primary, 0.14),
-            sleeveTop: mixHex("#faf5eb", primary, 0.03),
-            sleeveMid: mixHex("#f2eadc", primary, 0.05),
-            sleeveBottom: mixHex("#e7decb", secondary, 0.06),
-            inkPrimary: "#18131d",
-            inkMuted: "#54495d",
-            accentRule: mixHex(primary, "#18131d", 0.28),
-            noteBg: "rgba(255, 253, 249, 0.72)",
-            grainStroke: "rgba(45, 32, 24, 0.03)",
-          }
-        : {
-            outerTop: mixHex("#09080d", surface, 0.52),
-            outerBottom: mixHex("#050408", primary, 0.12),
-            sleeveTop: mixHex("#18151f", surface, 0.55),
-            sleeveMid: mixHex("#121018", primary, 0.14),
-            sleeveBottom: mixHex("#0d0b12", secondary, 0.14),
-            inkPrimary: "#f7f3ec",
-            inkMuted: "rgba(247, 243, 236, 0.72)",
-            accentRule: mixHex(primary, "#ffffff", 0.18),
-            noteBg: "rgba(255, 255, 255, 0.07)",
-            grainStroke: "rgba(255, 255, 255, 0.025)",
-          };
+    const g = gradientIntensity;
+    const curve = g > 0 ? Math.pow(g, 0.85) : 0;
+    const primaryRgb = parseHex(primary, [255, 101, 173]);
+    const secondaryRgb = parseHex(secondary, [53, 201, 233]);
+    const glowRgb = parseHex(glow, primaryRgb);
+    const surfaceRgb = parseHex(surface, [22, 19, 28]);
+
+    let palette;
+    if (mode === "paper") {
+      // Lifted light-mode stops so 0% is crisp neutral ivory and 100% is a bold, vivid album wash
+      const litPrimary = mixRgb(primaryRgb, [255, 250, 245], 0.2);
+      const litGlow = mixRgb(glowRgb, [255, 248, 242], 0.14);
+      const litSecondary = mixRgb(secondaryRgb, [252, 248, 244], 0.16);
+      const sleeveTopRgb = mixRgb([249, 245, 238], litPrimary, 0.36 * curve);
+      const sleeveMidRgb = mixRgb([243, 237, 227], litGlow, 0.48 * curve);
+      const sleeveBottomRgb = mixRgb([236, 228, 214], litSecondary, 0.56 * curve);
+      const darkFallback = [18, 13, 24];
+      const inkPrimaryRgb = ensureContrast(mixRgb(surfaceRgb, darkFallback, 0.82), sleeveMidRgb, darkFallback, 8.2);
+      const inkMutedRgb = ensureContrast(mixRgb(inkPrimaryRgb, primaryRgb, 0.24), sleeveMidRgb, inkPrimaryRgb, 5.0);
+      const accentRuleRgb = ensureContrast(primaryRgb, sleeveMidRgb, inkPrimaryRgb, 3.6);
+      palette = {
+        outerTop: rgbToHex(mixRgb([20, 17, 26], primaryRgb, 0.62 * curve)),
+        outerBottom: rgbToHex(mixRgb([11, 9, 15], secondaryRgb, 0.52 * curve)),
+        sleeveTop: rgbToHex(sleeveTopRgb),
+        sleeveMid: rgbToHex(sleeveMidRgb),
+        sleeveBottom: rgbToHex(sleeveBottomRgb),
+        inkPrimary: rgbToHex(inkPrimaryRgb),
+        inkMuted: rgbToHex(inkMutedRgb),
+        accentRule: rgbToHex(accentRuleRgb),
+        noteBg: "rgba(255, 253, 249, 0.84)",
+        grainStroke: "rgba(38, 26, 20, 0.024)",
+      };
+    } else {
+      // Deep obsidian at 0% scaling to lush, unmistakable album-gradient atmosphere at 100%
+      const dimTopRgb = mixRgb([20, 17, 26], mixRgb(surfaceRgb, primaryRgb, 0.44), 0.78 * curve);
+      const dimMidRgb = mixRgb([15, 13, 21], primaryRgb, 0.54 * curve);
+      const dimBottomRgb = mixRgb([10, 9, 15], secondaryRgb, 0.62 * curve);
+      const lightInkRgb = [248, 245, 239];
+      const mutedLightRgb = ensureContrast(mixRgb(lightInkRgb, primaryRgb, 0.2), dimMidRgb, lightInkRgb, 5.4);
+      const accentLightRgb = ensureContrast(primaryRgb, dimMidRgb, [255, 204, 230], 4.4);
+      palette = {
+        outerTop: rgbToHex(mixRgb([10, 9, 14], primaryRgb, 0.68 * curve)),
+        outerBottom: rgbToHex(mixRgb([6, 5, 10], secondaryRgb, 0.56 * curve)),
+        sleeveTop: rgbToHex(dimTopRgb),
+        sleeveMid: rgbToHex(dimMidRgb),
+        sleeveBottom: rgbToHex(dimBottomRgb),
+        inkPrimary: rgbToHex(lightInkRgb),
+        inkMuted: rgbToHex(mutedLightRgb),
+        accentRule: rgbToHex(accentLightRgb),
+        noteBg: "rgba(10, 8, 16, 0.36)",
+        grainStroke: "rgba(255, 255, 255, 0.022)",
+      };
+    }
 
     ctx.clearRect(0, 0, 1080, 1920);
     const outerBg = ctx.createLinearGradient(0, 0, 1080, 1920);
@@ -174,28 +242,41 @@
     ctx.fillStyle = outerBg;
     ctx.fillRect(0, 0, 1080, 1920);
 
-    const glowWash = ctx.createRadialGradient(540, 680, 80, 540, 680, 880);
-    glowWash.addColorStop(0, hexToRgba(glow, mode === "dark" ? 0.42 : 0.28));
-    glowWash.addColorStop(1, "rgba(0,0,0,0)");
-    ctx.fillStyle = glowWash;
-    ctx.fillRect(0, 0, 1080, 1920);
+    if (curve > 0.01) {
+      const glowWash = ctx.createRadialGradient(540, 620, 60, 540, 620, 960);
+      glowWash.addColorStop(0, hexToRgba(glow, (mode === "dark" ? 0.78 : 0.64) * curve));
+      glowWash.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = glowWash;
+      ctx.fillRect(0, 0, 1080, 1920);
+
+      const cornerWash = ctx.createRadialGradient(920, 1620, 40, 920, 1620, 820);
+      cornerWash.addColorStop(0, hexToRgba(secondary, (mode === "dark" ? 0.62 : 0.48) * curve));
+      cornerWash.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = cornerWash;
+      ctx.fillRect(0, 0, 1080, 1920);
+    }
 
     const sleeve = { x: 54, y: 76, w: 972, h: 1768 };
 
     // Offset chromatic registration plates
-    ctx.fillStyle = "rgba(0, 0, 0, 0.48)";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.44)";
     drawAsymmRoundRect(ctx, sleeve.x + 12, sleeve.y + 18, sleeve.w, sleeve.h, 18, 44, 18, 44);
     ctx.fill();
 
-    ctx.fillStyle = hexToRgba(secondary, 0.48);
-    drawAsymmRoundRect(ctx, sleeve.x + 9, sleeve.y + 9, sleeve.w, sleeve.h, 18, 44, 18, 44);
-    ctx.fill();
+    if (curve > 0.01) {
+      ctx.fillStyle = hexToRgba(secondary, 0.62 * Math.max(0.25, curve));
+      drawAsymmRoundRect(ctx, sleeve.x + 9, sleeve.y + 9, sleeve.w, sleeve.h, 18, 44, 18, 44);
+      ctx.fill();
 
-    ctx.fillStyle = hexToRgba(primary, 0.56);
-    drawAsymmRoundRect(ctx, sleeve.x - 8, sleeve.y - 8, sleeve.w, sleeve.h, 18, 44, 18, 44);
-    ctx.fill();
+      ctx.fillStyle = hexToRgba(primary, 0.68 * Math.max(0.25, curve));
+      drawAsymmRoundRect(ctx, sleeve.x - 8, sleeve.y - 8, sleeve.w, sleeve.h, 18, 44, 18, 44);
+      ctx.fill();
+    }
 
-    const cover = await loadImg(context.coverSrc, ".cover-frame img.cover");
+    const [cover, logo] = await Promise.all([
+      loadImg(context.coverSrc, ".cover-frame img.cover"),
+      loadImg("../covers/GSI_favicon.svg", '.gsi-home-mark-icon img'),
+    ]);
 
     ctx.save();
     drawAsymmRoundRect(ctx, sleeve.x, sleeve.y, sleeve.w, sleeve.h, 18, 44, 18, 44);
@@ -208,10 +289,51 @@
       sleeve.y + sleeve.h
     );
     sleeveGrad.addColorStop(0, palette.sleeveTop);
-    sleeveGrad.addColorStop(0.55, palette.sleeveMid);
+    sleeveGrad.addColorStop(0.52, palette.sleeveMid);
     sleeveGrad.addColorStop(1, palette.sleeveBottom);
     ctx.fillStyle = sleeveGrad;
     ctx.fillRect(sleeve.x, sleeve.y, sleeve.w, sleeve.h);
+
+    if (curve > 0.01) {
+      const innerBloom = ctx.createRadialGradient(
+        sleeve.x + sleeve.w * 0.82,
+        sleeve.y + sleeve.h * 0.14,
+        30,
+        sleeve.x + sleeve.w * 0.82,
+        sleeve.y + sleeve.h * 0.14,
+        860
+      );
+      innerBloom.addColorStop(0, hexToRgba(primary, (mode === "dark" ? 0.54 : 0.44) * curve));
+      innerBloom.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = innerBloom;
+      ctx.fillRect(sleeve.x, sleeve.y, sleeve.w, sleeve.h);
+
+      const lowerBloom = ctx.createRadialGradient(
+        sleeve.x + sleeve.w * 0.2,
+        sleeve.y + sleeve.h * 0.86,
+        30,
+        sleeve.x + sleeve.w * 0.2,
+        sleeve.y + sleeve.h * 0.86,
+        840
+      );
+      lowerBloom.addColorStop(0, hexToRgba(secondary, (mode === "dark" ? 0.46 : 0.38) * curve));
+      lowerBloom.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = lowerBloom;
+      ctx.fillRect(sleeve.x, sleeve.y, sleeve.w, sleeve.h);
+
+      const centerSheen = ctx.createRadialGradient(
+        sleeve.x + sleeve.w * 0.52,
+        sleeve.y + sleeve.h * 0.48,
+        20,
+        sleeve.x + sleeve.w * 0.52,
+        sleeve.y + sleeve.h * 0.48,
+        660
+      );
+      centerSheen.addColorStop(0, hexToRgba(glow, (mode === "dark" ? 0.3 : 0.24) * curve));
+      centerSheen.addColorStop(1, "rgba(0,0,0,0)");
+      ctx.fillStyle = centerSheen;
+      ctx.fillRect(sleeve.x, sleeve.y, sleeve.w, sleeve.h);
+    }
 
     // Subtle horizontal texture lines
     ctx.strokeStyle = palette.grainStroke;
@@ -224,7 +346,7 @@
     ctx.stroke();
 
     // Narrow tonal spine accent on left
-    const spineW = 34;
+    const spineW = 30;
     const spineGrad = ctx.createLinearGradient(sleeve.x, sleeve.y, sleeve.x, sleeve.y + sleeve.h);
     spineGrad.addColorStop(0, primary);
     spineGrad.addColorStop(0.55, glow);
@@ -232,78 +354,91 @@
     ctx.fillStyle = spineGrad;
     ctx.fillRect(sleeve.x, sleeve.y, spineW, sleeve.h);
 
-    const contentX = sleeve.x + spineW + 56;
-    const contentRight = sleeve.x + sleeve.w - 58;
+    const contentX = sleeve.x + spineW + 64;
+    const contentRight = sleeve.x + sleeve.w - 64;
     const contentW = contentRight - contentX;
 
-    // Header bar
+    // Header: Chaperone: ulaş's music archive on left + subtle emblem on right + hairline rule
     ctx.fillStyle = primary;
-    ctx.fillRect(contentX, 142, 6, 24);
+    ctx.fillRect(contentX, 141, 5, 24);
     ctx.fillStyle = secondary;
-    ctx.fillRect(contentX + 10, 142, 6, 24);
+    ctx.fillRect(contentX + 8, 141, 5, 24);
 
     ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
     ctx.fillStyle = palette.inkPrimary;
-    ctx.font = '700 30px "Space Grotesk", Arial, sans-serif';
-    ctx.fillText("Chaperone", contentX + 28, 165);
+    ctx.font = '700 26px "Space Grotesk", Arial, sans-serif';
+    ctx.fillText("Chaperone: ulaş's music archive", contentX + 24, 161);
 
-    ctx.textAlign = "right";
-    ctx.fillStyle = palette.inkMuted;
-    ctx.font = '600 22px "Space Grotesk", Arial, sans-serif';
-    ctx.fillText(context.inP53 ? "Archive · Radio P53" : "Archive Entry", contentRight, 163);
-    ctx.textAlign = "left";
+    const markW = 30;
+    const markH = 36;
+    if (logo) {
+      ctx.save();
+      ctx.globalAlpha = mode === "paper" ? 0.34 : 0.36;
+      ctx.drawImage(logo, contentRight - markW, 134, markW, markH);
+      ctx.restore();
+    }
 
     ctx.fillStyle = hexToRgba(palette.inkPrimary, 0.16);
-    ctx.fillRect(contentX, 192, contentW, 2);
+    ctx.fillRect(contentX, 194, contentW, 1.5);
     ctx.fillStyle = palette.accentRule;
-    ctx.fillRect(contentX, 191, 118, 4);
+    ctx.fillRect(contentX, 193, 96, 3.5);
 
-    // Track / Artist / Album
+    // Track / Artist / Album with cohesive spacing
     const track = String(context.track || "").trim();
     const artist = String(context.artistName || "").trim();
     const album = String(context.album || "").trim();
 
-    let y = 266;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "top";
+
+    let y = 248;
     const trackLen = Array.from(track).length;
-    const trackSize = trackLen <= 18 ? 76 : trackLen <= 32 ? 64 : 54;
-    const trackLH = trackSize + 8;
+    const trackSize = trackLen <= 18 ? 68 : trackLen <= 32 ? 58 : 48;
+    const trackLH = trackSize + 12;
 
     ctx.fillStyle = palette.inkPrimary;
     ctx.font = `800 ${trackSize}px "Space Grotesk", Arial, sans-serif`;
     const trackLines = measureWrappedLines(ctx, track, contentW, 2).lines;
     paintLines(ctx, trackLines, contentX, y, trackLH);
-    y += Math.max(1, trackLines.length) * trackLH - 2;
+    y += Math.max(1, trackLines.length) * trackLH + 16;
 
     ctx.fillStyle = palette.inkPrimary;
-    ctx.font = '700 38px "Space Grotesk", Arial, sans-serif';
+    ctx.font = '700 36px "Space Grotesk", Arial, sans-serif';
     const artistLines = measureWrappedLines(ctx, artist, contentW, 2).lines;
     paintLines(ctx, artistLines, contentX, y, 46);
-    y += Math.max(1, artistLines.length) * 46 + 2;
+    y += Math.max(1, artistLines.length) * 46 + 8;
 
     if (album) {
       ctx.fillStyle = palette.inkMuted;
-      ctx.font = '500 28px "Space Grotesk", Arial, sans-serif';
+      ctx.font = '500 26px "Space Grotesk", Arial, sans-serif';
       const albumLines = measureWrappedLines(ctx, album, contentW, 2).lines;
       paintLines(ctx, albumLines, contentX, y, 36);
       y += Math.max(1, albumLines.length) * 36;
     }
 
-    // Cover artwork in asymmetric Chaperone window
-    const coverY = y + 26;
-    const coverMaxBottom = quote ? 1046 : 1380;
-    const coverSize = Math.min(quote ? 560 : 720, Math.max(quote ? 400 : 520, coverMaxBottom - coverY));
+    // Cover artwork strictly locked to Cover Size slider (never auto-enlarges when quote is empty)
+    const coverY = y + 48;
+    const maxCoverSize = Math.min(contentW, 640);
+    const coverSize = Math.round(maxCoverSize * coverScale);
     const coverX = contentX + Math.round((contentW - coverSize) / 2);
 
-    ctx.fillStyle = hexToRgba(secondary, 0.42);
-    drawAsymmRoundRect(ctx, coverX + 10, coverY + 10, coverSize, coverSize, 12, 38, 12, 38);
+    ctx.fillStyle = "rgba(0, 0, 0, 0.26)";
+    drawAsymmRoundRect(ctx, coverX + 4, coverY + 14, coverSize, coverSize, 12, 36, 12, 36);
     ctx.fill();
-    ctx.fillStyle = hexToRgba(primary, 0.5);
-    drawAsymmRoundRect(ctx, coverX - 7, coverY - 7, coverSize, coverSize, 12, 38, 12, 38);
-    ctx.fill();
+
+    if (curve > 0.01) {
+      ctx.fillStyle = hexToRgba(secondary, 0.48 * Math.max(0.25, curve));
+      drawAsymmRoundRect(ctx, coverX + 9, coverY + 9, coverSize, coverSize, 12, 36, 12, 36);
+      ctx.fill();
+      ctx.fillStyle = hexToRgba(primary, 0.54 * Math.max(0.25, curve));
+      drawAsymmRoundRect(ctx, coverX - 7, coverY - 7, coverSize, coverSize, 12, 36, 12, 36);
+      ctx.fill();
+    }
 
     if (cover) {
       ctx.save();
-      drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, 12, 38, 12, 38);
+      drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, 12, 36, 12, 36);
       ctx.clip();
       const iw = cover.naturalWidth || cover.width || coverSize;
       const ih = cover.naturalHeight || cover.height || coverSize;
@@ -312,71 +447,75 @@
       ctx.restore();
     } else {
       ctx.fillStyle = surface;
-      drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, 12, 38, 12, 38);
+      drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, 12, 36, 12, 36);
       ctx.fill();
     }
 
-    // Selected Review Excerpt Block
+    ctx.strokeStyle = hexToRgba(palette.inkPrimary, 0.16);
+    ctx.lineWidth = 2;
+    drawAsymmRoundRect(ctx, coverX, coverY, coverSize, coverSize, 12, 36, 12, 36);
+    ctx.stroke();
+
+    // Cohesive, symmetrically padded Quote Block
+    let watermarkY = coverY + coverSize + 36;
     if (quote) {
-      const noteTop = coverY + coverSize + 40;
-      const noteMaxBottom = 1520;
-      const availH = Math.max(160, noteMaxBottom - noteTop);
-      const isLong = Array.from(quote).length > 175;
-      const fontSize = isLong ? 38 : 42;
-      const lh = isLong ? 52 : 56;
-      const headerOffset = quoteLabel ? 46 : 16;
-      const maxLines = Math.max(3, Math.floor((availH - headerOffset - 36) / lh));
-      const textX = contentX + 32;
-      const textW = contentW - 56;
+      const noteTop = coverY + coverSize + 48;
+      const noteMaxBottom = showWatermark ? sleeve.y + sleeve.h - 148 : sleeve.y + sleeve.h - 72;
+      const availH = Math.max(150, noteMaxBottom - noteTop);
+      const isLong = Array.from(quote).length > 165;
+      const fontSize = isLong ? 34 : 38;
+      const lh = isLong ? 48 : 54;
+      const padY = 30;
+      const labelBlockH = quoteLabel ? 36 : 0;
+      const maxLines = Math.max(2, Math.floor((availH - padY * 2 - labelBlockH) / lh));
+      const textX = contentX + 36;
+      const textW = contentW - 64;
 
       ctx.font = `500 ${fontSize}px "Space Grotesk", Arial, sans-serif`;
       const measured = measureWrappedLines(ctx, quote, textW, maxLines);
-      const boxH = headerOffset + measured.lines.length * lh + 32;
+      const linesBlockH = measured.lines.length > 0
+        ? (measured.lines.length - 1) * lh + fontSize
+        : fontSize;
+      const boxH = padY * 2 + labelBlockH + linesBlockH;
 
       ctx.fillStyle = palette.noteBg;
-      drawRoundRect(ctx, contentX, noteTop, contentW, boxH, 14);
+      drawRoundRect(ctx, contentX, noteTop, contentW, boxH, 16);
       ctx.fill();
 
-      ctx.strokeStyle = hexToRgba(palette.inkPrimary, 0.14);
+      ctx.strokeStyle = hexToRgba(palette.inkPrimary, mode === "dark" ? 0.18 : 0.12);
       ctx.lineWidth = 1.5;
-      drawRoundRect(ctx, contentX, noteTop, contentW, boxH, 14);
+      drawRoundRect(ctx, contentX, noteTop, contentW, boxH, 16);
       ctx.stroke();
 
       ctx.fillStyle = palette.accentRule;
-      drawRoundRect(ctx, contentX + 12, noteTop + 14, 5, boxH - 28, 2.5);
+      drawRoundRect(ctx, contentX + 14, noteTop + padY - 2, 4, boxH - (padY - 2) * 2, 2);
       ctx.fill();
 
+      let textY = noteTop + padY;
       if (quoteLabel) {
         ctx.fillStyle = palette.accentRule;
-        ctx.font = '700 22px "Space Grotesk", Arial, sans-serif';
-        ctx.fillText(quoteLabel.toUpperCase(), textX, noteTop + 36);
+        ctx.font = '700 20px "Space Grotesk", Arial, sans-serif';
+        ctx.fillText(quoteLabel.toUpperCase(), textX, textY);
+        textY += labelBlockH;
       }
 
       ctx.fillStyle = palette.inkPrimary;
       ctx.font = `500 ${fontSize}px "Space Grotesk", Arial, sans-serif`;
-      paintLines(
-        ctx,
-        measured.lines,
-        textX,
-        noteTop + headerOffset + Math.round(fontSize * 0.85),
-        lh
-      );
+      paintLines(ctx, measured.lines, textX, textY, lh);
+      watermarkY = noteTop + boxH + 24;
     }
 
-    // Open breathing room for link sticker + editorial footer
-    ctx.fillStyle = hexToRgba(palette.inkPrimary, 0.18);
-    ctx.fillRect(contentX, 1744, contentW, 1.5);
+    // Optional faint watermark directly beneath the quote/comment
+    if (showWatermark) {
+      const clampedY = Math.min(watermarkY, sleeve.y + sleeve.h - 68);
+      ctx.fillStyle = hexToRgba(palette.inkPrimary, mode === "paper" ? 0.44 : 0.42);
+      ctx.font = '500 22px "Space Grotesk", Arial, sans-serif';
+      ctx.textAlign = "left";
+      ctx.textBaseline = "top";
+      ctx.fillText("view now in Chaperone!", contentX + 6, clampedY);
+    }
 
-    ctx.font = '600 23px "Space Grotesk", Arial, sans-serif';
-    ctx.fillStyle = palette.inkMuted;
-    ctx.textAlign = "left";
-    ctx.fillText("Genome Stability Inducer", contentX, 1790);
-
-    ctx.font = '700 24px "Space Grotesk", Arial, sans-serif';
-    ctx.textAlign = "right";
-    ctx.fillText("Chaperone", contentRight, 1790);
-    ctx.textAlign = "left";
-
+    ctx.textBaseline = "alphabetic";
     ctx.restore();
 
     ctx.strokeStyle = hexToRgba(palette.inkPrimary, 0.16);
@@ -384,7 +523,7 @@
     drawAsymmRoundRect(ctx, sleeve.x, sleeve.y, sleeve.w, sleeve.h, 18, 44, 18, 44);
     ctx.stroke();
 
-    canvas.setAttribute("aria-label", `Chaperone story card: ${track} by ${artist}`);
+    canvas.setAttribute("aria-label", `Chaperone share card: ${track} by ${artist}`);
     return true;
   }
 
@@ -422,6 +561,11 @@
     const statusNode = modal.querySelector("#entry-story-status");
     const chipsWrap = modal.querySelector("#entry-story-quote-chips");
     const quoteInput = modal.querySelector("#entry-story-quote-input");
+    const gradientSlider = modal.querySelector("#entry-story-gradient-slider");
+    const gradientValue = modal.querySelector("#entry-story-gradient-value");
+    const coverSlider = modal.querySelector("#entry-story-cover-slider");
+    const coverValue = modal.querySelector("#entry-story-cover-value");
+    const watermarkToggle = modal.querySelector("#entry-story-watermark-toggle");
     const modeButtons = [...modal.querySelectorAll("[data-story-mode]")];
 
     const sections = Array.isArray(context.sections) ? context.sections : [];
@@ -429,6 +573,9 @@
       mode: document.documentElement.dataset.gsiTheme === "light" ? "paper" : "dark",
       quote: sections[0]?.excerpt || "",
       quoteLabel: sections[0]?.title || "",
+      gradientIntensity: Number(gradientSlider?.value ?? 65),
+      coverScale: Number(coverSlider?.value ?? 80),
+      watermark: watermarkToggle ? watermarkToggle.getAttribute("aria-checked") !== "false" : true,
     };
 
     function flash(btn, text) {
@@ -450,12 +597,14 @@
       if (btnDownload) btnDownload.disabled = !ok;
     }
 
-    // Build quote section chips
+    let customChip = null;
+
+    // Build quote section chips + Custom
     if (chipsWrap) {
       chipsWrap.innerHTML = "";
       const choices = [
-        ...sections.map((s) => ({ label: s.title, text: s.excerpt || s.content || "" })),
-        { label: "No quote", text: "" },
+        ...sections.map((s) => ({ label: s.title, text: s.excerpt || s.content || "", isCustom: false })),
+        { label: "Custom", text: "", isCustom: true },
       ];
       choices.forEach((choice, idx) => {
         const chip = document.createElement("button");
@@ -463,12 +612,22 @@
         chip.className = "story-quote-chip";
         chip.textContent = choice.label;
         chip.setAttribute("aria-pressed", idx === 0 ? "true" : "false");
+        if (choice.isCustom) customChip = chip;
         chip.addEventListener("click", () => {
           chipsWrap.querySelectorAll(".story-quote-chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
           chip.setAttribute("aria-pressed", "true");
-          state.quote = choice.text;
-          state.quoteLabel = choice.text ? choice.label : "";
-          if (quoteInput) quoteInput.value = choice.text;
+          if (choice.isCustom) {
+            state.quote = "";
+            state.quoteLabel = "";
+            if (quoteInput) {
+              quoteInput.value = "";
+              quoteInput.focus();
+            }
+          } else {
+            state.quote = choice.text;
+            state.quoteLabel = choice.text ? choice.label : "";
+            if (quoteInput) quoteInput.value = choice.text;
+          }
           redraw();
         });
         chipsWrap.append(chip);
@@ -479,6 +638,42 @@
       quoteInput.value = state.quote;
       quoteInput.addEventListener("input", () => {
         state.quote = quoteInput.value;
+        state.quoteLabel = "";
+        if (chipsWrap && customChip) {
+          chipsWrap.querySelectorAll(".story-quote-chip").forEach((c) => c.setAttribute("aria-pressed", "false"));
+          customChip.setAttribute("aria-pressed", "true");
+        }
+        redraw();
+      });
+    }
+
+    if (gradientSlider) {
+      syncSliderFill(gradientSlider);
+      const updateGradient = () => {
+        state.gradientIntensity = Number(gradientSlider.value);
+        if (gradientValue) gradientValue.textContent = `${state.gradientIntensity}%`;
+        syncSliderFill(gradientSlider);
+        redraw();
+      };
+      gradientSlider.addEventListener("input", updateGradient);
+    }
+
+    if (coverSlider) {
+      syncSliderFill(coverSlider);
+      const updateCover = () => {
+        state.coverScale = Number(coverSlider.value);
+        if (coverValue) coverValue.textContent = `${state.coverScale}%`;
+        syncSliderFill(coverSlider);
+        redraw();
+      };
+      coverSlider.addEventListener("input", updateCover);
+    }
+
+    if (watermarkToggle) {
+      watermarkToggle.setAttribute("aria-checked", state.watermark ? "true" : "false");
+      watermarkToggle.addEventListener("click", () => {
+        state.watermark = !state.watermark;
+        watermarkToggle.setAttribute("aria-checked", state.watermark ? "true" : "false");
         redraw();
       });
     }
@@ -497,7 +692,7 @@
     trigger.addEventListener("click", async () => {
       if (typeof modal.showModal === "function") {
         modal.showModal();
-        if (statusNode) statusNode.textContent = "Rendering 9:16 card…";
+        if (statusNode) statusNode.textContent = "Preparing card…";
         await redraw();
         if (statusNode) statusNode.textContent = "";
       }

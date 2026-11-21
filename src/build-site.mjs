@@ -293,14 +293,15 @@ async function buildEntryPage(item, artistCounts, albumPages, { base, config, tp
     const noteExcerptHtml = noteExcerpt
       ? `<p class="p53-card-note">${escapeHtml(noteExcerpt)}</p>`
       : "";
-    const { style: p53Style } = await p53ArtContext(config, base);
+    const { palette: p53Palette } = await p53ArtContext(config, base);
     const p53ImgSize = await imageSizeAttrs(path.join(base, "covers", "P53_cover-runtime.webp"));
+    const p53Primary = p53Palette.primary || "#ff65ad";
     p53CounterpartHtml =
       `<a class="p53-counterpart p53-card-companion" ` +
       `data-base-href="../p53/${escapeHtml(item.slug, true)}.html" ` +
       `href="../p53/${escapeHtml(item.slug, true)}.html" ` +
       `aria-label="${escapeHtml(`Radio P53: ${item.track}`, true)}" ` +
-      `style="${escapeHtml(p53Style, true)}">` +
+      `style="--p53-accent:${escapeHtml(p53Primary, true)};">` +
       `<div class="p53-card-art"><img src="../covers/P53_cover-runtime.webp" alt="Radio P53 artwork" loading="lazy" decoding="async" ${p53ImgSize}></div>` +
       `<div class="p53-card-body"><span class="p53-card-kicker">RADIO P53</span><strong class="p53-card-title">${escapeHtml(item.track)}</strong>${noteExcerptHtml}</div>` +
       `<span class="p53-card-cta" aria-hidden="true">↗</span></a>`;
@@ -764,6 +765,22 @@ async function buildArtistPages(artistGroups, { base, config, tplOpts, outputDir
 async function buildAlbumPages(archiveTracks, artistGroups, albumRoutes, { base, config, tplOpts, outputDir }) {
   await fsp.mkdir(outputDir, { recursive: true });
   const notes = config.album_notes || {};
+  let albumTracklists = {};
+  const tracklistsPath = path.join(base, "data", "album_tracklists.json");
+  if (fs.existsSync(tracklistsPath)) {
+    try {
+      albumTracklists = JSON.parse(await fsp.readFile(tracklistsPath, "utf-8"));
+    } catch {
+      albumTracklists = {};
+    }
+  }
+  const normalizeTrackTitle = (value) =>
+    String(value || "")
+      .toLowerCase()
+      .replace(/\s*\((feat\.|ft\.|with|remaster|bonus|deluxe|edit|version)[^)]*\)/gi, "")
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+
   const grouped = new Map();
   for (const item of archiveTracks) {
     const k = albumKey(item.artist, item.album);
@@ -798,10 +815,23 @@ async function buildAlbumPages(archiveTracks, artistGroups, albumRoutes, { base,
       ? `<img class="album-cover" src="../covers/${escapeHtml(cover, true)}" alt="${escapeHtml(album, true)} cover" loading="eager" fetchpriority="high" decoding="async" ${await imageSizeAttrs(path.join(base, "covers", cover))}>`
       : '<div class="cover-missing album-cover" aria-hidden="true"></div>';
 
+    const cachedTracklist = albumTracklists[`${artist}::${album}`] || null;
+    const trackByNum = new Map();
+    if (cachedTracklist && Array.isArray(cachedTracklist.tracks)) {
+      for (const entry of cachedTracklist.tracks) {
+        const num = Number(entry.track_number);
+        if (Number.isInteger(num) && num > 0 && !trackByNum.has(num)) {
+          trackByNum.set(num, entry);
+        }
+      }
+    }
+
     const trackCounts = items
       .map((i) => Number(i.track_count))
       .filter((n) => Number.isInteger(n) && n > 0);
-    const totalTracks = trackCounts.length ? Math.max(...trackCounts) : 0;
+    const enrichedMax = trackCounts.length ? Math.max(...trackCounts) : 0;
+    const cachedCount = trackByNum.size ? Math.max(Number(cachedTracklist.track_count) || 0, ...trackByNum.keys()) : 0;
+    const totalTracks = Math.max(cachedCount, enrichedMax);
     const archivedBadgeHtml =
       totalTracks > 0
         ? ` · <span class="album-archived-badge">${items.length} / ${totalTracks} ARCHIVED</span>`
@@ -810,10 +840,22 @@ async function buildAlbumPages(archiveTracks, artistGroups, albumRoutes, { base,
     const reviewedByNum = new Map();
     const unassignedItems = [];
     for (const item of items) {
-      const n = Number(item.track_number);
-      if (Number.isInteger(n) && n > 0) {
-        if (!reviewedByNum.has(n)) reviewedByNum.set(n, []);
-        reviewedByNum.get(n).push(item);
+      const targetNorm = normalizeTrackTitle(item.track);
+      let matchedNum = null;
+      if (trackByNum.size && targetNorm) {
+        for (const [num, entry] of trackByNum.entries()) {
+          const entryNorm = normalizeTrackTitle(entry.title);
+          if (entryNorm && (entryNorm === targetNorm || entryNorm.startsWith(`${targetNorm} `) || targetNorm.startsWith(`${entryNorm} `))) {
+            matchedNum = num;
+            break;
+          }
+        }
+      }
+      const fallbackNum = Number(item.track_number);
+      const resolvedNum = matchedNum || (Number.isInteger(fallbackNum) && fallbackNum > 0 ? fallbackNum : null);
+      if (resolvedNum) {
+        if (!reviewedByNum.has(resolvedNum)) reviewedByNum.set(resolvedNum, []);
+        reviewedByNum.get(resolvedNum).push(item);
       } else {
         unassignedItems.push(item);
       }
@@ -839,11 +881,22 @@ async function buildAlbumPages(archiveTracks, artistGroups, albumRoutes, { base,
             );
           }
         } else {
-          const arcBadge = `<small class="album-song-arc">TRACK ${String(t).padStart(2, "0")} OF ${String(totalTracks).padStart(2, "0")} · UNREVIEWED</small>`;
+          const trackInfo = trackByNum.get(t) || null;
+          const missingTitle = trackInfo && trackInfo.title ? trackInfo.title : `Track ${String(t).padStart(2, "0")}`;
+          const missingUrl =
+            (trackInfo && trackInfo.url) ||
+            (cachedTracklist && cachedTracklist.collection_url) ||
+            `https://music.apple.com/us/search?term=${encodeURIComponent(`${artist} ${missingTitle}`)}`;
+          const requestParams = new URLSearchParams();
+          requestParams.set("link", missingUrl);
+          requestParams.set("track", `${missingTitle} — ${artist}`);
+          const requestHref = `../recommend.html?${requestParams.toString()}`;
+          const arcBadge = `<small class="album-song-arc">TRACK ${String(t).padStart(2, "0")} OF ${String(totalTracks).padStart(2, "0")} · NOT YET ARCHIVED</small>`;
           songLinks.push(
             `<div class="album-song album-song--unreviewed">` +
               `<span class="album-song-mark" aria-hidden="true"></span>` +
-              `<div class="album-song-meta"><span>Track ${String(t).padStart(2, "0")}</span>${arcBadge}</div>` +
+              `<div class="album-song-meta"><span>${escapeHtml(missingTitle)}</span>${arcBadge}</div>` +
+              `<a class="album-request-btn" data-request-base-href="${escapeHtml(requestHref, true)}" href="${escapeHtml(requestHref, true)}" aria-label="${escapeHtml(`Request ${missingTitle} by ${artist}`, true)}">REQUEST</a>` +
               `</div>`
           );
         }
@@ -1249,6 +1302,30 @@ async function writeManifests(archiveTracks, artistGroups, inventory, { base, co
     ) + "\n",
     "utf-8"
   );
+
+  // Copy public Firebase web client configuration into site/data/firebase-config.json
+  const fbConfigSrc = path.join(base, "firebase-applet-config.json");
+  if (fs.existsSync(fbConfigSrc)) {
+    try {
+      const raw = JSON.parse(await fsp.readFile(fbConfigSrc, "utf-8"));
+      const publicConfig = {
+        projectId: raw.projectId || "",
+        appId: raw.appId || "",
+        apiKey: raw.apiKey || "",
+        authDomain: raw.authDomain || "",
+        storageBucket: raw.storageBucket || "",
+        messagingSenderId: raw.messagingSenderId || "",
+        firestoreDatabaseId: raw.firestoreDatabaseId || "",
+      };
+      await fsp.writeFile(
+        path.join(siteDataDir, "firebase-config.json"),
+        JSON.stringify(publicConfig, null, 2) + "\n",
+        "utf-8"
+      );
+    } catch {
+      // Skip if firebase-applet-config.json is unreadable
+    }
+  }
 }
 
 export async function buildSite(base = BASE) {
@@ -1386,6 +1463,15 @@ export async function buildSite(base = BASE) {
     renderTemplate("recommend.html", {}, tplOpts),
     "utf-8"
   );
+
+  const inboxTplPath = path.join(base, "templates", "inbox.html");
+  if (fs.existsSync(inboxTplPath)) {
+    await fsp.writeFile(
+      path.join(siteDir, "inbox.html"),
+      renderTemplate("inbox.html", {}, tplOpts),
+      "utf-8"
+    );
+  }
 
   console.log(
     `[Chaperone] Built site: ${archiveTracks.length} archive signals, ${tracks.length} entries, ${artistGroups.size} artists, ${Object.keys(inventory.album_routes).length} albums, ${p53History.length} P53 transmissions.`

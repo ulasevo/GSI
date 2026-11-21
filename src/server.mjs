@@ -30,6 +30,7 @@ const ENTRIES_DIR = path.join(BASE, "entries");
 const EDITOR_DIR = path.join(BASE, "tools", "editor");
 const INBOX_DIR = path.join(BASE, "submissions", "inbox");
 const DRAFTS_DIR = path.join(BASE, "submissions", "drafts");
+const HEARTS_SYNC_FILE = path.join(BASE, "submissions", "hearts-sync.json");
 
 const SUPPORTED_PROVIDERS = new Set([
   "music.apple.com",
@@ -343,6 +344,55 @@ async function startServer() {
       return res.status(200).json(result);
     } catch (err) {
       return res.status(400).json({ error: err?.message || "publish failed" });
+    }
+  });
+
+  // Private Heart Feedback local sync (from Firebase Owner Inbox -> local submissions/hearts-sync.json)
+  app.get("/api/hearts/sync", guardPrivateAuth, async (_req, res) => {
+    try {
+      if (!fs.existsSync(HEARTS_SYNC_FILE)) {
+        return res.json({ schema: 1, syncedAt: null, count: 0, records: [] });
+      }
+      const raw = JSON.parse(await fsp.readFile(HEARTS_SYNC_FILE, "utf-8"));
+      return res.json(raw);
+    } catch {
+      return res.status(500).json({ error: "Could not read local hearts sync snapshot." });
+    }
+  });
+
+  app.post("/api/hearts/sync", guardPrivateAuth, async (req, res) => {
+    const body = req.body;
+    if (!body || typeof body !== "object" || !Array.isArray(body.records)) {
+      return res.status(400).json({ error: "Expected a payload with a records array." });
+    }
+    const cleanRecords = body.records.slice(0, 5000).map((r) => ({
+      id: String(r?.id || "").slice(0, 180),
+      slug: String(r?.slug || "").slice(0, 160),
+      pageKind: r?.pageKind === "p53" ? "p53" : "entry",
+      track: String(r?.track || "").slice(0, 180),
+      artist: String(r?.artist || "").slice(0, 140),
+      note: String(r?.note || "").slice(0, 600),
+      senderName: String(r?.senderName || "").slice(0, 80),
+      createdAt: r?.createdAt || null,
+      updatedAt: r?.updatedAt || null,
+    }));
+    const snapshot = {
+      schema: 1,
+      syncedAt: new Date().toISOString(),
+      count: cleanRecords.length,
+      records: cleanRecords,
+    };
+    try {
+      await fsp.mkdir(path.dirname(HEARTS_SYNC_FILE), { recursive: true });
+      await fsp.writeFile(HEARTS_SYNC_FILE, JSON.stringify(snapshot, null, 2) + "\n", "utf-8");
+      return res.status(200).json({
+        status: "synced",
+        count: cleanRecords.length,
+        syncedAt: snapshot.syncedAt,
+        file: "submissions/hearts-sync.json",
+      });
+    } catch (err) {
+      return res.status(500).json({ error: err?.message || "Could not write local hearts sync file." });
     }
   });
 

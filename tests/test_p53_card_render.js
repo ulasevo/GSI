@@ -15,7 +15,7 @@ function hexLuminance(hex) {
   return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2];
 }
 
-async function render({ track, artistName = "Matt Maeson", album = "A Quiet And Harmless Living", signalLabel = "ACTIVE", note, trackPalette, routeQuery = "" } = {}) {
+async function render({ track, artistName = "Matt Maeson", album = "A Quiet And Harmless Living", signalLabel = "ACTIVE", note, trackPalette, routeQuery = "", watermarkChecked = "true" } = {}) {
   const painted = [];
   const drawnImages = [];
   const gradientStops = [];
@@ -115,6 +115,11 @@ async function render({ track, artistName = "Matt Maeson", album = "A Quiet And 
     "#story-btn-download": downloadBtn,
     "#story-status": status,
     "#story-card-canvas": canvas,
+    "#story-watermark-toggle": {
+      getAttribute: (name) => (name === "aria-checked" ? watermarkChecked : null),
+      setAttribute() {},
+      addEventListener() {},
+    },
     ".protein-panel img": proteinImage,
     ".signal-cover": albumImage,
   };
@@ -186,9 +191,9 @@ async function render({ track, artistName = "Matt Maeson", album = "A Quiet And 
   assert.ok(card.entryCounterpart.href.includes("filter=bassline") && card.entryCounterpart.href.includes("artist=matt-maeson"), "entry companion card forwards route params");
   assert.ok(card.albumLink.href.includes("filter=bassline") && card.albumLink.href.includes("artist=matt-maeson"), "album link forwards route params");
 
-  // Authentic GSI wording and absence of synthetic boilerplate
+  // Authentic wording and absence of removed Active/footer/boilerplate copy
   assert.ok(card.painted.some(({ text }) => text === "Radio P53"));
-  assert.ok(card.painted.some(({ text }) => text === "Active"));
+  assert.ok(!card.painted.some(({ text }) => text === "Active" || text === "Previous"), "Active/Previous status badge is removed from card");
   assert.ok(card.painted.some(({ text }) => text === "Matt Maeson"));
   const albumEntry = card.painted.find(({ text }) => text.includes("Quiet And Harmless"));
   assert.ok(albumEntry && card.painted.some(({ text }) => text.includes("Living")), "album original casing is preserved across wrapped lines");
@@ -212,11 +217,11 @@ async function render({ track, artistName = "Matt Maeson", album = "A Quiet And 
   const noteEntry = card.painted.find(({ text }) => text.includes("such a strong vocal"));
   assert.ok(noteEntry, "transmission note is painted");
   const noteSizeMatch = noteEntry.font.match(/(\d+)px/);
-  assert.ok(noteSizeMatch && Number(noteSizeMatch[1]) >= 40, "transmission note uses enlarged legible typography");
+  assert.ok(noteSizeMatch && Number(noteSizeMatch[1]) >= 36, "transmission note uses legible typography");
   const noteLum = hexLuminance(noteEntry.fillStyle);
   assert.ok(noteLum !== null && noteLum < 0.15, "note uses dark high-contrast archival ink even when trackPalette.ink is light");
 
-  // Paper sleeve geometry: Track/Artist/Album ABOVE cover; P53 protein in left spine strip; Note BELOW cover; open bottom breathing room
+  // Paper sleeve geometry: Track/Artist/Album ABOVE cover; P53 protein in left spine strip; Note BELOW cover; no bottom footer
   const coverDraws = card.drawnImages.filter(d => d.img === card.albumImage);
   assert.equal(coverDraws.length, 1, "album cover is drawn once inside the sleeve window");
   const [, , , , coverDx, coverDy, coverDw, coverDh] = coverDraws[0].args;
@@ -236,9 +241,27 @@ async function render({ track, artistName = "Matt Maeson", album = "A Quiet And 
     assert.ok(Math.abs((sw / sh) - (dw / dh)) < 0.05, "P53 spine slices preserve natural aspect ratio");
   }
 
-  const footerEntries = card.painted.filter(({ text, y }) => text === "Radio P53" && y > 1700);
-  assert.equal(footerEntries.length, 1, "bottom footer Radio P53 mark exists");
-  assert.ok(footerEntries[0].y - noteEntry.y >= 300, "quiet open breathing room remains above bottom footer for link sticker");
+  const footerEntries = card.painted.filter(({ y }) => y > 1700);
+  assert.equal(footerEntries.length, 0, "bottom footer clutter is removed from card");
+
+  // Cover size remains locked when there is no note (does not auto-enlarge)
+  const noNoteCard = await render({
+    track: "Stubborn As Religion",
+    note: "",
+    trackPalette: {
+      primary: "#0287ac",
+      secondary: "#053655",
+      glow: "#036b8e",
+      field: "#3aacc0",
+      soft: "#5fb5c8",
+      surface: "#0b2c3a",
+      ink: "#f8f5ef",
+    },
+  });
+  const noNoteCoverDraws = noNoteCard.drawnImages.filter(d => d.img === noNoteCard.albumImage);
+  assert.equal(noNoteCoverDraws.length, 1);
+  assert.equal(noNoteCoverDraws[0].args[6], coverDw, "cover width stays locked when note is empty");
+  assert.equal(noNoteCoverDraws[0].args[7], coverDh, "cover height stays locked when note is empty");
 
   // Original lowercase casing preserved & minimal fallback without trackPalette
   const lowercaseCard = await render({
@@ -250,31 +273,40 @@ async function render({ track, artistName = "Matt Maeson", album = "A Quiet And 
   });
   assert.ok(lowercaseCard.painted.some(({ text }) => text === "mangetout"), "original lowercase track casing is preserved");
   assert.ok(!lowercaseCard.painted.some(({ text }) => text === "MANGETOUT"), "track title is never uppercased");
-  assert.ok(lowercaseCard.painted.some(({ text }) => text === "Previous"), "previous factor status label is painted");
-
-  const legacyActiveCard = await render({
-    track: "Secret Door",
-    artistName: "Arctic Monkeys",
-    album: "Humbug",
-    signalLabel: "CURRENT TRANSMISSION",
-    note: "parade of fools",
-  });
-  assert.ok(legacyActiveCard.painted.some(({ text }) => text === "Active"), "legacy CURRENT TRANSMISSION maps cleanly to Active");
+  assert.ok(!lowercaseCard.painted.some(({ text }) => text === "Previous"), "Previous status label is not rendered");
 
   // Long text ellipsis & bounds check
   const long = await render({ track: "A".repeat(120), note: "A ".repeat(250) });
   assert.ok(long.painted.some(({ text }) => text.endsWith("…")), "long text is visibly abbreviated");
   assert.ok(long.painted.every(({ y }) => y < 1920), "text remains on the card");
 
+  // Optional watermark renders directly beneath note when ON and omits cleanly when OFF
+  const watermarkEntry = card.painted.find(({ text }) => text === "view now in Chaperone!");
+  assert.ok(watermarkEntry, "watermark renders when enabled");
+  assert.ok(watermarkEntry.y > noteEntry.y && watermarkEntry.y < 1700, "watermark sits directly beneath the note");
+
+  const noWatermarkCard = await render({
+    track: "Stubborn As Religion",
+    note: "such a strong vocal, this man",
+    watermarkChecked: "false",
+  });
+  assert.ok(!noWatermarkCard.painted.some(({ text }) => text === "view now in Chaperone!"), "watermark omits cleanly when toggled off");
+
   // Template & vars touch-up invariants
   const landingTpl = fs.readFileSync(path.join(__dirname, "../templates/p53-landing.html"), "utf8");
   const factorTpl = fs.readFileSync(path.join(__dirname, "../templates/p53-transmission.html"), "utf8");
+  const entryTpl = fs.readFileSync(path.join(__dirname, "../templates/entry.html"), "utf8");
+  const entryStudioJs = fs.readFileSync(path.join(__dirname, "../web/scripts/story-studio.js"), "utf8");
   const varsCss = fs.readFileSync(path.join(__dirname, "../web/styles/p53-transmission-vars.css"), "utf8");
   assert.ok(landingTpl.includes('class="p53-path floating-path"') && landingTpl.includes('data-gsi-mark="favicon-slot"'));
   assert.ok(!landingTpl.includes("→ RADIO P53"));
   assert.ok(factorTpl.includes('class="p53-trace floating-path"') && factorTpl.includes('data-gsi-mark="favicon-slot"'));
   assert.ok(!factorTpl.includes("trace-current") && !factorTpl.includes("@@SIGNAL_LABEL@@"));
+  assert.ok(factorTpl.includes(">Share Card<") && !factorTpl.includes("9:16 Story Studio") && !factorTpl.includes("Some apps don't include"));
+  assert.ok(factorTpl.includes('id="story-watermark-toggle"') && factorTpl.includes('class="p53-corner-actions"'));
+  assert.ok(entryTpl.includes('id="entry-story-watermark-toggle"') && entryTpl.includes('class="entry-title-row"') && entryTpl.includes('id="heart-trigger"'));
+  assert.ok(entryStudioJs.includes("Chaperone: ulaş's music archive") && entryStudioJs.includes("view now in Chaperone!"));
   assert.ok(!varsCss.includes("signal-panel::before") && !varsCss.includes("--signal-label"));
 
-  console.log("P53 card: paper-sleeve geometry, palette, casing, long-text and ready-state paths passed");
+  console.log("P53 card: sleeve geometry, locked cover size, palette, watermark, casing, long-text and ready-state paths passed");
 })().catch((error) => { console.error(error); process.exitCode = 1; });

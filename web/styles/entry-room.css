@@ -1517,44 +1517,45 @@ body.entry-room .p53-counterpart.p53-card-companion {
     width: 100%;
     box-sizing: border-box;
     margin: 18px 0 0;
-    padding: 14px 18px;
-    border: 1px solid color-mix(in srgb, var(--art-control, var(--p53-accent, #ff65ad)), transparent 42%);
-    border-radius: 14px;
+    padding: 16px 20px;
+    border: 1px solid color-mix(in srgb, var(--room-ink), var(--room-field) 70%);
+    border-top: 3px solid color-mix(in srgb, var(--room-accent, var(--art-control, var(--accent))), var(--room-field) 28%);
+    border-radius: 16px;
     background:
-        var(--art-rim-gradient, none),
-        linear-gradient(125deg,
-            color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-primary, #ff65ad) 22%),
-            color-mix(in srgb, var(--art-dark-surface, #17151b), var(--art-secondary, #35c9e9) 14%));
-    color: var(--art-dark-ink, #f8f5ef);
+        var(--art-section-rim-gradient, var(--art-rim-gradient, none)),
+        linear-gradient(135deg,
+            color-mix(in srgb, var(--room-left, var(--room-field)), var(--room-field) 54%),
+            color-mix(in srgb, var(--room-field), white 10%) 48%,
+            color-mix(in srgb, var(--room-right, var(--room-field)), var(--room-field) 58%));
+    background-blend-mode: soft-light, normal;
+    color: var(--room-ink, var(--art-dark-ink, #f8f5ef));
     font-size: 14px;
     font-weight: 400;
     letter-spacing: 0;
     text-decoration: none;
     overflow: hidden;
     box-shadow:
-        0 18px 44px rgba(0, 0, 0, .28),
-        0 0 22px color-mix(in srgb, #35c9e9, transparent 84%),
-        0 0 18px color-mix(in srgb, #ff58a6, transparent 86%),
-        inset 0 1px 0 rgba(255, 255, 255, .08);
+        inset 0 1px 0 color-mix(in srgb, var(--room-ink), transparent 86%),
+        0 18px 44px color-mix(in srgb, var(--room-field), black 24%);
     transition: transform 220ms var(--ease-out, cubic-bezier(.23,1,.32,1)), border-color 180ms ease, box-shadow 220ms ease;
 }
 
 body.entry-room .p53-counterpart.p53-card-companion:focus-visible {
     transform: translateY(-2px);
-    border-color: var(--art-control, #f3d8ff);
+    border-color: color-mix(in srgb, var(--room-accent, var(--art-control, #f3d8ff)), var(--room-ink) 28%);
+    border-top-color: var(--room-accent, var(--art-control, #f3d8ff));
     box-shadow:
-        0 22px 52px rgba(0, 0, 0, .36),
-        0 0 28px color-mix(in srgb, #35c9e9, transparent 72%),
-        0 0 24px color-mix(in srgb, #ff58a6, transparent 74%);
+        inset 0 1px 0 color-mix(in srgb, var(--room-ink), transparent 80%),
+        0 22px 52px color-mix(in srgb, var(--room-field), black 34%);
 }
 @media (hover: hover) and (pointer: fine) {
     body.entry-room .p53-counterpart.p53-card-companion:hover {
         transform: translateY(-2px);
-        border-color: var(--art-control, #f3d8ff);
+        border-color: color-mix(in srgb, var(--room-accent, var(--art-control, #f3d8ff)), var(--room-ink) 28%);
+        border-top-color: var(--room-accent, var(--art-control, #f3d8ff));
         box-shadow:
-            0 22px 52px rgba(0, 0, 0, .36),
-            0 0 28px color-mix(in srgb, #35c9e9, transparent 72%),
-            0 0 24px color-mix(in srgb, #ff58a6, transparent 74%);
+            inset 0 1px 0 color-mix(in srgb, var(--room-ink), transparent 80%),
+            0 22px 52px color-mix(in srgb, var(--room-field), black 34%);
     }
 }
 
@@ -1563,7 +1564,7 @@ body.entry-room .p53-card-companion .p53-card-art {
     height: 76px;
     border-radius: 10px;
     overflow: hidden;
-    border: 1px solid color-mix(in srgb, var(--art-control, var(--p53-accent, #ff65ad)), transparent 42%);
+    border: 1px solid color-mix(in srgb, var(--room-ink), var(--room-field) 66%);
     background: rgba(16, 13, 21, .84);
 }
 
@@ -1751,7 +1752,8 @@ body.entry-room .p53-card-companion:focus-visible .p53-card-cta {
         line-height: .94;
     }
     body.art-room .sections,
-    body.art-room .also-appears {
+    body.art-room .also-appears,
+    body.entry-room .p53-counterpart.p53-card-companion {
         max-width: 1120px;
         margin-inline: auto;
     }

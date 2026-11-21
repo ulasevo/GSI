@@ -33,12 +33,32 @@
   const providerFor = (value) => {
     try {
       const url = new URL(value);
+      if (url.protocol !== "https:" && url.protocol !== "http:") return null;
       const host = url.hostname.toLowerCase().replace(/^www\./, "");
       return [...supportedProviders.entries()].find(([domain]) => host === domain || host.endsWith(`.${domain}`))?.[1] || null;
     } catch {
       return null;
     }
   };
+
+  function prefillFromQuery() {
+    const params = new URLSearchParams(window.location.search);
+    const incomingLink = (params.get("link") || "").trim();
+    const incomingTrack = (params.get("track") || "").trim();
+    const linkInput = document.querySelector("#recommend-link");
+    const noteInput = document.querySelector("#recommend-note");
+    if (!linkInput || !incomingLink) return;
+    if (!providerFor(incomingLink)) return;
+    linkInput.value = incomingLink;
+    if (incomingTrack) {
+      setStatus(`Link ready for “${incomingTrack}”. Add a short note to send the request.`, "");
+    } else {
+      setStatus("Link pre-filled. Add a short note to send the request.", "");
+    }
+    if (noteInput) noteInput.focus();
+  }
+
+  prefillFromQuery();
 
   function downloadPendingSignal(data) {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });

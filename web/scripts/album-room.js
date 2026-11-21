@@ -40,6 +40,16 @@
     document.querySelectorAll("[data-entry-base-href]").forEach(link => {
       link.href = GSIContext.href(link.dataset.entryBaseHref, entryParams);
     });
+
+    document.querySelectorAll("[data-request-base-href]").forEach(link => {
+      const baseHref = link.dataset.requestBaseHref || "";
+      const [pathPart, queryPart = ""] = baseHref.split("?");
+      const merged = new URLSearchParams(queryPart);
+      roomParams.forEach((value, key) => {
+        if (!merged.has(key)) merged.set(key, value);
+      });
+      link.href = GSIContext.href(pathPart, merged);
+    });
   }
 
   syncLinks();
