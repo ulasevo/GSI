@@ -4,33 +4,36 @@ plugins {
 }
 
 val archiveRoot = rootProject.projectDir.parentFile
-val reviewAssetsDir = layout.buildDirectory.dir("generated/gsi-review-assets")
-val reviewAsset = reviewAssetsDir.map { it.file("data/reviews.json") }
 val nodeSyncScript = File(archiveRoot, "src/android-sync.mjs")
 
 val syncAndroidArchive = tasks.register<Exec>("syncAndroidArchive") {
-    val siteCatalog = File(archiveRoot, "site/data/catalog.json")
-    onlyIf { siteCatalog.isFile && nodeSyncScript.isFile }
-    workingDir(archiveRoot)
-    commandLine("node", nodeSyncScript.absolutePath, "--sync-assets", "--root", archiveRoot.absolutePath)
+    val rootDirFile = archiveRoot
+    val scriptFile = nodeSyncScript
+    val siteCatalog = File(rootDirFile, "site/data/catalog.json")
+    enabled = siteCatalog.isFile && scriptFile.isFile
+    workingDir(rootDirFile)
+    commandLine("node", scriptFile.absolutePath, "--sync-assets", "--root", rootDirFile.absolutePath)
 }
 
 val exportAndroidReviews = tasks.register<Exec>("exportAndroidReviews") {
     dependsOn(syncAndroidArchive)
+    val rootDirFile = archiveRoot
+    val scriptFile = nodeSyncScript
     val catalog = file("src/main/assets/data/catalog.json")
-    val entries = File(archiveRoot, "entries")
-    onlyIf { catalog.isFile && nodeSyncScript.isFile }
+    val entries = File(rootDirFile, "entries")
+    val reviewsOut = file("src/main/assets/data/reviews.json")
+    enabled = catalog.isFile && scriptFile.isFile && entries.isDirectory
     inputs.file(catalog)
     inputs.files(fileTree(entries) { include("*.md") })
-    inputs.file(nodeSyncScript)
-    outputs.file(reviewAsset)
-    workingDir(archiveRoot)
+    inputs.file(scriptFile)
+    outputs.file(reviewsOut)
+    workingDir(rootDirFile)
     commandLine(
-        "node", nodeSyncScript.absolutePath,
+        "node", scriptFile.absolutePath,
         "--export-reviews",
         "--catalog", catalog.absolutePath,
         "--entries", entries.absolutePath,
-        "--output", reviewAsset.get().asFile.absolutePath
+        "--output", reviewsOut.absolutePath
     )
 }
 
@@ -65,7 +68,6 @@ android {
     buildFeatures {
         compose = true
     }
-    sourceSets.getByName("main").assets.srcDir(reviewAssetsDir.get().asFile)
 }
 
 tasks.named("preBuild") { dependsOn(exportAndroidReviews) }
