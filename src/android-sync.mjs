@@ -12,12 +12,63 @@ import fsp from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-import {
-  currentP53Slug,
-  extractSectionsFromMarkdown,
-  loadConfig,
-  slugify,
-} from "./gsi-core.mjs";
+function slugify(text) {
+  return String(text || "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function loadConfig(configFile) {
+  return JSON.parse(fs.readFileSync(configFile, "utf-8"));
+}
+
+function currentP53Slug(config, p53History) {
+  const currentId = String(config.p53_current_signal_id || "").trim();
+  if (currentId) {
+    const match = p53History.find(
+      (item) => String(item.signal_id || "").trim() === currentId
+    );
+    if (match) return String(match.slug || "");
+  }
+  const slug = String(config.p53_current_slug || "").trim();
+  if (slug) {
+    const match = p53History.find((item) => item.slug === slug);
+    if (match) return String(match.slug || "");
+  }
+  return "";
+}
+
+function extractSectionsFromMarkdown(entryPath) {
+  let text = fs.readFileSync(entryPath, "utf-8");
+  text = text.replace(/<!--[\s\S]*?-->/g, "");
+  if (text.startsWith("---")) {
+    const secondIdx = text.indexOf("---", 3);
+    if (secondIdx !== -1) {
+      text = text.slice(secondIdx + 3);
+    }
+  }
+  text = text.replace(/!\[cover\]\(.*?\)/g, "");
+  text = text.replace(/\*\*Album:\*\*.*/g, "");
+  text = text.replace(/\*\*Accent:\*\*.*/g, "");
+  text = text.replace(/^# .*$/gm, "");
+
+  const regex = /^## (.+)$/gm;
+  const matches = [...text.matchAll(regex)];
+  if (!matches.length) {
+    return [{ title: "Note", content: text.trim() }];
+  }
+  const sections = [];
+  for (let i = 0; i < matches.length; i++) {
+    const match = matches[i];
+    const title = match[1].trim();
+    const start = match.index + match[0].length;
+    const end = i + 1 < matches.length ? matches[i + 1].index : text.length;
+    sections.push({ title, content: text.slice(start, end).trim() });
+  }
+  return sections;
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
