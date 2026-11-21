@@ -5,47 +5,24 @@ import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.os.VibratorManager
+import android.provider.Settings
 
 /**
- * Direct hardware haptics engine for Android.
- * Leverages the Pixel's linear resonant actuator for crisp physical clicks and ticks.
+ * Choreographed Pixel linear resonant actuator (LRA) haptics for Chaperone.
+ * Respects system haptic feedback settings and cancels cleanly before firing.
  */
 object HapticHelper {
 
-    fun click(context: Context) {
-        try {
-            val vibrator = getVibrator(context) ?: return
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(25)
-            }
-        } catch (_: Exception) {}
-    }
-
-    fun tick(context: Context) {
-        try {
-            val vibrator = getVibrator(context) ?: return
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_TICK))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(12)
-            }
-        } catch (_: Exception) {}
-    }
-
-    fun heavyClick(context: Context) {
-        try {
-            val vibrator = getVibrator(context) ?: return
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                vibrator.vibrate(VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
-            } else {
-                @Suppress("DEPRECATION")
-                vibrator.vibrate(40)
-            }
-        } catch (_: Exception) {}
+    private fun isHapticsEnabled(context: Context): Boolean {
+        return try {
+            Settings.System.getInt(
+                context.contentResolver,
+                Settings.System.HAPTIC_FEEDBACK_ENABLED,
+                1
+            ) != 0
+        } catch (_: Exception) {
+            true
+        }
     }
 
     private fun getVibrator(context: Context): Vibrator? {
@@ -56,5 +33,52 @@ object HapticHelper {
             @Suppress("DEPRECATION")
             context.getSystemService(Context.VIBRATOR_SERVICE) as? Vibrator
         }
+    }
+
+    private fun vibrateEffect(context: Context, effect: VibrationEffect) {
+        if (!isHapticsEnabled(context)) return
+        try {
+            val vibrator = getVibrator(context) ?: return
+            if (!vibrator.hasVibrator()) return
+            vibrator.cancel()
+            vibrator.vibrate(effect)
+        } catch (_: Exception) {
+            // Gracefully ignore when vibrator service is unavailable
+        }
+    }
+
+    /** Crisp detent for filter chips, quote selectors, and segmented controls. */
+    fun tick(context: Context) {
+        val effect = VibrationEffect.startComposition()
+            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, 0.55f)
+            .compose()
+        vibrateEffect(context, effect)
+    }
+
+    /** Clean tactile confirmation for PEEK playback toggle and standard buttons. */
+    fun click(context: Context) {
+        vibrateEffect(context, VibrationEffect.createPredefined(VibrationEffect.EFFECT_CLICK))
+    }
+
+    /** Grounded physical thud when opening a Song Room or settling into a hero card. */
+    fun roomOpen(context: Context) {
+        val effect = VibrationEffect.startComposition()
+            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_THUD, 0.72f)
+            .compose()
+        vibrateEffect(context, effect)
+    }
+
+    /** Rising two-beat signature when saving a signal, copying a 9:16 card, or finishing LAN sync. */
+    fun confirmSuccess(context: Context) {
+        val effect = VibrationEffect.startComposition()
+            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_QUICK_RISE, 0.6f)
+            .addPrimitive(VibrationEffect.Composition.PRIMITIVE_TICK, 0.85f, 38)
+            .compose()
+        vibrateEffect(context, effect)
+    }
+
+    /** Deep tactile anchor for destructive/reset or heavy gestures. */
+    fun heavyClick(context: Context) {
+        vibrateEffect(context, VibrationEffect.createPredefined(VibrationEffect.EFFECT_HEAVY_CLICK))
     }
 }

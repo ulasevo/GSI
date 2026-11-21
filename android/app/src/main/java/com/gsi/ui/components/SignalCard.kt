@@ -1,168 +1,173 @@
 package com.gsi.ui.components
 
+import androidx.compose.animation.AnimatedVisibilityScope
+import androidx.compose.animation.ExperimentalSharedTransitionApi
+import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.gsi.data.GsiRepository
 import com.gsi.model.Signal
-import com.gsi.ui.theme.GsiBorder
-import com.gsi.ui.theme.GsiBorderActive
-import com.gsi.ui.theme.GsiSurface
-import com.gsi.ui.theme.GsiSurfaceElevated
-import com.gsi.ui.theme.GsiTextMuted
-import com.gsi.ui.theme.GsiTextPrimary
-import com.gsi.ui.theme.GsiTextSecondary
+import com.gsi.ui.theme.ChaperoneAsymmShape
+import com.gsi.ui.theme.ChaperoneCompactAsymmShape
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 /**
- * An individual Signal item from the GSI catalogue.
- * Instantaneous tactile spring on touch, high-contrast typography, and album palette indicator.
+ * Archive Wall Signal Card featuring Chaperone's asymmetric 28dp/8dp framing,
+ * cover-derived tonal border, and SharedTransitionLayout hero hooks.
  */
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun SignalCard(
     signal: Signal,
-    coverBitmap: ImageBitmap?,
-    isSelected: Boolean,
-    modifier: Modifier = Modifier,
-    onClick: () -> Unit
+    sharedTransitionScope: SharedTransitionScope,
+    animatedVisibilityScope: AnimatedVisibilityScope,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val borderColor = if (isSelected) signal.glowColor else GsiBorder
-    val borderWidth = if (isSelected) 1.5.dp else 1.dp
-    val backgroundColor = if (isSelected) GsiSurfaceElevated else GsiSurface
-
-    TactileCard(
-        onClick = onClick,
-        cornerRadius = 14.dp,
-        backgroundColor = backgroundColor,
-        borderColor = borderColor,
-        borderWidth = borderWidth,
-        modifier = modifier.fillMaxWidth()
+    val context = LocalContext.current
+    val coverBitmap = produceState<ImageBitmap?>(
+        initialValue = null,
+        key1 = signal.coverFileName,
+        key2 = signal.localCoverPath
     ) {
-        Row(
-            modifier = Modifier
+        value = withContext(Dispatchers.IO) {
+            GsiRepository.loadCoverBitmap(context, signal.coverFileName, signal.localCoverPath)
+        }
+    }
+
+    with(sharedTransitionScope) {
+        TactileCard(
+            onClick = onClick,
+            shape = ChaperoneAsymmShape,
+            backgroundColor = MaterialTheme.colorScheme.surfaceContainer,
+            borderColor = signal.primaryColor.copy(alpha = 0.34f),
+            borderWidth = 1.dp,
+            modifier = modifier
                 .fillMaxWidth()
-                .padding(12.dp),
-            verticalAlignment = Alignment.CenterVertically
+                .sharedBounds(
+                    sharedContentState = rememberSharedContentState(key = "card-${signal.slug}"),
+                    animatedVisibilityScope = animatedVisibilityScope
+                )
         ) {
-            // 1. Thumbnail
-            Box(
-                modifier = Modifier
-                    .size(56.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(0.5.dp, GsiBorderActive, RoundedCornerShape(8.dp)),
-                contentAlignment = Alignment.Center
-            ) {
-                if (coverBitmap != null) {
-                    Image(
-                        bitmap = coverBitmap,
-                        contentDescription = "${signal.track} by ${signal.artist}",
-                        modifier = Modifier.fillMaxSize(),
-                        contentScale = ContentScale.Crop
+            Column(modifier = Modifier.fillMaxWidth()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .aspectRatio(1f)
+                        .clip(ChaperoneCompactAsymmShape)
+                        .background(
+                            Brush.linearGradient(
+                                listOf(
+                                    signal.surfaceColor,
+                                    signal.primaryColor.copy(alpha = 0.32f)
+                                )
+                            )
+                        )
+                        .sharedElement(
+                            sharedContentState = rememberSharedContentState(key = "cover-${signal.slug}"),
+                            animatedVisibilityScope = animatedVisibilityScope
+                        )
+                ) {
+                    coverBitmap.value?.let { bmp ->
+                        Image(
+                            bitmap = bmp,
+                            contentDescription = "${signal.album} cover",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                    }
+
+                    // Subtle accent indicator dot for Radio P53 or unsynced local note
+                    if (signal.isP53 || signal.pendingSync) {
+                        Row(
+                            modifier = Modifier
+                                .align(Alignment.TopEnd)
+                                .padding(10.dp),
+                            horizontalArrangement = Arrangement.spacedBy(5.dp)
+                        ) {
+                            if (signal.isP53) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(9.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFFFF58A6))
+                                )
+                            }
+                            if (signal.pendingSync) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(9.dp)
+                                        .clip(CircleShape)
+                                        .background(Color(0xFF35C9E9))
+                                )
+                            }
+                        }
+                    }
+                }
+
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 12.dp, vertical = 11.dp)
+                ) {
+                    Text(
+                        text = signal.track,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        fontSize = 15.sp,
+                        fontWeight = FontWeight.Bold,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
                     )
-                } else {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .background(signal.surfaceColor),
-                        contentAlignment = Alignment.Center
-                    ) {
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = signal.artist,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontSize = 13.sp,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
+                    if (signal.album.isNotBlank()) {
+                        Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = signal.track.take(1).uppercase(),
-                            color = signal.glowColor,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 18.sp
+                            text = signal.album,
+                            color = signal.primaryColor.copy(alpha = 0.85f),
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis
                         )
                     }
                 }
             }
-
-            Spacer(modifier = Modifier.width(14.dp))
-
-            // 2. Track & Artist text
-            Column(
-                modifier = Modifier.weight(1f)
-            ) {
-                Text(
-                    text = signal.track,
-                    style = androidx.compose.material3.MaterialTheme.typography.titleMedium.copy(
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
-                    ),
-                    color = GsiTextPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = signal.artist,
-                    style = androidx.compose.material3.MaterialTheme.typography.bodyMedium,
-                    color = GsiTextSecondary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-
-                if (signal.tags.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        signal.tags.take(2).forEach { tag ->
-                            Text(
-                                text = tag.replaceFirstChar { it.uppercase() },
-                                style = androidx.compose.material3.MaterialTheme.typography.labelSmall.copy(
-                                    fontSize = 10.sp,
-                                    color = if (isSelected) signal.glowColor else GsiTextMuted
-                                ),
-                                modifier = Modifier
-                                    .background(
-                                        color = Color.Black.copy(alpha = 0.5f),
-                                        shape = RoundedCornerShape(4.dp)
-                                    )
-                                    .padding(horizontal = 6.dp, vertical = 2.dp)
-                            )
-                        }
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // 3. Extracted Palette Indicator Dot
-            Box(
-                modifier = Modifier
-                    .size(9.dp)
-                    .background(
-                        color = signal.glowColor,
-                        shape = CircleShape
-                    )
-                    .border(
-                        width = 0.5.dp,
-                        color = Color.White.copy(alpha = 0.3f),
-                        shape = CircleShape
-                    )
-            )
         }
     }
 }

@@ -1,3 +1,11 @@
 <resources>
-    <string name="app_name">GSI</string>
+    <string name="app_name">Chaperone</string>
+    <string name="shortcut_p53_short">Radio P53</string>
+    <string name="shortcut_p53_long">Open Active Radio P53</string>
+    <string name="shortcut_capture_short">Capture</string>
+    <string name="shortcut_capture_long">Capture New Signal</string>
+    <string name="shortcut_random_short">Random</string>
+    <string name="shortcut_random_long">Open Random Signal</string>
+    <string name="widget_p53_label">Radio P53 Transmission</string>
+    <string name="widget_p53_description">Displays the active Radio P53 track, artwork, and note from Chaperone.</string>
 </resources>

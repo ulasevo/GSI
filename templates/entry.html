@@ -29,6 +29,7 @@
     <link rel="stylesheet" href="../styles/art-room.css">
     <title>@@SAFE_PAGE_TITLE@@</title>
 <link rel="stylesheet" href="../styles/entry-room.css?v=20260920-rim32">
+<link rel="stylesheet" href="../styles/story-studio.css">
 <link rel="stylesheet" href="../styles/theme-mode.css?v=20260920-final8">
 </head>
 <body class="art-room entry-room" style="--accent:@@ACCENT@@;@@ART_STYLE@@;@@BG_STYLE@@">
@@ -52,6 +53,9 @@
                 <p>@@ARTIST_DISPLAY@@</p>
                 <p class="album">@@ALBUM_DISPLAY@@</p>
                 @@STREAMING_LINKS_HTML@@
+                <div class="entry-share-row" style="margin-top:14px">
+                    <button class="entry-share-trigger" id="entry-share-trigger" type="button" aria-haspopup="dialog">Share 9:16 card ↗</button>
+                </div>
             </div>
         </section>
 
@@ -65,8 +69,48 @@
         </div>
         @@ALSO_APPEARS_HTML@@
     </main>
+    <dialog id="entry-story-modal" class="story-modal story-studio-modal" aria-labelledby="entry-story-modal-title">
+        <div class="story-modal-shell">
+            <header class="story-modal-header">
+                <div class="story-modal-heading">
+                    <span class="story-modal-kicker">Chaperone · 9:16 Story Card</span>
+                    <h2 id="entry-story-modal-title" class="story-modal-title">Share signal card</h2>
+                </div>
+                <button type="button" class="story-modal-close" id="entry-story-close" aria-label="Close share studio">✕</button>
+            </header>
+            <div class="story-modal-body">
+                <div class="story-studio-preview-col">
+                    <div class="story-card-preview-wrap">
+                        <canvas id="entry-story-canvas" role="img" width="1080" height="1920" class="story-card-canvas" aria-label="Chaperone 9:16 story card preview"></canvas>
+                    </div>
+                </div>
+                <div class="story-studio-controls-col">
+                    <div class="story-control-group">
+                        <span class="story-control-label">Sleeve Surface</span>
+                        <div class="story-mode-toggle" role="group" aria-label="Card surface style">
+                            <button type="button" class="story-mode-btn" data-story-mode="dark" aria-pressed="true">Dark Room</button>
+                            <button type="button" class="story-mode-btn" data-story-mode="paper" aria-pressed="false">Archival Paper</button>
+                        </div>
+                    </div>
+                    <div class="story-control-group">
+                        <span class="story-control-label">Excerpt Source</span>
+                        <div class="story-quote-chips" id="entry-story-quote-chips"></div>
+                        <textarea id="entry-story-quote-input" class="story-quote-textarea" rows="3" maxlength="320" placeholder="Optional note or excerpt on card…"></textarea>
+                    </div>
+                    <div class="story-modal-actions">
+                        <button type="button" class="story-btn story-btn-share" id="entry-story-btn-share" disabled>Share card ↗</button>
+                        <button type="button" class="story-btn story-btn-copy-image" id="entry-story-btn-copy-image" disabled>Copy image</button>
+                        <button type="button" class="story-btn story-btn-download" id="entry-story-btn-download" disabled>Download PNG</button>
+                        <button type="button" class="story-btn story-btn-copy" id="entry-story-btn-copy-link">Copy link</button>
+                        <p class="story-status" id="entry-story-status" role="status" aria-live="polite"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </dialog>
     <script id="gsi-entry-context" type="application/json">@@ENTRY_CONTEXT_JSON@@</script>
     <script src="../scripts/gsi-context.js"></script>
     <script src="../scripts/entry-page.js?v=20260919-path"></script>
+    <script src="../scripts/story-studio.js"></script>
 </body>
 </html>

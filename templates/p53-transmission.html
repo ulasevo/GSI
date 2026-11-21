@@ -25,6 +25,7 @@
     <link rel="stylesheet" href="../styles/art-room.css">
     <link rel="stylesheet" href="../styles/p53-transmission.css">
     <link rel="stylesheet" href="../styles/p53-transmission-vars.css">
+    <link rel="stylesheet" href="../styles/story-studio.css">
     <link rel="stylesheet" href="../styles/theme-mode.css">
     <title>@@P53_TITLE@@</title>
 </head>
@@ -56,25 +57,42 @@
             @@ENTRY_COUNTERPART_HTML@@
         </div>
     </main>
-    <dialog id="story-modal" class="story-modal" aria-labelledby="story-modal-title">
+    <dialog id="story-modal" class="story-modal story-studio-modal" aria-labelledby="story-modal-title">
         <div class="story-modal-shell">
             <header class="story-modal-header">
                 <div class="story-modal-heading">
-                    <span class="story-modal-kicker">Radio P53</span>
+                    <span class="story-modal-kicker">Radio P53 · 9:16 Story Studio</span>
                     <h2 id="story-modal-title" class="story-modal-title">Share transmission</h2>
                 </div>
                 <button type="button" class="story-modal-close" id="story-modal-close" aria-label="Close share dialog">✕</button>
             </header>
             <div class="story-modal-body">
-                <div class="story-card-preview-wrap">
-                    <canvas id="story-card-canvas" role="img" width="1080" height="1920" class="story-card-canvas" aria-label="Radio P53 transmission story card preview"></canvas>
+                <div class="story-studio-preview-col">
+                    <div class="story-card-preview-wrap">
+                        <canvas id="story-card-canvas" role="img" width="1080" height="1920" class="story-card-canvas" aria-label="Radio P53 transmission story card preview"></canvas>
+                    </div>
                 </div>
-                <div class="story-modal-actions">
-                    <button type="button" class="story-btn story-btn-share" id="story-btn-share" disabled>Share card ↗</button>
-                    <button type="button" class="story-btn story-btn-download" id="story-btn-download" disabled>Download card</button>
-                    <button type="button" class="story-btn story-btn-copy" id="story-btn-copy">Copy link</button>
-                    <p class="story-share-hint">Some apps don't include a link with an image. Copy it to add separately.</p>
-                    <p class="story-status" id="story-status" role="status" aria-live="polite"></p>
+                <div class="story-studio-controls-col">
+                    <div class="story-control-group">
+                        <span class="story-control-label">Sleeve Surface</span>
+                        <div class="story-mode-toggle" role="group" aria-label="Card surface style">
+                            <button type="button" class="story-mode-btn" id="story-style-paper" data-p53-style="paper" aria-pressed="true">Archival Paper</button>
+                            <button type="button" class="story-mode-btn" id="story-style-dark" data-p53-style="dark" aria-pressed="false">Dark Room</button>
+                        </div>
+                    </div>
+                    <div class="story-control-group">
+                        <span class="story-control-label">Transmission Excerpt</span>
+                        <div class="story-quote-chips" id="story-quote-chips"></div>
+                        <textarea id="story-quote-input" class="story-quote-textarea" rows="3" maxlength="320" placeholder="Edit transmission note for card…"></textarea>
+                    </div>
+                    <div class="story-modal-actions">
+                        <button type="button" class="story-btn story-btn-share" id="story-btn-share" disabled>Share card ↗</button>
+                        <button type="button" class="story-btn story-btn-copy-image" id="story-btn-copy-image" disabled>Copy image</button>
+                        <button type="button" class="story-btn story-btn-download" id="story-btn-download" disabled>Download card</button>
+                        <button type="button" class="story-btn story-btn-copy" id="story-btn-copy">Copy link</button>
+                        <p class="story-share-hint">Some apps don't include a link with an image. Copy it to add separately.</p>
+                        <p class="story-status" id="story-status" role="status" aria-live="polite"></p>
+                    </div>
                 </div>
             </div>
         </div>

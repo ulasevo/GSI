@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shortcuts xmlns:android="http://schemas.android.com/apk/res/android">
+    <shortcut
+        android:shortcutId="active_p53"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_p53_short"
+        android:shortcutLongLabel="@string/shortcut_p53_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="chaperone://p53/active"
+            android:targetPackage="com.gsi"
+            android:targetClass="com.gsi.MainActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="quick_capture"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_capture_short"
+        android:shortcutLongLabel="@string/shortcut_capture_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="chaperone://capture"
+            android:targetPackage="com.gsi"
+            android:targetClass="com.gsi.MainActivity" />
+    </shortcut>
+
+    <shortcut
+        android:shortcutId="random_signal"
+        android:enabled="true"
+        android:icon="@mipmap/ic_launcher"
+        android:shortcutShortLabel="@string/shortcut_random_short"
+        android:shortcutLongLabel="@string/shortcut_random_long">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:data="chaperone://random"
+            android:targetPackage="com.gsi"
+            android:targetClass="com.gsi.MainActivity" />
+    </shortcut>
+</shortcuts>

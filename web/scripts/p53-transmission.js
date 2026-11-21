@@ -78,12 +78,19 @@
   const storyModal = document.querySelector("#story-modal");
   const modalClose = document.querySelector("#story-modal-close");
   const btnShare = document.querySelector("#story-btn-share");
+  const btnCopyImage = document.querySelector("#story-btn-copy-image");
   const btnDownload = document.querySelector("#story-btn-download");
   const btnCopy = document.querySelector("#story-btn-copy");
+  const stylePaperBtn = document.querySelector("#story-style-paper");
+  const styleDarkBtn = document.querySelector("#story-style-dark");
+  const quoteChipsWrap = document.querySelector("#story-quote-chips");
+  const quoteInput = document.querySelector("#story-quote-input");
   const storyStatus = document.querySelector("#story-status");
   const canvas = document.querySelector("#story-card-canvas");
 
   let cardRendered = false;
+  let studioStyle = "paper";
+  let studioNoteOverride = null;
 
   function parseHex(hex, fallback = [255, 101, 173]) {
     if (Array.isArray(hex) && hex.length === 3) return hex;
@@ -134,7 +141,7 @@
     return targetRgb;
   }
 
-  function deriveSleevePalette(ctxData) {
+  function deriveSleevePalette(ctxData, styleMode = "paper") {
     const palette = ctxData.trackPalette || {};
     const primary = parseHex(palette.primary || ctxData.trackAccent || "#ff65ad");
     const secondary = parseHex(palette.secondary || toHex(mixRgb(primary, [86, 74, 102], 0.45)));
@@ -143,6 +150,36 @@
     const soft = parseHex(palette.soft || toHex(mixRgb(primary, [245, 239, 226], 0.52)));
     const surface = parseHex(palette.surface || toHex(mixRgb(primary, [16, 12, 22], 0.78)));
     const rawInk = palette.ink ? parseHex(palette.ink, [25, 19, 30]) : null;
+
+    if (styleMode === "dark") {
+      const darkTopRgb = mixRgb([26, 20, 32], surface, 0.5);
+      const darkMidRgb = mixRgb([19, 15, 25], field, 0.32);
+      const darkBottomRgb = mixRgb([14, 10, 19], surface, 0.45);
+      const darkNoteRgb = mixRgb([36, 28, 44], primary, 0.14);
+      const lightInk = [248, 245, 239];
+      const mutedLight = mixRgb(lightInk, soft, 0.38);
+      const accentLight = ensureContrast(primary, darkMidRgb, [255, 180, 220], 4.2);
+      return {
+        primary: toHex(primary),
+        secondary: toHex(secondary),
+        glow: toHex(glow),
+        field: toHex(field),
+        soft: toHex(soft),
+        surface: toHex(surface),
+        outerTop: toHex(mixRgb(surface, [10, 8, 14], 0.58)),
+        outerBottom: toHex(mixRgb(field, [7, 5, 10], 0.82)),
+        spineBg: toHex(mixRgb(surface, [24, 15, 32], 0.55)),
+        paperTop: toHex(darkTopRgb),
+        paperMid: toHex(darkMidRgb),
+        paperBottom: toHex(darkBottomRgb),
+        noteBg: toHex(darkNoteRgb),
+        inkPrimary: toHex(lightInk),
+        inkMuted: toHex(mutedLight),
+        accentRule: toHex(accentLight),
+        p53Accent: toHex(parseHex(ctxData.p53Accent || "#ff58a6")),
+        cyanAccent: toHex(parseHex(ctxData.cyanAccent || "#35c9e9")),
+      };
+    }
 
     // Tactile archival paper stock gently warmed by the artwork's soft/field tones.
     const paperTopRgb = mixRgb([245, 239, 226], soft, 0.14);
@@ -418,11 +455,11 @@
     const ctx = canvas.getContext("2d");
     if (!ctx) return false;
 
-    const colors = deriveSleevePalette(context);
+    const colors = deriveSleevePalette(context, studioStyle);
     const track = (context.track || "").trim();
     const artist = (artistName || "").trim();
     const album = (context.album || "").trim();
-    const note = (context.transmissionNote || "").trim();
+    const note = (studioNoteOverride !== null ? studioNoteOverride : (context.transmissionNote || "")).trim();
     const rawSignal = String(context.signalLabel || "").trim().toUpperCase();
     const isActive = rawSignal === "ACTIVE" || rawSignal === "CURRENT TRANSMISSION";
     const status = isActive ? "Active" : "Previous";
@@ -660,6 +697,7 @@
           try {
             const ready = await renderStoryCard();
             if (btnShare) btnShare.disabled = !ready;
+            if (btnCopyImage) btnCopyImage.disabled = !ready;
             if (btnDownload) btnDownload.disabled = !ready;
             if (storyStatus) storyStatus.textContent = ready ? "" : "The card couldn't be prepared. You can still copy the link.";
           } catch {
@@ -745,6 +783,73 @@
   btnDownload?.addEventListener("click", () => {
     if (triggerDownload()) flashButton(btnDownload, "Card downloaded");
   });
+
+  btnCopyImage?.addEventListener?.("click", async () => {
+    if (!canvas) return;
+    if (!navigator?.clipboard?.write || typeof ClipboardItem === "undefined") {
+      if (storyStatus) storyStatus.textContent = "Image copy isn't supported in this browser — use Download or Share.";
+      return;
+    }
+    try {
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/png"));
+      if (!blob) throw new Error("No image blob");
+      await navigator.clipboard.write([new ClipboardItem({ "image/png": blob })]);
+      flashButton(btnCopyImage, "Image copied");
+    } catch {
+      flashButton(btnCopyImage, "Couldn't copy image");
+    }
+  });
+
+  if (stylePaperBtn && styleDarkBtn) {
+    const setSurfaceStyle = async (mode) => {
+      studioStyle = mode === "dark" ? "dark" : "paper";
+      stylePaperBtn.setAttribute?.("aria-pressed", studioStyle === "paper" ? "true" : "false");
+      styleDarkBtn.setAttribute?.("aria-pressed", studioStyle === "dark" ? "true" : "false");
+      await renderStoryCard();
+    };
+    stylePaperBtn.addEventListener?.("click", () => setSurfaceStyle("paper"));
+    styleDarkBtn.addEventListener?.("click", () => setSurfaceStyle("dark"));
+  }
+
+  if (quoteChipsWrap && typeof document.createElement === "function") {
+    const choices = [];
+    if ((context.transmissionNote || "").trim()) {
+      choices.push({ label: "Transmission Note", text: (context.transmissionNote || "").trim() });
+    }
+    if (Array.isArray(context.entrySections)) {
+      context.entrySections.forEach((sec) => {
+        if (sec?.title && sec?.excerpt) {
+          choices.push({ label: sec.title, text: sec.excerpt });
+        }
+      });
+    }
+    choices.push({ label: "No quote", text: "" });
+    choices.forEach((choice, idx) => {
+      const chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "story-quote-chip";
+      chip.textContent = choice.label;
+      chip.setAttribute?.("aria-pressed", idx === 0 ? "true" : "false");
+      chip.addEventListener?.("click", () => {
+        quoteChipsWrap.querySelectorAll?.(".story-quote-chip")?.forEach?.((el) =>
+          el.setAttribute?.("aria-pressed", "false")
+        );
+        chip.setAttribute?.("aria-pressed", "true");
+        studioNoteOverride = choice.text;
+        if (quoteInput) quoteInput.value = choice.text;
+        renderStoryCard();
+      });
+      quoteChipsWrap.append?.(chip);
+    });
+  }
+
+  if (quoteInput) {
+    quoteInput.value = (context.transmissionNote || "").trim();
+    quoteInput.addEventListener?.("input", () => {
+      studioNoteOverride = quoteInput.value;
+      renderStoryCard();
+    });
+  }
 
   btnCopy?.addEventListener("click", async () => {
     const shareUrl = GSIContext.canonicalHref();
