@@ -36,7 +36,6 @@ import androidx.compose.material.icons.rounded.Search
 import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Badge
 import androidx.compose.material3.BadgedBox
-import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
@@ -88,7 +87,7 @@ private sealed class ArchiveDestination {
  * persistent filter & scroll state, live Media3 PEEK mini player, Live Authoring,
  * 9:16 Share Card Studio, and LAN Sync & JSON Export.
  */
-@OptIn(ExperimentalSharedTransitionApi::class, ExperimentalMaterial3ExpressiveApi::class)
+@OptIn(ExperimentalSharedTransitionApi::class)
 @Composable
 fun GsiArchiveScreen(
     launchAction: ChaperoneLaunchAction = ChaperoneLaunchAction.None,
